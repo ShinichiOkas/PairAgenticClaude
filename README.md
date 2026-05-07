@@ -22,9 +22,15 @@ Claude Codeの上に「徒弟制度」を実現するものです。
 
 ## インストール
 
+### macOS / Linux  
 ```bash  
 chmod +x install.sh  
 ./install.sh
+```
+
+### Windows  
+```batch
+.\install.bat
 ```
 
 既存の `~/.claude/CLAUDE.md` がある場合はバックアップを作成します。
@@ -33,8 +39,17 @@ chmod +x install.sh
 
 新しいプロジェクトで Pair Agent を使い始めるとき:
 
+#### macOS / Linux
+```bash
 cd your-project  
 ./install.sh --project
+```
+
+#### Windows
+```batch
+cd your-project
+path\to\install.bat --project
+```
 
 または手動で `project-template/.pair-agent/` をプロジェクトルートにコピーしてください。
 
@@ -63,7 +78,15 @@ cd your-project
 
 ## **アンインストール**
 
+### macOS / Linux
+```bash
 ./install.sh --uninstall
+```
+
+### Windows
+```batch
+.\install.bat --uninstall
+```
 
 `~/.claude/pair-agent/` の学習データは保持されます。  
  完全削除する場合は手動で `rm -rf ~/.claude/pair-agent/` を実行してください。
