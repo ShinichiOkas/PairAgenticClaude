@@ -27,6 +27,13 @@ if not exist "%CLAUDE_HOME%\pair-agent\skills" mkdir "%CLAUDE_HOME%\pair-agent\s
 if not exist "%CLAUDE_HOME%\pair-agent\vision" mkdir "%CLAUDE_HOME%\pair-agent\vision"
 if not exist "%CLAUDE_HOME%\pair-agent\corrections" mkdir "%CLAUDE_HOME%\pair-agent\corrections"
 
+:: Copy project template to %CLAUDE_HOME%\pair-agent\template\  
+if exist "%PAIR_AGENT_SRC%\pair-agent\template" (
+    if exist "%CLAUDE_HOME%\pair-agent\template" rmdir /s /q "%CLAUDE_HOME%\pair-agent\template"
+    xcopy /e /i /y "%PAIR_AGENT_SRC%\pair-agent\template" "%CLAUDE_HOME%\pair-agent\template" >nul
+    echo !GREEN![pair-agent]!NC! Installed pair-agent/template (used by project-init skill)
+)
+
 :: Backup existing CLAUDE.md
 if exist "%CLAUDE_HOME%\CLAUDE.md" (
     findstr /c:"Pair Agent" "%CLAUDE_HOME%\CLAUDE.md" >nul
@@ -71,8 +78,16 @@ goto end
 if exist ".pair-agent" (
     echo !YELLOW![pair-agent]!NC! .pair-agent/ already exists in current directory. Skipping.
 ) else (
-    xcopy /e /i /y "%PROJECT_TEMPLATE%\.pair-agent" ".pair-agent" >nul
-    echo !GREEN![pair-agent]!NC! Created .pair-agent/ in %CD%
+    if exist "%CLAUDE_HOME%\pair-agent\template" (
+        xcopy /e /i /y "%CLAUDE_HOME%\pair-agent\template" ".pair-agent" >nul
+        echo !GREEN![pair-agent]!NC! Created .pair-agent/ in %CD% (from %%USERPROFILE%%\.claude\pair-agent\template\)
+    ) else (
+        xcopy /e /i /y "%PROJECT_TEMPLATE%\.pair-agent" ".pair-agent" >nul
+        echo !YELLOW![pair-agent]!NC! Warning: %%CLAUDE_HOME%%\pair-agent\template\ not found.
+        echo !YELLOW![pair-agent]!NC! Consider re-running install.bat to update the template.
+    )
+    :: Set created_at timestamp via PowerShell
+    powershell -Command "$f='.pair-agent/current-sprint.json';$d=Get-Content $f|ConvertFrom-Json;$d.created_at=(Get-Date -Format 'o');$d|ConvertTo-Json|Set-Content $f" 2>nul
     echo !GREEN![pair-agent]!NC! Add to .gitignore if needed: .pair-agent/current-sprint.json
 )
 goto end
@@ -102,9 +117,9 @@ goto end
 :end
 echo.
 echo Learning data directory: %CLAUDE_HOME%\pair-agent\
-echo   skills/      - 師匠の判断基準（プロジェクトを跨ぐ）
-echo   vision/      - ビジョン記録
-echo   corrections/ - 叱責・修正記録
+echo   skills/      - ??????????????????
+echo   vision/      - ??????
+echo   corrections/ - ???????
 echo.
 echo To set up a project: cd your-project ^&^& "%SCRIPT_DIR%install.bat" --project
 echo To start: claude

@@ -20,8 +20,24 @@ if [[ "${1:-}" == "--project" ]]; then
     if [[ -d ".pair-agent" ]]; then  
         warn ".pair-agent/ already exists in current directory. Skipping."  
     else  
-        cp -r "${PROJECT_TEMPLATE}/.pair-agent" .  
-        info "Created .pair-agent/ in $(pwd)"  
+        if [[ -d "${CLAUDE_HOME}/pair-agent/template" ]]; then  
+            cp -r "${CLAUDE_HOME}/pair-agent/template" .pair-agent  
+            info "Created .pair-agent/ in $(pwd) (from ~/.claude/pair-agent/template/)"  
+        else  
+            cp -r "${PROJECT_TEMPLATE}/.pair-agent" .  
+            warn "~/.claude/pair-agent/template/ not found, used repository template instead."  
+            warn "Consider re-running install.sh to update the template."  
+        fi  
+        # Set created_at timestamp  
+        if command -v python3 &>/dev/null; then  
+            python3 -c "  
+import json, datetime  
+with open('.pair-agent/current-sprint.json', 'r+') as f:  
+    d = json.load(f)  
+    d['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()  
+    f.seek(0); json.dump(d, f, indent=2); f.truncate()  
+" 2>/dev/null || true  
+        fi  
         info "Add to .gitignore if needed: .pair-agent/current-sprint.json"  
     fi  
     exit 0  
@@ -66,6 +82,13 @@ mkdir -p "${CLAUDE_HOME}/agents"
 mkdir -p "${CLAUDE_HOME}/pair-agent/skills"  
 mkdir -p "${CLAUDE_HOME}/pair-agent/vision"  
 mkdir -p "${CLAUDE_HOME}/pair-agent/corrections"
+
+# Copy project template to ~/.claude/pair-agent/template/  
+if [[ -d "${PAIR_AGENT_SRC}/pair-agent/template" ]]; then  
+    rm -rf "${CLAUDE_HOME}/pair-agent/template"  
+    cp -r "${PAIR_AGENT_SRC}/pair-agent/template" "${CLAUDE_HOME}/pair-agent/template"  
+    info "Installed pair-agent/template (used by project-init skill)"  
+fi
 
 # Backup existing CLAUDE.md  
 if [[ -f "${CLAUDE_HOME}/CLAUDE.md" ]]; then  

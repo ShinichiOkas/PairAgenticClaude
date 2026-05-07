@@ -1,15 +1,10 @@
-# タスクリスト - Windows環境対応
+# タスクリスト - プロジェクト初期化の自動化
 
-- [x] `install.bat` の作成
-    - [x] 基本変数の設定
-    - [x] ANSIカラー出力の設定
-    - [x] `--project` フラグの実装
-    - [x] `--uninstall` フラグの実装
-    - [x] フルインストールの実装 (ディレクトリ作成、CLAUDE.md更新、ファイルコピー)
-- [x] `README.md` の更新
-    - [x] インストール手順の追加
-    - [x] プロジェクト導入手順の追加
-- [x] 動作確認
-    - [x] フルインストールの実行確認
-    - [x] `--project` の実行確認
-    - [x] `--uninstall` の実行確認
+- [/] テンプレートを `home-claude/pair-agent/template/` に移動
+- [/] 新スキル `project-init` の作成
+- [/] `project-start-existing` の修正
+- [/] `pair-agent-core.md` の修正
+- [/] `install.sh` の修正（テンプレートコピー追加・`--project` 変更）
+- [/] `install.bat` の修正（同上）
+- [ ] `README.md` の更新
+- [ ] 動作確認・コミット

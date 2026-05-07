@@ -16,6 +16,7 @@ Claude Codeの上に「徒弟制度」を実現するものです。
 | 師匠の判断基準・用語・好み | `~/.claude/pair-agent/skills/` | ペア固有の長期資産。プロジェクトを跨ぐ |  
 | ビジョン記録 | `~/.claude/pair-agent/vision/` | 師匠の思考パターン。プロジェクトを跨ぐ |  
 | 叱責・修正記録 | `~/.claude/pair-agent/corrections/` | 境界線はペア固有 |  
+| プロジェクト初期化テンプレート | `~/.claude/pair-agent/template/` | `project-init` スキルが使用。リポジトリ不要 |  
 | 合意ドキュメント | `<project>/.pair-agent/agreements/` | スプリントはプロジェクトに紐づく |  
 | スプリント状態 | `<project>/.pair-agent/current-sprint.json` | プロジェクト単位の作業状態 |  
 | プロジェクト固有Skill | `<project>/.pair-agent/skills/` | そのプロジェクトだけの技術知見 |
@@ -37,7 +38,12 @@ chmod +x install.sh
 
 ## **プロジェクトへの導入**
 
-新しいプロジェクトで Pair Agent を使い始めるとき:
+> [!NOTE]
+> **プロジェクトへの導入は自動化されています。**  
+> インストール後に既存プロジェクトで `claude` を起動すると、`.pair-agent/` が存在しない場合に
+> `project-init` スキルが自動的に初期化を提案します。
+
+手動で初期化したい場合:
 
 #### macOS / Linux
 ```bash
@@ -51,8 +57,6 @@ cd your-project
 path\to\install.bat --project
 ```
 
-または手動で `project-template/.pair-agent/` をプロジェクトルートにコピーしてください。
-
 ## **使い方**
 
 インストール後、いつも通り `claude` を起動するだけです。  
@@ -60,8 +64,9 @@ path\to\install.bat --project
 
 ### **最初のセッション**
 
-空ディレクトリなら「何を作りたいですか？」と聞かれます。  
- 既存プロジェクトなら「プロジェクトの分析をしますか？」と聞かれます。
+- **空ディレクトリ**: 「何を作りたいですか？」と聞かれます。
+- **既存プロジェクト（`.pair-agent/` なし）**: 作業ディレクトリの初期化を自動的に提案します。
+- **既存プロジェクト（`.pair-agent/` あり）**: 進行中のスプリントがあれば状態を報告します。
 
 ### **スプリントの流れ**
 

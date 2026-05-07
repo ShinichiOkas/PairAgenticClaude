@@ -1,41 +1,93 @@
-# Windows環境向けインストールスクリプトの実装計画
+# 実装計画：プロジェクト初期化の自動化
 
-Windows 11環境でも本プロジェクトを簡単にインストール・利用できるように、`install.sh` と同等の機能を持つ `install.bat` を作成します。
+## 背景・課題
 
-## 変更内容の概要
+現在 `install.bat --project` で手動コピーしている `.pair-agent/` の初期化を、  
+Claude Code が自動的に行うスキルへ移行する。
 
-1. **`install.bat` の新規作成**:
-   - `install.sh` のロジックを Windows バッチファイル形式に移植。
-   - `~/.claude` の代わりに `%USERPROFILE%\.claude` を使用。
-   - ANSI エスケープシーケンスを用いた色付きログ出力をサポート。
-   - `--project`, `--uninstall` フラグのサポート。
+また、テンプレートファイルを `~/.claude/pair-agent/template/` に格納することで、  
+インストール後に元リポジトリが不要な完全自己完結型にする。
 
-2. **`README.md` の更新**:
-   - Windows 環境でのインストール手順（`install.bat` の実行）を追記。
+---
 
-## 導入計画
+## 設計方針
 
-### [Windows Support]
+### 1. テンプレートの格納先変更
 
-#### [NEW] [install.bat](file:///s:/work/develop/PairAgenticClaude/install.bat)
-- 環境変数設定 (`SCRIPT_DIR`, `CLAUDE_HOME` 等)。
-- ログ出力関数 (ANSIカラー付き)。
-- ディレクトリ作成ロジック。
-- `CLAUDE.md` のバックアップと追記ロジック。
-- `skills`, `agents`, `rules` のコピー。
-- `--project` によるプロジェクト固有設定の配置。
-- `--uninstall` による削除処理。
+| 変更前 | 変更後 |
+|---|---|
+| `project-template/.pair-agent/` (リポジトリ内) | `~/.claude/pair-agent/template/` (ユーザーホーム内) |
 
-#### [MODIFY] [README.md](file:///s:/work/develop/PairAgenticClaude/README.md)
-- 「インストール」セクションに Windows 版の手順を追加。
-- 「プロジェクトへの導入」セクションに Windows 版のコマンド例を追加。
+インストールスクリプト（`install.sh` / `install.bat`）が  
+`project-template/.pair-agent/` の内容を `~/.claude/pair-agent/template/` にコピーする。  
+インストール後はリポジトリが無くても動作する。
+
+### 2. 新スキル `project-init` の追加
+
+`~/.claude/skills/project-init/SKILL.md` を新規作成する。
+
+**発動条件:**  
+セッション開始時に `.pair-agent/` が存在しないことを検知したとき。
+
+**動作:**  
+1. `.pair-agent/` が存在しない既存プロジェクトを検知
+2. 師匠に確認: 「`.pair-agent/` がありません。Pair Agent の作業ディレクトリを初期化しますか？」
+3. 承認されたら `~/.claude/pair-agent/template/` の内容をコピー
+4. `current-sprint.json` の `created_at` を現在時刻で初期化
+
+**修正が必要なスキル:**  
+- `project-start-existing`: `.pair-agent/` の不在チェックを `project-init` スキルに委譲するよう修正
+- `project-start-empty`: `.pair-agent/` を即時作成するのではなく、  
+  プロジェクト方向決定後に `project-init` スキルを呼ぶよう修正
+
+### 3. `pair-agent-core.md` ルールの更新
+
+セッション開始手順に「`.pair-agent/` が存在しなければ `project-init` スキルを実行する」を追加する。
+
+---
+
+## 変更ファイル一覧
+
+### home-claude/（インストール元）
+
+#### [NEW] `home-claude/skills/project-init/SKILL.md`
+- `.pair-agent/` 不在検知・初期化スキル本体
+- テンプレートのコピー手順を記述
+- 承認フロー付き
+
+#### [MODIFY] `home-claude/pair-agent/template/`（新規ディレクトリ）
+- `project-template/.pair-agent/` の内容をこちらへ移動
+
+#### [MODIFY] `home-claude/skills/project-start-existing/SKILL.md`
+- `.pair-agent/` 不在時は `project-init` スキルへ委譲する記述を追加
+
+#### [MODIFY] `home-claude/rules/pair-agent-core.md`
+- セッション開始手順に `.pair-agent/` 不在チェックを追加
+
+### インストールスクリプト
+
+#### [MODIFY] `install.sh`
+- `project-template/.pair-agent/` を `~/.claude/pair-agent/template/` にコピーするステップを追加
+- `--project` オプションの動作を  
+  「リポジトリからのコピー」→「`~/.claude/pair-agent/template/` からのコピー」に変更
+
+#### [MODIFY] `install.bat`
+- 同上（Windows版）
+
+---
 
 ## 検証計画
 
-### 手動検証
-- Windows コマンドプロンプトで以下のコマンドを実行し、期待通りに動作することを確認する。
-  - `install.bat` (フルインストール)
-  - `install.bat --project` (カレントディレクトリへの配置)
-  - `install.bat --uninstall` (アンインストール)
-- `%USERPROFILE%\.claude` 内に正しくファイルが配置されているか確認。
-- 色付きのログが正しく表示されるか確認。
+1. `install.sh` / `install.bat` を実行し、`~/.claude/pair-agent/template/` が正しく作成されることを確認
+2. `.pair-agent/` なしのプロジェクトで claude を起動し、自動的に初期化の確認が表示されることを確認
+3. 承認後に `.pair-agent/` ディレクトリ構造が正しく作成されることを確認
+4. `--project` フラグが廃止されてもドキュメントが正しく更新されることを確認
+
+---
+
+## 備考
+
+> [!NOTE]
+> `--project` オプションは互換性のために残しつつ、動作を  
+> `~/.claude/pair-agent/template/` からのコピーに変更する。  
+> 将来的には「スキルで自動化されたので不要です」とドキュメントに記載できる。
