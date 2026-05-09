@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  
 CLAUDE_HOME="${HOME}/.claude"  
+ANTIGRAVITY_HOME="${HOME}/.gemini/antigravity"
 PAIR_AGENT_SRC="${SCRIPT_DIR}/home-claude"  
 PROJECT_TEMPLATE="${SCRIPT_DIR}/project-template"
 
@@ -23,11 +24,20 @@ if [[ "${1:-}" == "--project" ]]; then
         if [[ -d "${CLAUDE_HOME}/pair-agent/template" ]]; then  
             cp -r "${CLAUDE_HOME}/pair-agent/template" .pair-agent  
             info "Created .pair-agent/ in $(pwd) (from ~/.claude/pair-agent/template/)"  
+        elif [[ -d "${ANTIGRAVITY_HOME}/pair-agent/template" ]]; then
+            cp -r "${ANTIGRAVITY_HOME}/pair-agent/template" .pair-agent
+            info "Created .pair-agent/ in $(pwd) (from ~/.gemini/antigravity/pair-agent/template/)"
         else  
             cp -r "${PROJECT_TEMPLATE}/.pair-agent" .  
-            warn "~/.claude/pair-agent/template/ not found, used repository template instead."  
-            warn "Consider re-running install.sh to update the template."  
+            warn "Local template not found, used repository template instead."  
         fi  
+
+        # Create GEMINI.md if CLAUDE.md exists
+        if [[ -f "CLAUDE.md" && ! -f "GEMINI.md" ]]; then
+            cp "CLAUDE.md" "GEMINI.md"
+            info "Created GEMINI.md as a copy of CLAUDE.md"
+        fi
+
         # Set created_at timestamp  
         if command -v python3 &>/dev/null; then  
             python3 -c "  
@@ -45,22 +55,25 @@ fi
 
 # --- Uninstall ---  
 if [[ "${1:-}" == "--uninstall" ]]; then  
-    warn "Removing Pair Agent files from ~/.claude/ ..."  
-    warn "(~/.claude/pair-agent/ learning data is preserved)"
+    warn "Removing Pair Agent files from ~/.claude/ and ~/.gemini/antigravity/ ..."  
+    warn "(Learning data in pair-agent/ is preserved)"
 
+    # Claude Code
     rm -f  "${CLAUDE_HOME}/CLAUDE.md.pair-agent-backup" 2>/dev/null || true  
-    # Remove rules  
     rm -f  "${CLAUDE_HOME}/rules/pair-agent-core.md" 2>/dev/null || true  
-    # Remove skills  
+    rm -f  "${CLAUDE_HOME}/agents/"*.md 2>/dev/null || true
+    
+    # Antigravity
+    rm -f  "${ANTIGRAVITY_HOME}/GEMINI.md" 2>/dev/null || true
+    rm -rf "${ANTIGRAVITY_HOME}/skills/" 2>/dev/null || true
+
+    # Common skills
     for skill in sprint-lifecycle agreement-document correction-record \
                  skill-learning retrospect vision-record \
-                 project-start-empty project-start-existing vocabulary-capture; do  
+                 project-start-empty project-start-existing vocabulary-capture project-init; do  
         rm -rf "${CLAUDE_HOME}/skills/${skill}" 2>/dev/null || true  
+        rm -rf "${ANTIGRAVITY_HOME}/skills/${skill}" 2>/dev/null || true  
     done  
-    # Remove agents  
-    for agent in deliberation.md retrospective.md skill-executor.md; do  
-        rm -f "${CLAUDE_HOME}/agents/${agent}" 2>/dev/null || true  
-    done
 
     # Restore CLAUDE.md backup if exists  
     if [[ -f "${CLAUDE_HOME}/CLAUDE.md.pair-agent-backup" ]]; then  
@@ -68,14 +81,14 @@ if [[ "${1:-}" == "--uninstall" ]]; then
         info "Restored original CLAUDE.md from backup"  
     fi
 
-    info "Uninstall complete. Learning data in ~/.claude/pair-agent/ preserved."  
+    info "Uninstall complete."  
     exit 0  
 fi
 
 # --- Full install ---  
-info "Installing Pair Agent to ~/.claude/ ..."
+info "Installing Pair Agent to ~/.claude/ and ~/.gemini/antigravity/ ..."
 
-# Ensure directories  
+# Ensure directories (Claude)
 mkdir -p "${CLAUDE_HOME}/rules"  
 mkdir -p "${CLAUDE_HOME}/skills"  
 mkdir -p "${CLAUDE_HOME}/agents"  
@@ -83,18 +96,27 @@ mkdir -p "${CLAUDE_HOME}/pair-agent/skills"
 mkdir -p "${CLAUDE_HOME}/pair-agent/vision"  
 mkdir -p "${CLAUDE_HOME}/pair-agent/corrections"
 
-# Copy project template to ~/.claude/pair-agent/template/  
+# Ensure directories (Antigravity)
+mkdir -p "${ANTIGRAVITY_HOME}/skills"
+mkdir -p "${ANTIGRAVITY_HOME}/pair-agent/skills"
+mkdir -p "${ANTIGRAVITY_HOME}/pair-agent/vision"
+mkdir -p "${ANTIGRAVITY_HOME}/pair-agent/corrections"
+
+# Copy project template
 if [[ -d "${PAIR_AGENT_SRC}/pair-agent/template" ]]; then  
+    # Claude
     rm -rf "${CLAUDE_HOME}/pair-agent/template"  
     cp -r "${PAIR_AGENT_SRC}/pair-agent/template" "${CLAUDE_HOME}/pair-agent/template"  
-    info "Installed pair-agent/template (used by project-init skill)"  
+    # Antigravity
+    rm -rf "${ANTIGRAVITY_HOME}/pair-agent/template"
+    cp -r "${PAIR_AGENT_SRC}/pair-agent/template" "${ANTIGRAVITY_HOME}/pair-agent/template"
+    info "Installed pair-agent/template"  
 fi
 
-# Backup existing CLAUDE.md  
+# Handle CLAUDE.md / GEMINI.md
 if [[ -f "${CLAUDE_HOME}/CLAUDE.md" ]]; then  
     if ! grep -q "Pair Agent" "${CLAUDE_HOME}/CLAUDE.md" 2>/dev/null; then  
         cp "${CLAUDE_HOME}/CLAUDE.md" "${CLAUDE_HOME}/CLAUDE.md.pair-agent-backup"  
-        warn "Backed up existing CLAUDE.md to CLAUDE.md.pair-agent-backup"  
         # Append pair-agent content  
         echo "" >> "${CLAUDE_HOME}/CLAUDE.md"  
         echo "<!-- Pair Agent instructions appended below -->" >> "${CLAUDE_HOME}/CLAUDE.md"  
@@ -102,36 +124,41 @@ if [[ -f "${CLAUDE_HOME}/CLAUDE.md" ]]; then
         info "Appended Pair Agent instructions to existing CLAUDE.md"  
     else  
         cp "${PAIR_AGENT_SRC}/CLAUDE.md" "${CLAUDE_HOME}/CLAUDE.md"  
-        info "Updated CLAUDE.md (Pair Agent content already present)"  
+        info "Updated CLAUDE.md"  
     fi  
 else  
     cp "${PAIR_AGENT_SRC}/CLAUDE.md" "${CLAUDE_HOME}/CLAUDE.md"  
     info "Created CLAUDE.md"  
 fi
+# Copy to GEMINI.md
+cp "${CLAUDE_HOME}/CLAUDE.md" "${ANTIGRAVITY_HOME}/GEMINI.md"
+info "Created/Updated GEMINI.md (copy of CLAUDE.md)"
 
 # Rules  
 cp "${PAIR_AGENT_SRC}/rules/pair-agent-core.md" "${CLAUDE_HOME}/rules/"  
-info "Installed rules/pair-agent-core.md"
+# Note: Antigravity doesn't have a direct rules/ folder like Claude Code, 
+# so we rely on GEMINI.md or global skills.
 
-# Skills  
+# Skills (Deploy to both)
 for skill_dir in "${PAIR_AGENT_SRC}/skills/"*/; do  
     skill_name="$(basename "${skill_dir}")"  
+    # Claude
     mkdir -p "${CLAUDE_HOME}/skills/${skill_name}"  
     cp "${skill_dir}SKILL.md" "${CLAUDE_HOME}/skills/${skill_name}/"  
+    # Antigravity
+    mkdir -p "${ANTIGRAVITY_HOME}/skills/${skill_name}"
+    cp "${skill_dir}SKILL.md" "${ANTIGRAVITY_HOME}/skills/${skill_name}/"
     info "Installed skills/${skill_name}"  
 done
 
-# Agents  
+# Agents (Claude specific, but we keep them)
 cp "${PAIR_AGENT_SRC}/agents/"*.md "${CLAUDE_HOME}/agents/"  
-info "Installed agents (deliberation, retrospective, skill-executor)"
 
 info ""  
 info "Installation complete!"  
 info ""  
-info "Learning data directory: ~/.claude/pair-agent/"  
-info "  skills/      — 師匠の判断基準（プロジェクトを跨ぐ）"  
-info "  vision/      — ビジョン記録"  
-info "  corrections/  — 叱責・修正記録"  
+info "Claude Code Home:   ~/.claude/"
+info "Antigravity Home:    ~/.gemini/antigravity/"
 info ""  
 info "To set up a project: cd your-project && ${SCRIPT_DIR}/install.sh --project"  
-info "To start: claude"
+info "To start:            claude  (or  geminicli / antigravity)"

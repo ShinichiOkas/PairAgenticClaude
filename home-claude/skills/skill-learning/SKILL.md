@@ -7,8 +7,13 @@ description: Skillの生成・昇格・精緻化・管理。振り返りフェ�
 
 ## 保存先
 
-- ペア固有Skill: `~/.claude/pair-agent/skills/<skill-name>.md`  
-- プロジェクト固有Skill: `.pair-agent/skills/<skill-name>.md`
+- ペア固有Skill:
+  使用中のツールに合わせて以下のいずれかを選択する（両方存在する場合は、使用中のツールのパスを優先）。
+  - `~/.claude/pair-agent/skills/<skill-name>.md` (Claude Code)
+  - `~/.gemini/antigravity/pair-agent/skills/<skill-name>.md` (Google Antigravity)
+- プロジェクト固有Skill:
+  - `.pair-agent/skills/<skill-name>.md` (Claude Code)
+  - `.agents/skills/<skill-name>/SKILL.md` (Google Antigravity - 必要に応じて `.pair-agent/skills/` からコピーまたはシンボリックリンク)
 
 ## Skill記録形式
 
@@ -52,9 +57,9 @@ user_model の境界タイプ:
 
 | 内容 | 保存先 |
 | ----- | ----- |
-| 師匠の好み・用語・プロセスルール・境界線 | `~/.claude/pair-agent/skills/` |
-| プロジェクト固有の技術知見（APIの仕様、DB構造等） | `.pair-agent/skills/` |
-| 迷ったら | `~/.claude/pair-agent/skills/`（ペア固有を優先） |
+| 師匠の好み・用語・プロセスルール・境界線 | ペア固有Skillフォルダ（上記参照） |
+| プロジェクト固有の技術知見（APIの仕様、DB構造等） | プロジェクト固有Skillフォルダ（上記参照） |
+| 迷ったら | ペア固有側を優先 |
 
 ## **maturity昇格**
 

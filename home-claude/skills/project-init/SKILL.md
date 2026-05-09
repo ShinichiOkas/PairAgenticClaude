@@ -19,13 +19,16 @@ description: プロジェクトに .pair-agent/ が存在しないとき、作�
    > Pair Agent の作業ディレクトリを初期化してよいですか？  
    > （`agreements/`, `sprints/`, `skills/`, `current-sprint.json` が作成されます）
 
-2. 承認されたら `~/.claude/pair-agent/template/` の内容をカレントディレクトリの `.pair-agent/` へコピーする。
+2. 承認されたら、以下の手順で初期化を実行する:
+   - テンプレートの内容を `.pair-agent/` へコピーする
+     - 優先パス: `~/.claude/pair-agent/template/` または `~/.gemini/antigravity/pair-agent/template/`
+   - `CLAUDE.md` が存在し、`GEMINI.md` が存在しない場合、`CLAUDE.md` を `GEMINI.md` にコピーする
+   - `current-sprint.json` の `created_at` フィールドを現在の ISO 8601 日時で設定する
 
-3. `current-sprint.json` の `created_at` フィールドを現在の ISO 8601 日時で設定する。
+3. 完了を報告する:
 
-4. 完了を報告する:
-
-   > `.pair-agent/` を初期化しました。  
+   > `.pair-agent/` を初期化しました。
+   > （Antigravity用に `GEMINI.md` も作成しました）
    > `.gitignore` に `.pair-agent/current-sprint.json` を追加することをお勧めします。
 
 ## 注意
@@ -34,5 +37,5 @@ description: プロジェクトに .pair-agent/ が存在しないとき、作�
 - `.pair-agent/` がすでに存在する場合はこのスキルを発動しない
 - 空ディレクトリ（`project-start-empty` の管轄）では発動しない。  
   空プロジェクトでは、プロジェクト方向が決まったタイミングで師匠の承認を得てから初期化する
-- テンプレートが `~/.claude/pair-agent/template/` に見つからない場合は  
+- テンプレートがユーザーホームに見つからない場合は  
   「`install.sh`（または `install.bat`）を再実行してください」と案内する

@@ -1,25 +1,26 @@
-# Pair Agent for Claude Code
+# Pair Agent for Claude Code & Google Antigravity
 
 AIは何も知らない新入りとして始まり、師匠（あなた）が少しずつ任せながら育てていく  
-――従来のAIエージェントとはまったく異なる前提で動くClaude Code設定一式。
+――従来のAIエージェントとはまったく異なる前提で動く、エージェント用設定一式。
 
 ## 概要
 
-Pair Agentは、CLAUDE.md・Skills・Subagents・Rulesを組み合わせて、  
-Claude Codeの上に「徒弟制度」を実現するものです。
+Pair Agentは、`CLAUDE.md` / `GEMINI.md`・Skills・Rulesを組み合わせて、  
+Claude Code や Google Antigravity (GeminiCLI) の上に「徒弟制度」を実現するものです。
 
 ### ファイル配置の設計思想
 
-| 何を | どこに | 理由 |  
-|------|--------|------|  
-| Pair Agentの振る舞い定義 | `~/.claude/`（skills, agents, rules） | どのプロジェクトでもPair Agentとして動く |  
-| 師匠の判断基準・用語・好み | `~/.claude/pair-agent/skills/` | ペア固有の長期資産。プロジェクトを跨ぐ |  
-| ビジョン記録 | `~/.claude/pair-agent/vision/` | 師匠の思考パターン。プロジェクトを跨ぐ |  
-| 叱責・修正記録 | `~/.claude/pair-agent/corrections/` | 境界線はペア固有 |  
-| プロジェクト初期化テンプレート | `~/.claude/pair-agent/template/` | `project-init` スキルが使用。リポジトリ不要 |  
-| 合意ドキュメント | `<project>/.pair-agent/agreements/` | スプリントはプロジェクトに紐づく |  
-| スプリント状態 | `<project>/.pair-agent/current-sprint.json` | プロジェクト単位の作業状態 |  
-| プロジェクト固有Skill | `<project>/.pair-agent/skills/` | そのプロジェクトだけの技術知見 |
+| 何を | どこに | 備考 |
+|------|--------|------|
+| Pair Agentの振る舞い定義 | `~/.claude/` または `~/.gemini/antigravity/` | どのプロジェクトでもPair Agentとして動く |
+| 師匠の判断基準・用語・好み | `~/.../pair-agent/skills/` | ペア固有の長期資産。プロジェクトを跨ぐ |
+| ビジョン記録 | `~/.../pair-agent/vision/` | 師匠の思考パターン。プロジェクトを跨ぐ |
+| 叱責・修正記録 | `~/.../pair-agent/corrections/` | 境界線はペア固有 |
+| プロジェクト初期化テンプレート | `~/.../pair-agent/template/` | `project-init` スキルが使用。リポジトリ不要 |
+| 合意ドキュメント | `<project>/.pair-agent/agreements/` | スプリントはプロジェクトに紐づく |
+| スプリント状態 | `<project>/.pair-agent/current-sprint.json` | プロジェクト単位の作業状態 |
+| プロジェクト固有Skill | `<project>/.pair-agent/skills/` | そのプロジェクトだけの技術知見 (Claude用) |
+| プロジェクト固有Skill | `<project>/.agents/skills/` | そのプロジェクトだけの技術知見 (Antigravity用) |
 
 ## インストール
 
@@ -34,13 +35,13 @@ chmod +x install.sh
 .\install.bat
 ```
 
-既存の `~/.claude/CLAUDE.md` がある場合はバックアップを作成します。
+既存の `CLAUDE.md` がある場合はバックアップを作成し、Antigravity用に `GEMINI.md` も作成します。
 
 ## **プロジェクトへの導入**
 
 > [!NOTE]
 > **プロジェクトへの導入は自動化されています。**  
-> インストール後に既存プロジェクトで `claude` を起動すると、`.pair-agent/` が存在しない場合に
+> インストール後に既存プロジェクトでエージェントを起動すると、`.pair-agent/` が存在しない場合に
 > `project-init` スキルが自動的に初期化を提案します。
 
 手動で初期化したい場合:
@@ -59,7 +60,7 @@ path\to\install.bat --project
 
 ## **使い方**
 
-インストール後、いつも通り `claude` を起動するだけです。  
+インストール後、いつも通り `claude` または `geminicli` (Antigravity) を起動するだけです。  
  Pair Agentが自動的に有効になります。
 
 ### **最初のセッション**
