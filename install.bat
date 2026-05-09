@@ -42,7 +42,7 @@ if exist "%PAIR_AGENT_SRC%\pair-agent\template" (
     :: Antigravity
     if exist "%ANTIGRAVITY_HOME%\pair-agent\template" rmdir /s /q "%ANTIGRAVITY_HOME%\pair-agent\template"
     xcopy /e /i /y "%PAIR_AGENT_SRC%\pair-agent\template" "%ANTIGRAVITY_HOME%\pair-agent\template" >nul
-    echo !GREEN![pair-agent]!NC! Installed pair-agent/template
+    echo !GREEN![pair-agent]!NC! Installed pair-agent/template (used by project-init skill^)
 )
 
 :: Handle CLAUDE.md / GEMINI.md
@@ -57,7 +57,7 @@ if exist "%CLAUDE_HOME%\CLAUDE.md" (
         echo !GREEN![pair-agent]!NC! Appended Pair Agent instructions to existing CLAUDE.md
     ) else (
         copy /y "%PAIR_AGENT_SRC%\CLAUDE.md" "%CLAUDE_HOME%\CLAUDE.md" >nul
-        echo !GREEN![pair-agent]!NC! Updated CLAUDE.md
+        echo !GREEN![pair-agent]!NC! Updated CLAUDE.md (Pair Agent content already present^)
     )
 ) else (
     copy /y "%PAIR_AGENT_SRC%\CLAUDE.md" "%CLAUDE_HOME%\CLAUDE.md" >nul
@@ -84,6 +84,7 @@ for /d %%d in ("%PAIR_AGENT_SRC%\skills\*") do (
 
 :: Agents (Claude specific)
 copy /y "%PAIR_AGENT_SRC%\agents\*.md" "%CLAUDE_HOME%\agents\" >nul
+echo !GREEN![pair-agent]!NC! Installed agents (deliberation, retrospective, skill-executor^)
 
 echo.
 echo !GREEN![pair-agent]!NC! Installation complete!
@@ -95,10 +96,10 @@ if exist ".pair-agent" (
 ) else (
     if exist "%CLAUDE_HOME%\pair-agent\template" (
         xcopy /e /i /y "%CLAUDE_HOME%\pair-agent\template" ".pair-agent" >nul
-        echo !GREEN![pair-agent]!NC! Created .pair-agent/ in %CD% (from %%USERPROFILE%%\.claude\pair-agent\template\)
+        echo !GREEN![pair-agent]!NC! Created .pair-agent/ in %CD% (from %%USERPROFILE%%\.claude\pair-agent\template\^)
     ) else if exist "%ANTIGRAVITY_HOME%\pair-agent\template" (
         xcopy /e /i /y "%ANTIGRAVITY_HOME%\pair-agent\template" ".pair-agent" >nul
-        echo !GREEN![pair-agent]!NC! Created .pair-agent/ in %CD% (from %%USERPROFILE%%\.gemini\antigravity\pair-agent\template\)
+        echo !GREEN![pair-agent]!NC! Created .pair-agent/ in %CD% (from %%USERPROFILE%%\.gemini\antigravity\pair-agent\template\^)
     ) else (
         xcopy /e /i /y "%PROJECT_TEMPLATE%\.pair-agent" ".pair-agent" >nul
         echo !YELLOW![pair-agent]!NC! Local template not found, used repository template instead.
@@ -120,7 +121,7 @@ goto end
 
 :uninstall
 echo !YELLOW![pair-agent]!NC! Removing Pair Agent files from Claude and Antigravity ...
-echo !YELLOW![pair-agent]!NC! (Learning data in pair-agent\ is preserved)
+echo !YELLOW![pair-agent]!NC! (Learning data in pair-agent\ is preserved^)
 
 :: Claude
 del /q "%CLAUDE_HOME%\rules\pair-agent-core.md" 2>nul
@@ -145,6 +146,11 @@ goto end
 echo.
 echo Claude Home:      %CLAUDE_HOME%
 echo Antigravity Home: %ANTIGRAVITY_HOME%
+echo.
+echo Learning data directory: %CLAUDE_HOME%\pair-agent\
+echo   skills/      - Master's criteria (cross-project)
+echo   vision/      - Vision records
+echo   corrections/ - Correction records
 echo.
 echo To set up a project: cd your-project ^&^& "%SCRIPT_DIR%install.bat" --project
 echo To start:            claude (or geminicli / antigravity)
