@@ -1,0 +1,7 @@
+{
+  "project_roots": [],
+  "max_depth": 2,
+  "output_dir": "~/.claude/pair-agent/skill-library",
+  "model": "claude-haiku-4-5-20251001",
+  "also_survey_global": true
+}

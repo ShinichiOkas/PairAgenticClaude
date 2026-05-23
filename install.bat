@@ -27,12 +27,27 @@ if not exist "%CLAUDE_HOME%\agents" mkdir "%CLAUDE_HOME%\agents"
 if not exist "%CLAUDE_HOME%\pair-agent\skills" mkdir "%CLAUDE_HOME%\pair-agent\skills"
 if not exist "%CLAUDE_HOME%\pair-agent\vision" mkdir "%CLAUDE_HOME%\pair-agent\vision"
 if not exist "%CLAUDE_HOME%\pair-agent\corrections" mkdir "%CLAUDE_HOME%\pair-agent\corrections"
+if not exist "%CLAUDE_HOME%\pair-agent\skill-library\pending" mkdir "%CLAUDE_HOME%\pair-agent\skill-library\pending"
+if not exist "%CLAUDE_HOME%\pair-agent\skill-library\approved" mkdir "%CLAUDE_HOME%\pair-agent\skill-library\approved"
+if not exist "%CLAUDE_HOME%\pair-agent\tools" mkdir "%CLAUDE_HOME%\pair-agent\tools"
 
 :: Ensure directories (Antigravity)
 if not exist "%ANTIGRAVITY_HOME%\skills" mkdir "%ANTIGRAVITY_HOME%\skills"
 if not exist "%ANTIGRAVITY_HOME%\pair-agent\skills" mkdir "%ANTIGRAVITY_HOME%\pair-agent\skills"
 if not exist "%ANTIGRAVITY_HOME%\pair-agent\vision" mkdir "%ANTIGRAVITY_HOME%\pair-agent\vision"
 if not exist "%ANTIGRAVITY_HOME%\pair-agent\corrections" mkdir "%ANTIGRAVITY_HOME%\pair-agent\corrections"
+
+:: Copy skill-survey config (only if not already customized)
+if not exist "%CLAUDE_HOME%\pair-agent\skill-survey-config.json" (
+    copy /y "%PAIR_AGENT_SRC%\pair-agent\skill-survey-config.json" "%CLAUDE_HOME%\pair-agent\" >nul
+    echo !GREEN![pair-agent]!NC! Installed pair-agent/skill-survey-config.json (edit project_roots to add your projects^)
+) else (
+    echo !GREEN![pair-agent]!NC! pair-agent/skill-survey-config.json already exists -- keeping your customizations
+)
+
+:: Copy skill-survey script
+copy /y "%SCRIPT_DIR%tools\skill-survey.py" "%CLAUDE_HOME%\pair-agent\tools\" >nul
+echo !GREEN![pair-agent]!NC! Installed pair-agent/tools/skill-survey.py
 
 :: Copy project template
 if exist "%PAIR_AGENT_SRC%\pair-agent\template" (
@@ -129,10 +144,11 @@ del /q "%CLAUDE_HOME%\agents\*.md" 2>nul
 :: Antigravity
 del /q "%ANTIGRAVITY_HOME%\GEMINI.md" 2>nul
 
-for %%s in (sprint-lifecycle agreement-document correction-record skill-learning retrospect vision-record project-start-empty project-start-existing vocabulary-capture project-init) do (
+for %%s in (sprint-lifecycle agreement-document correction-record skill-learning retrospect vision-record project-start-empty project-start-existing vocabulary-capture project-init skill-survey) do (
     rmdir /s /q "%CLAUDE_HOME%\skills\%%s" 2>nul
     rmdir /s /q "%ANTIGRAVITY_HOME%\skills\%%s" 2>nul
 )
+del /q "%CLAUDE_HOME%\pair-agent\tools\skill-survey.py" 2>nul
 
 if exist "%CLAUDE_HOME%\CLAUDE.md.pair-agent-backup" (
     move /y "%CLAUDE_HOME%\CLAUDE.md.pair-agent-backup" "%CLAUDE_HOME%\CLAUDE.md" >nul

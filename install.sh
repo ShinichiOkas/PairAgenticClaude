@@ -70,10 +70,12 @@ if [[ "${1:-}" == "--uninstall" ]]; then
     # Common skills
     for skill in sprint-lifecycle agreement-document correction-record \
                  skill-learning retrospect vision-record \
-                 project-start-empty project-start-existing vocabulary-capture project-init; do  
-        rm -rf "${CLAUDE_HOME}/skills/${skill}" 2>/dev/null || true  
-        rm -rf "${ANTIGRAVITY_HOME}/skills/${skill}" 2>/dev/null || true  
-    done  
+                 project-start-empty project-start-existing vocabulary-capture project-init \
+                 skill-survey; do
+        rm -rf "${CLAUDE_HOME}/skills/${skill}" 2>/dev/null || true
+        rm -rf "${ANTIGRAVITY_HOME}/skills/${skill}" 2>/dev/null || true
+    done
+    rm -f "${CLAUDE_HOME}/pair-agent/tools/skill-survey.py" 2>/dev/null || true  
 
     # Restore CLAUDE.md backup if exists  
     if [[ -f "${CLAUDE_HOME}/CLAUDE.md.pair-agent-backup" ]]; then  
@@ -89,18 +91,33 @@ fi
 info "Installing Pair Agent to ~/.claude/ and ~/.gemini/antigravity/ ..."
 
 # Ensure directories (Claude)
-mkdir -p "${CLAUDE_HOME}/rules"  
-mkdir -p "${CLAUDE_HOME}/skills"  
-mkdir -p "${CLAUDE_HOME}/agents"  
-mkdir -p "${CLAUDE_HOME}/pair-agent/skills"  
-mkdir -p "${CLAUDE_HOME}/pair-agent/vision"  
+mkdir -p "${CLAUDE_HOME}/rules"
+mkdir -p "${CLAUDE_HOME}/skills"
+mkdir -p "${CLAUDE_HOME}/agents"
+mkdir -p "${CLAUDE_HOME}/pair-agent/skills"
+mkdir -p "${CLAUDE_HOME}/pair-agent/vision"
 mkdir -p "${CLAUDE_HOME}/pair-agent/corrections"
+mkdir -p "${CLAUDE_HOME}/pair-agent/skill-library/pending"
+mkdir -p "${CLAUDE_HOME}/pair-agent/skill-library/approved"
+mkdir -p "${CLAUDE_HOME}/pair-agent/tools"
 
 # Ensure directories (Antigravity)
 mkdir -p "${ANTIGRAVITY_HOME}/skills"
 mkdir -p "${ANTIGRAVITY_HOME}/pair-agent/skills"
 mkdir -p "${ANTIGRAVITY_HOME}/pair-agent/vision"
 mkdir -p "${ANTIGRAVITY_HOME}/pair-agent/corrections"
+
+# Copy skill-survey config (only if not already customized)
+if [[ ! -f "${CLAUDE_HOME}/pair-agent/skill-survey-config.json" ]]; then
+    cp "${PAIR_AGENT_SRC}/pair-agent/skill-survey-config.json" "${CLAUDE_HOME}/pair-agent/"
+    info "Installed pair-agent/skill-survey-config.json (edit project_roots to add your projects)"
+else
+    info "pair-agent/skill-survey-config.json already exists — skipping (keeping your customizations)"
+fi
+
+# Copy skill-survey script
+cp "${SCRIPT_DIR}/tools/skill-survey.py" "${CLAUDE_HOME}/pair-agent/tools/"
+info "Installed pair-agent/tools/skill-survey.py"
 
 # Copy project template
 if [[ -d "${PAIR_AGENT_SRC}/pair-agent/template" ]]; then  
