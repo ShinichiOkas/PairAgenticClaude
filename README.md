@@ -162,6 +162,7 @@ examples/
     ├── process-git-autonomous.md       # git操作は確認なしで実行する
     ├── process-tdd.md                  # TDDで設計・実装・動作確認まで行う
     ├── scratch-dir-python-venv.md      # 作業ディレクトリのPythonにはvenvを使う
+    ├── web-lookup-before-using-libraries-apis.md  # ライブラリ・API使用前は必ずネットで最新を確認する
     └── working-code-over-clean-code.md # 動くコードをきれいなコードより優先する
 ```
 
