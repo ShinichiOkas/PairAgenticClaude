@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 .claude/settings.json
 .claude/settings.local.json
+privateskills/
