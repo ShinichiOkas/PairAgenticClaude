@@ -15,6 +15,19 @@ except ImportError:
     print("Error: anthropic package not found. Install with: pip install anthropic")
     sys.exit(1)
 
+# Load .env if present (search script dir and cwd)
+def _load_dotenv():
+    for candidate in [Path(__file__).parent.parent / ".env", Path.cwd() / ".env"]:
+        if candidate.exists():
+            for line in candidate.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, _, v = line.partition("=")
+                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            break
+
+_load_dotenv()
+
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
@@ -214,7 +227,8 @@ def analyze_skill(content: str, skill_info: dict, client: anthropic.Anthropic, m
             ],
             messages=[{"role": "user", "content": user_msg}],
         )
-        raw = response.content[0].text.strip()
+        block = response.content[0]
+        raw = (block.text if block.type == "text" else "").strip()  # type: ignore[union-attr]
         # Extract JSON block if wrapped in code fences
         m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
         if m:
