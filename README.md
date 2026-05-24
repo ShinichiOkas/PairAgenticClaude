@@ -146,6 +146,25 @@ pending のスキルが1件ずつ提示されます。各スキルに対して:
 └── survey-report-YYYY-MM-DD.md # サーベイ実行レポート
 ```
 
+## **サンプルスキル**
+
+`examples/skills/` には、本プロジェクト自体のペアリングから生成・昇格したグローバルスキルが収録されています。  
+skill-survey が実際に何を出力するかを示す実例であり、そのままコピーして利用することもできます。
+
+```
+examples/
+└── skills/
+    ├── eval-by-tests-only.md           # テスト通過をコード評価の基準とする
+    ├── llm-output-stochasticity.md     # LLM出力の確率的性質を前提に設計する
+    ├── no-deferred-doubts.md           # 疑問はその場で追及する
+    ├── observation-scope-by-sufficiency.md  # 観察範囲は最大情報量で決める
+    ├── process-commit-after-work.md    # 作業後はコミット・同期する
+    ├── process-git-autonomous.md       # git操作は確認なしで実行する
+    ├── process-tdd.md                  # TDDで設計・実装・動作確認まで行う
+    ├── scratch-dir-python-venv.md      # 作業ディレクトリのPythonにはvenvを使う
+    └── working-code-over-clean-code.md # 動くコードをきれいなコードより優先する
+```
+
 ## **アンインストール**
 
 ### macOS / Linux
