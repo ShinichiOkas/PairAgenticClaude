@@ -82,6 +82,70 @@ path\to\install.bat --project
 * 用語を定義する → vocabulary Skillとして記録される  
 * 繰り返し同じパターンが出る → AIがSkill昇格を提案する
 
+## **スキルライブラリ（skill-survey）**
+
+複数プロジェクトで蓄積されたスキルを横断収集・汎化してライブラリ化するツールです。
+
+### セットアップ
+
+インストール後、スキャン対象のプロジェクト親ディレクトリを設定します:
+
+```json
+// ~/.claude/pair-agent/skill-survey-config.json
+{
+  "project_roots": ["~/work/develop"],   // ← ここに追加
+  "max_depth": 2,
+  "model": "claude-haiku-4-5-20251001",
+  "also_survey_global": true
+}
+```
+
+APIキーは環境変数 `ANTHROPIC_API_KEY` か、プロジェクトルートの `.env` に記述します:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### サーベイ実行
+
+```bash
+# macOS / Linux
+python ~/.claude/pair-agent/tools/skill-survey.py
+
+# Windows
+python %USERPROFILE%\.claude\pair-agent\tools\skill-survey.py
+```
+
+各プロジェクトの `.pair-agent/skills/` とグローバルの `~/.claude/pair-agent/skills/` を走査し、
+Claude APIでプロジェクト固有情報を検出・除去した汎化版を `~/.claude/pair-agent/skill-library/pending/` に出力します。
+
+### レビュー
+
+Claude Code 上で:
+
+```
+/skill-survey --review
+```
+
+pending のスキルが1件ずつ提示されます。各スキルに対して:
+
+| 操作 | 結果 |
+|------|------|
+| approve | `approved/` に移動。グローバルスキルへの昇格を提案 |
+| reject | 削除 |
+| edit | その場で修正してから再提示 |
+| skip | 今回はスキップ（pending に残る） |
+
+### ライブラリの構造
+
+```
+~/.claude/pair-agent/skill-library/
+├── index.md                    # 全エントリのカタログ
+├── pending/                    # 汎化済み・承認待ち
+├── approved/                   # 承認済み
+└── survey-report-YYYY-MM-DD.md # サーベイ実行レポート
+```
+
 ## **アンインストール**
 
 ### macOS / Linux
