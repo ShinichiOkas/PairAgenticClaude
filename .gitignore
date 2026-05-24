@@ -2,3 +2,5 @@
 tools/__pycache__/
 __pycache__/
 *.pyc
+.claude/settings.json
+.claude/settings.local.json
