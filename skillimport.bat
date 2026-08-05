@@ -6,6 +6,9 @@ setlocal enabledelayedexpansion
 ::   skillimport.bat            Import new skills only (existing files are kept)
 ::   skillimport.bat --force    Overwrite existing skills as well
 ::   skillimport.bat --list     Show what would be imported, change nothing
+::
+:: Claude and Antigravity are checked independently: a skill already present in
+:: one library is still imported into the other.
 
 :: ESC character for colors
 for /f "delims=" %%a in ('powershell -Command "[char]27"') do set "ESC=%%a"
@@ -34,45 +37,64 @@ if not "%MODE%"=="list" (
     if not exist "%ANTIGRAVITY_DST%" mkdir "%ANTIGRAVITY_DST%"
 )
 
-set /a n_new=0
-set /a n_over=0
-set /a n_skip=0
+set /a c_new=0, c_over=0, c_skip=0
+set /a a_new=0, a_over=0, a_skip=0
 
 echo !GREEN![skillimport]!NC! Source: %SRC%
 if "%MODE%"=="list" echo !YELLOW![skillimport]!NC! --list: dry run, nothing will be written
 echo.
+echo   C=Claude  A=Antigravity   ^(+ import / ^= keep / ^! overwrite^)
+echo.
 
 for %%f in ("%SRC%\*.md") do (
     set "name=%%~nxf"
+
+    :: --- Claude ---
     if exist "%CLAUDE_DST%\%%~nxf" (
         if "%MODE%"=="force" (
-            copy /y "%%f" "%CLAUDE_DST%\" >nul
-            copy /y "%%f" "%ANTIGRAVITY_DST%\" >nul
-            set /a n_over+=1
-            echo   !YELLOW!overwrite!NC!  !name!
+            if not "%MODE%"=="list" copy /y "%%f" "%CLAUDE_DST%\" >nul
+            set /a c_over+=1
+            set "tc=!YELLOW!C!!NC!"
         ) else (
-            set /a n_skip+=1
-            if "%MODE%"=="list" echo   skip       !name!  ^(already exists^)
+            set /a c_skip+=1
+            set "tc=C="
         )
     ) else (
-        if "%MODE%"=="list" (
-            set /a n_new+=1
-            echo   !GREEN!import!NC!     !name!
-        ) else (
-            copy /y "%%f" "%CLAUDE_DST%\" >nul
-            copy /y "%%f" "%ANTIGRAVITY_DST%\" >nul
-            set /a n_new+=1
-            echo   !GREEN!import!NC!     !name!
-        )
+        if not "%MODE%"=="list" copy /y "%%f" "%CLAUDE_DST%\" >nul
+        set /a c_new+=1
+        set "tc=!GREEN!C+!NC!"
     )
+
+    :: --- Antigravity ---
+    if exist "%ANTIGRAVITY_DST%\%%~nxf" (
+        if "%MODE%"=="force" (
+            if not "%MODE%"=="list" copy /y "%%f" "%ANTIGRAVITY_DST%\" >nul
+            set /a a_over+=1
+            set "ta=!YELLOW!A!!NC!"
+        ) else (
+            set /a a_skip+=1
+            set "ta=A="
+        )
+    ) else (
+        if not "%MODE%"=="list" copy /y "%%f" "%ANTIGRAVITY_DST%\" >nul
+        set /a a_new+=1
+        set "ta=!GREEN!A+!NC!"
+    )
+
+    echo   !tc! !ta!   !name!
 )
 
 echo.
 if "%MODE%"=="list" (
-    echo !GREEN![skillimport]!NC! Would import !n_new! / keep !n_skip! existing
+    echo !GREEN![skillimport]!NC! Dry run -- nothing was written.
+    echo   Claude:      would import !c_new! / overwrite !c_over! / keep !c_skip!
+    echo   Antigravity: would import !a_new! / overwrite !a_over! / keep !a_skip!
+    echo.
     echo   Run without --list to import, or --force to overwrite existing too.
 ) else (
-    echo !GREEN![skillimport]!NC! Imported !n_new! / overwrote !n_over! / skipped !n_skip!
+    echo !GREEN![skillimport]!NC! Done.
+    echo   Claude:      imported !c_new! / overwrote !c_over! / skipped !c_skip!
+    echo   Antigravity: imported !a_new! / overwrote !a_over! / skipped !a_skip!
 )
 echo.
 echo   Claude:      %CLAUDE_DST%
@@ -89,9 +111,12 @@ echo   (no args)   Import skills that do not exist yet. Existing files are kept.
 echo   --list      Show what would be imported. Changes nothing.
 echo   --force     Also overwrite skills that already exist.
 echo.
-echo Imports examples\skills\*.md into:
+echo Imports examples\skills\*.md into BOTH of:
 echo   %%USERPROFILE%%\.claude\pair-agent\skills\
 echo   %%USERPROFILE%%\.gemini\antigravity\pair-agent\skills\
+echo.
+echo Each destination is checked independently, so a skill present in one
+echo library is still imported into the other.
 
 :end
 endlocal
