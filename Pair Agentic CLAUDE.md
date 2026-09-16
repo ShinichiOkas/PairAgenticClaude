@@ -7,51 +7,70 @@
 PairAgenticClaude/  
 ├── README.md
 ├── install.sh  
+├── install.bat
+├── skillimport.bat
 │  
-├── home-claude/                        \# → \~/.claude/ に配置  
-│   ├── CLAUDE.md  
+├── models/                             # 成果物因果定義モデルカタログ
+│   ├── *.mk                            # waterfall-core, devops, inquiry-small 等
+│   └── *.tasks                         # モデルごとのタスク・スキル対応
+│  
+├── skills/                             # 16領域 51スキルのカタログ定義
+│   ├── *.md
+│   ├── slugs.map
+│   └── capabilities.cap
+│  
+├── tools/                              # 導出・検査・生成・ワークフロー実行ツール
+│   ├── derive_roles.py                 # ロール導出
+│   ├── simulate_mk.py                  # DAG空回しシミュレータ（H-8含む）
+│   ├── check_skills.py                 # スキルカタログ検査
+│   ├── check_report.py                 # 成果物報告書の機械検査（遮断・事後条件）
+│   ├── watch_workflow.py               # 進行監視
+│   ├── emit_claude.py                  # Claude Code マルチエージェント生成
+│   ├── emit_agents.py                  # Claude & Gemini 統合エクスポート（deny-map生成・maxTurns注入）
+│   ├── run_workflow.py                 # 成果物 DAG ワークフロー実行ランナー
+│   ├── deny_read.py                    # PreToolUse 実行時物理遮断フック（UTF-8・0.3秒/回）
+│   └── measure_agent_usage.py          # 会話記録からのエージェント使用量・コスト集計計器
+│  
+├── home-claude/                        # → ~/.claude/ および ~/.gemini/config/ に配備
+│   ├── CLAUDE.md                       # 主エージェント行動規範（Claude）
+│   ├── GEMINI.md                       # 主エージェント行動規範（Gemini）
 │   ├── rules/  
-│   │   └── pair-agent-core.md  
-│   ├── skills/  
+│   │   └── pair-agent-core.md          # コア原則（主エージェントとサブエージェントの分離）
+│   ├── skills/                         # 徒弟制度・スプリント管理・コスト管理スキル群
 │   │   ├── sprint-lifecycle/  
-│   │   │   └── SKILL.md  
 │   │   ├── agreement-document/  
-│   │   │   └── SKILL.md  
 │   │   ├── correction-record/  
-│   │   │   └── SKILL.md  
 │   │   ├── skill-learning/  
-│   │   │   └── SKILL.md  
 │   │   ├── retrospect/  
-│   │   │   └── SKILL.md  
 │   │   ├── vision-record/  
-│   │   │   └── SKILL.md  
 │   │   ├── project-start-empty/  
-│   │   │   └── SKILL.md  
 │   │   ├── project-start-existing/  
-│   │   │   └── SKILL.md  
-│   │   └── vocabulary-capture/  
-│   │       └── SKILL.md  
-│   ├── agents/  
+│   │   ├── vocabulary-capture/  
+│   │   ├── project-init/  
+│   │   ├── skill-survey/  
+│   │   ├── subagent-cost-management/   # 費用構造（maxTurns・モデル階層・診断禁止）
+│   │   └── slice-size-management/      # スライスサイズ（XS/S/M/L/おまかせ）
+│   ├── agents/                         # コアサブエージェント（協議・振り返り・スキル実行）
 │   │   ├── deliberation.md  
 │   │   ├── retrospective.md  
 │   │   └── skill-executor.md  
-│   └── pair-agent/                     \# ペア固有の長期資産ストレージ  
+│   └── pair-agent/                     # ペア固有の長期資産ストレージ  
 │       ├── skills/  
-│       │   └── .gitkeep  
 │       ├── vision/  
-│       │   └── .gitkeep  
 │       └── corrections/  
-│           └── .gitkeep  
 │  
-└── project-template/                   \# → プロジェクトルートに配置  
-    └── .pair-agent/  
-        ├── agreements/  
-        │   └── .gitkeep  
-        ├── sprints/  
-        │   └── .gitkeep  
-        ├── skills/  
-        │   └── .gitkeep  
-        └── current-sprint.json
+└── project-template/                   # → プロジェクトルートに配置  
+    ├── .pair-agent/  
+    │   ├── agreements/  
+    │   ├── sprints/  
+    │   ├── acceptance/                 # 受入検査仕様・報告書（隔離保護領域）
+    │   ├── assurance/                  # 設計保証
+    │   ├── skills/  
+    │   └── current-sprint.json
+    └── .agents/                        # Google Antigravity 用構造
+        ├── skills/
+        ├── agents/
+        └── workflows/
 
 ---
 

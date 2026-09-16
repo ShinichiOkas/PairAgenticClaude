@@ -1,0 +1,254 @@
+{
+  "model": "pair-agent-s",
+  "description": "pair-agent-s の成果物 DAG（役 5 ／ 機械 1 ／ 人間ゲート 1）",
+  "levels": [
+    [
+      "受入検査仕様",
+      "実装物"
+    ],
+    [
+      "設計保証",
+      "非回帰の合否"
+    ],
+    [
+      "受入検査報告書"
+    ],
+    [
+      "リポジトリの状態"
+    ]
+  ],
+  "nodes": {
+    "受入検査仕様": {
+      "target": "受入検査仕様",
+      "role": "受入検査設計者",
+      "task": "design_acceptance_tests",
+      "by": "agent",
+      "agentType": "pair-agent-s-design-acceptance-tests",
+      "gate": null,
+      "path": ".pair-agent/acceptance/受入検査仕様.md",
+      "deps": [
+        {
+          "name": "バグ票",
+          "node": "バグ票",
+          "kind": "必須",
+          "path": ".pair-agent/sprints/バグ票.md"
+        },
+        {
+          "name": "差し戻し指示_v(j-1)",
+          "node": "差し戻し指示",
+          "kind": "前版",
+          "path": ".pair-agent/assurance/差し戻し指示.md"
+        }
+      ],
+      "blocks": [
+        "実装物"
+      ],
+      "post": [
+        "実装コードを見ずに書かれている",
+        "各判定基準が明確である"
+      ],
+      "out": [
+        "バグ票の再現条件と修正判定基準"
+      ],
+      "skills": [
+        "同値分割",
+        "境界値分析"
+      ]
+    },
+    "実装物": {
+      "target": "実装物_v(n)",
+      "role": "構築者",
+      "task": "build",
+      "by": "agent",
+      "agentType": "pair-agent-s-build",
+      "gate": null,
+      "path": "src/",
+      "deps": [
+        {
+          "name": "バグ票",
+          "node": "バグ票",
+          "kind": "必須",
+          "path": ".pair-agent/sprints/バグ票.md"
+        },
+        {
+          "name": "実装物_v(n-1)",
+          "node": "実装物",
+          "kind": "前版",
+          "path": "src/"
+        },
+        {
+          "name": "差し戻し指示_v(m-1)",
+          "node": "差し戻し指示",
+          "kind": "前版",
+          "path": ".pair-agent/assurance/差し戻し指示.md"
+        }
+      ],
+      "blocks": [
+        "受入検査仕様"
+      ],
+      "post": [
+        "バグ票の事象を解消する実装となっている"
+      ],
+      "out": [
+        "修正された実装コード"
+      ],
+      "skills": [
+        "ホワイトボックステストの書き方",
+        "実装言語・基盤の知識",
+        "縮退経路のログ設計"
+      ]
+    },
+    "非回帰の合否": {
+      "target": "非回帰の合否",
+      "role": "機械（非回帰の合否）",
+      "task": "run_regression",
+      "by": "machine",
+      "agentType": "pair-agent-s-run-regression",
+      "gate": null,
+      "path": ".pair-agent/assurance/非回帰の合否.md",
+      "deps": [
+        {
+          "name": "実装物_v(n)",
+          "node": "実装物",
+          "kind": "必須",
+          "path": "src/"
+        }
+      ],
+      "blocks": [],
+      "post": [
+        "決定論的である。「既知の赤」で通さない"
+      ],
+      "out": [
+        "既存テストの合否結果"
+      ],
+      "skills": []
+    },
+    "設計保証": {
+      "target": "設計保証",
+      "role": "構築者",
+      "task": "assure_design",
+      "by": "agent",
+      "agentType": "pair-agent-s-assure-design",
+      "gate": null,
+      "path": ".pair-agent/assurance/設計保証.md",
+      "deps": [
+        {
+          "name": "バグ票",
+          "node": "バグ票",
+          "kind": "必須",
+          "path": ".pair-agent/sprints/バグ票.md"
+        },
+        {
+          "name": "実装物_v(n)",
+          "node": "実装物",
+          "kind": "必須",
+          "path": "src/"
+        }
+      ],
+      "blocks": [
+        "受入検査仕様"
+      ],
+      "post": [
+        "受入検査から見えない内部整合性が保証されている"
+      ],
+      "out": [
+        "修正箇所の説明と副作用がない根拠"
+      ],
+      "skills": [
+        "エビデンスの設計",
+        "保証範囲の切り出し"
+      ]
+    },
+    "受入検査報告書": {
+      "target": "受入検査報告書",
+      "role": "受入検査実施者",
+      "task": "execute_acceptance_tests",
+      "by": "agent",
+      "agentType": "pair-agent-s-execute-acceptance-tests",
+      "gate": null,
+      "path": ".pair-agent/acceptance/受入検査報告書.md",
+      "deps": [
+        {
+          "name": "受入検査仕様",
+          "node": "受入検査仕様",
+          "kind": "必須",
+          "path": ".pair-agent/acceptance/受入検査仕様.md"
+        },
+        {
+          "name": "非回帰の合否",
+          "node": "非回帰の合否",
+          "kind": "必須",
+          "path": ".pair-agent/assurance/非回帰の合否.md"
+        },
+        {
+          "name": "設計保証",
+          "node": "設計保証",
+          "kind": "必須",
+          "path": ".pair-agent/assurance/設計保証.md"
+        },
+        {
+          "name": "実行環境",
+          "node": "実行環境",
+          "kind": "必須",
+          "path": ".pair-agent/inbox/実行環境.md"
+        }
+      ],
+      "blocks": [
+        "実装物"
+      ],
+      "post": [
+        "実装内部コードを見ずに外部契約から検査した結果である",
+        "合否が明確に判定されている"
+      ],
+      "out": [
+        "バグ修正の検証結果および合否"
+      ],
+      "skills": [
+        "保証の受理",
+        "未カバー領域の言語化",
+        "検査実行環境の扱い",
+        "残留リスクの書き方"
+      ]
+    },
+    "リポジトリの状態": {
+      "target": "リポジトリの状態",
+      "role": "同期担当",
+      "task": "sync_repository",
+      "by": "agent",
+      "agentType": "pair-agent-s-sync-repository",
+      "gate": null,
+      "path": ".git",
+      "deps": [
+        {
+          "name": "受入検査報告書",
+          "node": "受入検査報告書",
+          "kind": "必須",
+          "path": ".pair-agent/acceptance/受入検査報告書.md"
+        },
+        {
+          "name": "実装物_v(n)",
+          "node": "実装物",
+          "kind": "必須",
+          "path": "src/"
+        }
+      ],
+      "blocks": [],
+      "post": [
+        "作業ツリーがクリーンである"
+      ],
+      "out": [
+        "コミットと同期"
+      ],
+      "skills": [
+        "バージョン管理の作法"
+      ]
+    }
+  },
+  "human": [
+    {
+      "target": "差し戻し指示",
+      "gate": null,
+      "path": ".pair-agent/assurance/差し戻し指示.md"
+    }
+  ]
+}

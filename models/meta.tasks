@@ -1,0 +1,11 @@
+# タスクライブラリ（メタ層） — task 名 : 要求する技能領域
+#
+# ⚠ 技能領域の層で書く（skill-definition.md §1-3）。
+#   個別 skill（同値分割など）ではなく、一緒に習得・保持される束の名前。
+
+run_probe                  : 実験の設計, 測定
+estimate                   : 測定, 外挿と不確かさ
+decide_policy              : プロセスモデルの選択, 資源配分, 帰責の設計, 受入検査の隔離規約
+extract_process_model      : （機械）
+aggregate_track_record     : （機械）
+check_feasibility_envelope : （機械）

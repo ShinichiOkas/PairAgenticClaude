@@ -1,0 +1,15 @@
+# タスクライブラリ — task 名 : 要求する skill
+#
+# `waterfall-small.tasks` からの派生。`build` を `investigate` に差し替えただけ。
+# ⚠ skill は `skills/capabilities.cap` に登録済みのものだけを使う（check_skills.py が検める）
+
+normalize_request        : （機械）
+write_specification      : 対象ドメイン知識, 判定可能な仕様の書き方, 扱いの型の使い分け
+design_acceptance_tests  : 同値分割, 境界値分析
+investigate              : 対象ドメイン知識, 証拠の採取, 未カバー領域の言語化
+assure_design            : 保証範囲の切り出し, エビデンスの設計
+execute_acceptance_tests : 未カバー領域の言語化, 残留リスクの書き方, 保証の受理
+adjudicate_rework        : 差し戻し先の語彙翻訳, 帰責判断
+publish                  : （機械）
+run_regression           : （機械）
+aggregate_residual_risk  : （機械）

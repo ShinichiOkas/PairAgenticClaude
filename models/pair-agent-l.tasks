@@ -1,0 +1,16 @@
+# Pair Agent L タスクライブラリ
+# task 名 : 要求する skill
+
+elicit_intent            : 復唱・確認, 用語定義の書き方, 要求の網羅性検査
+run_probe                : 実験の設計, 測定条件の統制, 使い捨ての規律, 不可能性の論証
+design_architecture      : トレードオフの明示, 構造制約の書き方, 品質特性の操作化
+write_specification      : 対象ドメイン知識, 判定可能な仕様の書き方, 扱いの型の使い分け
+design_acceptance_tests  : 同値分割, 境界値分析
+build                    : 実装言語・基盤の知識, ホワイトボックステストの書き方, 縮退経路のログ設計, インタフェース設計, データ構造設計
+run_regression           : （機械）
+assure_design            : 保証範囲の切り出し, エビデンスの設計
+execute_acceptance_tests : 検査実行環境の扱い, 未カバー領域の言語化, 残留リスクの書き方, 保証の受理
+adjudicate_rework        : 差し戻し先の語彙翻訳, 帰責判断
+aggregate_residual_risk  : （機械）
+reconcile_documents      : 差分の追跡, 文書ごとの正の向き
+sync_repository          : バージョン管理の作法

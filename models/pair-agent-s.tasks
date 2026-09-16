@@ -1,0 +1,10 @@
+# Pair Agent S タスクライブラリ
+# task 名 : 要求する skill
+
+design_acceptance_tests  : 境界値分析, 同値分割
+build                    : 実装言語・基盤の知識, ホワイトボックステストの書き方, 縮退経路のログ設計
+run_regression           : （機械）
+assure_design            : 保証範囲の切り出し, エビデンスの設計
+execute_acceptance_tests : 検査実行環境の扱い, 未カバー領域の言語化, 残留リスクの書き方, 保証の受理
+adjudicate_rework        : 差し戻し先の語彙翻訳, 帰責判断
+sync_repository          : バージョン管理の作法

@@ -1,0 +1,149 @@
+{
+  "model": "pair-agent-xs",
+  "description": "pair-agent-xs の成果物 DAG（役 3 ／ 機械 1 ／ 人間ゲート 0）",
+  "levels": [
+    [
+      "受入検査仕様",
+      "実装物"
+    ],
+    [
+      "非回帰の合否"
+    ],
+    [
+      "受入検査報告書"
+    ]
+  ],
+  "nodes": {
+    "受入検査仕様": {
+      "target": "受入検査仕様",
+      "role": "受入検査設計者",
+      "task": "design_acceptance_tests",
+      "by": "agent",
+      "agentType": "pair-agent-xs-design-acceptance-tests",
+      "gate": null,
+      "path": ".pair-agent/acceptance/受入検査仕様.md",
+      "deps": [
+        {
+          "name": "要望",
+          "node": "要望",
+          "kind": "必須",
+          "path": ".pair-agent/inbox/要望.md"
+        }
+      ],
+      "blocks": [
+        "実装物"
+      ],
+      "post": [
+        "実装コードを見ずに書かれている"
+      ],
+      "out": [
+        "要望に対応する最小限の判定手続き"
+      ],
+      "skills": [
+        "同値分割",
+        "境界値分析"
+      ]
+    },
+    "実装物": {
+      "target": "実装物",
+      "role": "構築者",
+      "task": "build",
+      "by": "agent",
+      "agentType": "pair-agent-xs-build",
+      "gate": null,
+      "path": "src/",
+      "deps": [
+        {
+          "name": "要望",
+          "node": "要望",
+          "kind": "必須",
+          "path": ".pair-agent/inbox/要望.md"
+        }
+      ],
+      "blocks": [
+        "受入検査仕様"
+      ],
+      "post": [
+        "要望を満たす変更が行われている"
+      ],
+      "out": [
+        "変更コード"
+      ],
+      "skills": [
+        "ホワイトボックステストの書き方",
+        "実装言語・基盤の知識"
+      ]
+    },
+    "非回帰の合否": {
+      "target": "非回帰の合否",
+      "role": "機械（非回帰の合否）",
+      "task": "run_regression",
+      "by": "machine",
+      "agentType": "pair-agent-xs-run-regression",
+      "gate": null,
+      "path": ".pair-agent/assurance/非回帰の合否.md",
+      "deps": [
+        {
+          "name": "実装物",
+          "node": "実装物",
+          "kind": "必須",
+          "path": "src/"
+        }
+      ],
+      "blocks": [],
+      "post": [
+        "全テストがパスしている"
+      ],
+      "out": [
+        "既存テストの合否結果"
+      ],
+      "skills": []
+    },
+    "受入検査報告書": {
+      "target": "受入検査報告書",
+      "role": "受入検査実施者",
+      "task": "execute_acceptance_tests",
+      "by": "agent",
+      "agentType": "pair-agent-xs-execute-acceptance-tests",
+      "gate": null,
+      "path": ".pair-agent/acceptance/受入検査報告書.md",
+      "deps": [
+        {
+          "name": "受入検査仕様",
+          "node": "受入検査仕様",
+          "kind": "必須",
+          "path": ".pair-agent/acceptance/受入検査仕様.md"
+        },
+        {
+          "name": "非回帰の合否",
+          "node": "非回帰の合否",
+          "kind": "必須",
+          "path": ".pair-agent/assurance/非回帰の合否.md"
+        },
+        {
+          "name": "実行環境",
+          "node": "実行環境",
+          "kind": "必須",
+          "path": ".pair-agent/inbox/実行環境.md"
+        }
+      ],
+      "blocks": [
+        "実装物"
+      ],
+      "post": [
+        "実装内部コードを見ずに外部契約から検査した結果である",
+        "合否が明確に判定されている"
+      ],
+      "out": [
+        "受入検査仕様に基づく合否判定",
+        "未カバー領域・残留リスク"
+      ],
+      "skills": [
+        "未カバー領域の言語化",
+        "検査実行環境の扱い",
+        "残留リスクの書き方"
+      ]
+    }
+  },
+  "human": []
+}

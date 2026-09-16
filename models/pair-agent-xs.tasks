@@ -1,0 +1,7 @@
+# Pair Agent XS タスクライブラリ
+# task 名 : 要求する skill
+
+design_acceptance_tests  : 同値分割, 境界値分析
+build                    : 実装言語・基盤の知識, ホワイトボックステストの書き方
+run_regression           : （機械）
+execute_acceptance_tests : 検査実行環境の扱い, 未カバー領域の言語化, 残留リスクの書き方
