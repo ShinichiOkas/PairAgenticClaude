@@ -102,23 +102,32 @@ python tools/emit_agents.py models/waterfall-core.mk --target=gemini
 
 # ユーザー環境にグローバル配備
 python tools/emit_agents.py --dest=global
+
+# 導入先プロジェクトに出力し、遮断フックを .claude/settings.local.json に登録
+python tools/emit_agents.py --dest=path/to/your-project --register-hook
 ```
 
-### 2. 成果物 DAG ワークフローの実行 (`run_workflow.py`)
+> [!IMPORTANT]
+> 遮断フック `deny_read.py` は Claude Code の settings に登録されて初めて動きます。
+> `--register-hook` を付けない場合、未登録なら警告と登録用 JSON を表示するだけです（設定は書き換えません）。
 
-定義された DAG に従って各段のエージェントを順次駆動します。
+### 2. 成果物 DAG ワークフローの実行
+
+**Claude Code**: `.claude/workflows/<model>.js` を Workflow として走らせます（`/<model>`）。
+
+```json
+{ "root": ".", "stopAtGate": true }
+```
+
+- args の `stopAtGate` を省くと、人間ゲートで**止まらず**未決ゲートの一覧を返すだけになります。Pair Agent では `true` を渡してください。
+- **起動の2条件 (P-53)**: 必須 dep が揃っているか、かつ deps が target より新しいか判定
+- **人間ゲート**: `gate: H1...` が指定された成果物で停止し、師匠の判断を仰ぐ
+
+**起動判定の確認** (`run_workflow.py`): サブエージェントは起動しません。どの段が走るかを見るだけです。
 
 ```bash
-# 実行判定の確認 (dry-run)
-python tools/run_workflow.py waterfall-core --dry-run
-
-# ワークフローを実行（人間ゲートで一時停止）
-python tools/run_workflow.py waterfall-core --root=.
+python tools/run_workflow.py waterfall-core --root=. --dry-run
 ```
-
-- **起動の2条件 (P-53)**: 必須 dep が揃っているか、かつ deps が target より新しいか判定
-- **H-8 機構**: 成果物内容が変わらなければ mtime を進めず、下流の無駄な空回りを防止
-- **人間ゲート**: `gate: H1...` が指定された成果物は、師匠の判断を仰ぐため自動停止
 
 詳細な仕様と運用方法は [docs/multi-agent-guide.md](docs/multi-agent-guide.md) を参照してください。
 

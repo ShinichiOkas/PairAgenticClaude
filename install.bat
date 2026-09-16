@@ -157,7 +157,7 @@ del /q "%ANTIGRAVITY_CONFIG%\GEMINI.md" 2>nul
 del /q "%ANTIGRAVITY_CONFIG%\rules\pair-agent-core.md" 2>nul
 del /q "%ANTIGRAVITY_CONFIG%\agents\*.md" 2>nul
 
-for %%s in (sprint-lifecycle agreement-document correction-record skill-learning retrospect vision-record project-start-empty project-start-existing vocabulary-capture project-init skill-survey) do (
+for %%s in (sprint-lifecycle agreement-document correction-record skill-learning retrospect vision-record project-start-empty project-start-existing vocabulary-capture project-init skill-survey slice-size-management subagent-cost-management) do (
     rmdir /s /q "%CLAUDE_HOME%\skills\%%s" 2>nul
     rmdir /s /q "%ANTIGRAVITY_CONFIG%\skills\%%s" 2>nul
 )

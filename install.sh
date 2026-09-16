@@ -75,7 +75,7 @@ if [[ "${1:-}" == "--uninstall" ]]; then
     for skill in sprint-lifecycle agreement-document correction-record \
                  skill-learning retrospect vision-record \
                  project-start-empty project-start-existing vocabulary-capture project-init \
-                 skill-survey; do
+                 skill-survey slice-size-management subagent-cost-management; do
         rm -rf "${CLAUDE_HOME}/skills/${skill}" 2>/dev/null || true
         rm -rf "${ANTIGRAVITY_CONFIG}/skills/${skill}" 2>/dev/null || true
     done

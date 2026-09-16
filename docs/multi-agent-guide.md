@@ -93,20 +93,33 @@ python tools/emit_agents.py --dest=global
 
 ---
 
-## 4. 実行エンジン: `run_workflow.py`
+## 4. 実行: 台本（Claude Workflow）と起動判定（`run_workflow.py`）
 
-成果物 DAG をステップ実行し、ハーネス要件を満たしながらマルチエージェントを駆動します。
+### Claude Code: `.claude/workflows/<model>.js`
+
+Workflow として走らせる（`/<model>`）。args:
+
+```json
+{ "root": ".", "stopAtGate": true, "force": false }
+```
+
+- ⚠ `stopAtGate` の既定は `false`（移植元 AgentRoleDesign の設計）。省くと人間ゲートで**止まらず**、`openGates` を返すだけになる。Pair Agent の主エージェントは `true` を渡す。
+- 台本にはファイルシステムが無いため、起動判定のための存在・時刻は「状態の観測」エージェント 1 体に測らせる。
+
+### 起動判定の確認: `run_workflow.py`
+
+⚠ **サブエージェントを起動しない。** 起動判定（P-53）と段の並びを見せるだけである。
 
 ```bash
-# 実行判定（dry-run）
-python tools/run_workflow.py waterfall-core --dry-run
+# 起動判定（どの段が走るか）
+python tools/run_workflow.py waterfall-core --root=. --dry-run
 
-# 作業ディレクトリを指定して実行（人間ゲートで一時停止）
-python tools/run_workflow.py waterfall-core --root=.
-
-# 人間ゲートで停止せずに通しで実行
-python tools/run_workflow.py waterfall-core --no-stop
+# 人間ゲートで止めずに最後まで判定を見る
+python tools/run_workflow.py waterfall-core --root=. --dry-run --no-stop
 ```
+
+- `--dry-run` を付けずに走らせると拒否する（exit 2）。以前はプレースホルダーを成果物の置き場に書き、次回の起動判定が全段を「完了」と読んだ（2026-09-17 実測）。
+- DAG の空回しだけをしたいときは `--placeholder` を明示し、作業根を使い捨ての場所にする。
 
 ### 内蔵されるハーネス機能
 1. **起動の 2 条件 (P-53)**:
@@ -126,7 +139,7 @@ python tools/run_workflow.py waterfall-core --no-stop
 2. **合意フェーズ**:
    - 入力（要望・制約）を `inbox/` 配下に配置し、合意ドキュメントを締結。
 3. **実行フェーズ**:
-   - 主エージェントが `tools/run_workflow.py` または各プラットフォームのマルチエージェント台本を起動。
+   - 主エージェントが各プラットフォームのマルチエージェント台本を起動（Claude Code: Workflow `/<model>`、args `{"root": ".", "stopAtGate": true}`）。
    - 中間成果物が人間ゲートに達したら、主エージェントが師匠に提示して確認。
    - 最終成果物（受入検査報告書・残留リスク報告）が完成。
 4. **振り返りフェーズ**:
@@ -141,10 +154,17 @@ python tools/run_workflow.py waterfall-core --no-stop
 ### ① 宣言だけでは遮断が破られる問題 → `PreToolUse` フック（`deny_read.py`）
 - **課題**: サブエージェントが自律的に Grep や Read を行う中で、`blocks` に指定された成果物を無意識に読んでしまうケースがあった（Windows では frontmatter の hooks: が環境によって起動しない）。
 - **解決策**:
-  - プロジェクト設定（`.claude/settings.json` または `.agents/hooks.json`）の `PreToolUse` に [tools/deny_read.py](file:///Users/shinichi/work/PairAgenticClaude/tools/deny_read.py) を登録。
-  - サブエージェントの `agent_type` を参照し、[deny-map.json](file:///Users/shinichi/work/PairAgenticClaude/.claude/hooks/deny-map.json) から glob を引いて `Read`, `Grep`, `Glob`, `Bash` を実行時に物理遮断（exit 2）。
+  - プロジェクト設定（`.claude/settings.json` / `.claude/settings.local.json` または `.agents/hooks.json`）の `PreToolUse` に [tools/deny_read.py](../tools/deny_read.py) を登録。
+  - サブエージェントの `agent_type` を参照し、[deny-map.json](../.claude/hooks/deny-map.json) から glob を引いて `Read`, `Grep`, `Glob`, `Bash` を実行時に物理遮断（exit 2）。
   - 親セッション（主エージェント）には `agent_type` が無いため無条件に通過（オーバーヘッドなし）。
-  - `tools/emit_agents.py` により、`.mk` の `blocks` 宣言から `deny-map.json` が全自動生成される。
+  - `tools/emit_agents.py` により、`.mk` の `blocks` 宣言から `deny-map.json` が全自動生成される。自分の deps と target に当たる glob は生成時に落とす（deps は読んでよい）。
+  - ⚠ **生成しただけでは登録されない。** `python tools/emit_agents.py --dest=<project> --register-hook` で `<project>/.claude/settings.local.json` に登録する（インタプリタは実行した Python の絶対パス。Windows の `python3` はストアのスタブで黙って効かない）。付けなければ未登録の警告と登録用 JSON を表示する。
+  - ⚠ Bash の判定はコマンド文字列の照合で、ベストエフォートである（宣言が拘束し、フックは証拠）。
+
+#### Claude 環境での検証（2026-09-17・Windows）
+- 生成した deny-map を、各エージェントの遮断対象の実パスに当てた（Read 絶対/相対・Grep・Bash）: 修正前は **268 件中 69 件が素通り**（`src/` から `src//**` が生成され Read が通る／ファイル単位の遮断を Bash が拾わない）。修正後 0 件。
+- deps と target の読み取り・一般コマンド 798 件: 修正前は 1 件誤遮断（論理名 `*仕様*` が deps の `受入検査仕様.md` を塞ぐ）。修正後 0 件。
+- 登録したコマンド文字列を bash で起動し、遮断 exit 2 ／通過 exit 0 を確認。⚠ **Claude Code 上でサブエージェントを実走させての確認はまだ**。
 
 ### ② Windows 環境での日本語パス例外（fail-open）の防止
 - **課題**: Windows の `sys.stdin` は既定で `cp932` のため、日本語のパスやコマンドが含まれると JSON デコードで例外が起き、fail-open して遮断が素通りしていた。
