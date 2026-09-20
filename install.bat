@@ -115,6 +115,9 @@ goto end
 :project
 if exist ".pair-agent" (
     echo !YELLOW![pair-agent]!NC! .pair-agent/ already exists in current directory. Skipping.
+    if exist ".pair-agent\current-sprint.json" if not exist ".pair-agent\current" (
+        echo !YELLOW![pair-agent]!NC! Legacy .pair-agent\current-sprint.json found. It will be migrated to .pair-agent\current\ on the next session ^(see sprint-lifecycle skill^).
+    )
 ) else (
     if exist "%CLAUDE_HOME%\pair-agent\template" (
         xcopy /e /i /y "%CLAUDE_HOME%\pair-agent\template" ".pair-agent" >nul
@@ -139,9 +142,7 @@ if exist ".pair-agent" (
         )
     )
 
-    :: Set created_at timestamp via PowerShell
-    powershell -Command "$f='.pair-agent/current-sprint.json';$d=Get-Content $f|ConvertFrom-Json;$d.created_at=(Get-Date -Format 'o');$d|ConvertTo-Json|Set-Content $f" 2>nul
-    echo !GREEN![pair-agent]!NC! Add to .gitignore if needed: .pair-agent/current-sprint.json
+    echo !GREEN![pair-agent]!NC! Current sprint state is tracked per workcopy under .pair-agent/current/ ^(safe to commit; no .gitignore entry needed^)
 )
 goto end
 

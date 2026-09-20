@@ -45,7 +45,7 @@
 - `.pair-agent/assurance/` — 設計保証
 - `.pair-agent/skills/` — プロジェクト固有のSkill（Claude Code用）
 - `.agents/skills/` — プロジェクト固有のSkill（Antigravity用。必要に応じて `.pair-agent/skills/` と同期）
-- `.pair-agent/current-sprint.json` — 現在のスプリント状態
+- `.pair-agent/current/<鍵>-*.json` — 現在地のポインタ（**作業ツリーごと**。鍵は `ホスト名 + git rev-parse --show-toplevel` の SHA-1 先頭 8 桁。詳細はプロジェクトの `CLAUDE.md`「スプリントの現在地は作業ツリーごと」）
 
 ## 主エージェントとサブエージェント（マルチエージェント協調）
 

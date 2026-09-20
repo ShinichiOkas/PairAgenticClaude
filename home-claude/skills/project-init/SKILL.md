@@ -17,19 +17,20 @@ description: プロジェクトに .pair-agent/ が存在しないとき、作�
 
    > `.pair-agent/` がありません。  
    > Pair Agent の作業ディレクトリを初期化してよいですか？  
-   > （`agreements/`, `sprints/`, `skills/`, `current-sprint.json` が作成されます）
+   > （`agreements/`, `sprints/`, `skills/`, `current/` が作成されます）
 
 2. 承認されたら、以下の手順で初期化を実行する:
    - テンプレートの内容を `.pair-agent/` へコピーする
      - 優先パス: `~/.claude/pair-agent/template/` または `~/.gemini/antigravity/pair-agent/template/`
    - `CLAUDE.md` が存在し、`GEMINI.md` が存在しない場合、`CLAUDE.md` を `GEMINI.md` にコピーする
-   - `current-sprint.json` の `created_at` フィールドを現在の ISO 8601 日時で設定する
+   - 作業ツリーの鍵を計算し（`ホスト名 + git rev-parse --show-toplevel` の SHA-1 先頭 8 桁）、
+     `.pair-agent/current/<鍵>-<末尾ディレクトリ名>.json` に `status: "idle"` のポインタを作成する
 
 3. 完了を報告する:
 
    > `.pair-agent/` を初期化しました。
    > （Antigravity用に `GEMINI.md` も作成しました）
-   > `.gitignore` に `.pair-agent/current-sprint.json` を追加することをお勧めします。
+   > 現在地は作業ツリーごとに `.pair-agent/current/` で管理されます（`.gitignore` は不要です）。
 
 ## 注意
 

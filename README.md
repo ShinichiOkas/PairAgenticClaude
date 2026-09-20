@@ -18,7 +18,8 @@ Claude Code や Google Antigravity (Gemini) の上に「徒弟制度」と「成
 | 叱責・修正記録 | `~/.../pair-agent/corrections/` | 境界線はペア固有 |
 | プロジェクト初期化テンプレート | `~/.../pair-agent/template/` | `project-init` スキルが使用。リポジトリ不要 |
 | 合意ドキュメント | `<project>/.pair-agent/agreements/` | スプリントはプロジェクトに紐づく |
-| スプリント状態 | `<project>/.pair-agent/current-sprint.json` | プロジェクト単位の作業状態 |
+| 現在地（スプリント状態） | `<project>/.pair-agent/current/<鍵>-*.json` | 作業ツリーごとのポインタ（鍵はホスト名+パスのSHA-1先頭8桁） |
+| スプリント履歴 | `<project>/.pair-agent/sprints/<sprint_id>.json` | 経過（生きているものも閉じたものも同じ場所） |
 | プロジェクト固有Skill | `<project>/.pair-agent/skills/` | そのプロジェクトだけの技術知見 (Claude用) |
 | プロジェクト固有Skill | `<project>/.agents/skills/` | そのプロジェクトだけの技術知見 (Antigravity用) |
 | サブエージェント定義 | `.claude/agents/` / `.agents/agents/` | 特化役割エージェント仕様書 |

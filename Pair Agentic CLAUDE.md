@@ -62,11 +62,11 @@ PairAgenticClaude/
 └── project-template/                   # → プロジェクトルートに配置  
     ├── .pair-agent/  
     │   ├── agreements/  
-    │   ├── sprints/  
+    │   ├── sprints/                    # 経過（生きているものも閉じたものも同じ場所）
     │   ├── acceptance/                 # 受入検査仕様・報告書（隔離保護領域）
     │   ├── assurance/                  # 設計保証
     │   ├── skills/  
-    │   └── current-sprint.json
+    │   └── current/                    # 現在地のポインタ（作業ツリーごと）
     └── .agents/                        # Google Antigravity 用構造
         ├── skills/
         ├── agents/
@@ -95,7 +95,8 @@ Claude Codeの上に「徒弟制度」を実現するものです。
 | ビジョン記録 | \`\~/.claude/pair-agent/vision/\` | 師匠の思考パターン。プロジェクトを跨ぐ |  
 | 叱責・修正記録 | \`\~/.claude/pair-agent/corrections/\` | 境界線はペア固有 |  
 | 合意ドキュメント | \`\<project\>/.pair-agent/agreements/\` | スプリントはプロジェクトに紐づく |  
-| スプリント状態 | \`\<project\>/.pair-agent/current-sprint.json\` | プロジェクト単位の作業状態 |  
+| 現在地（スプリント状態） | \`\<project\>/.pair-agent/current/\<鍵\>-\*.json\` | 作業ツリーごとのポインタ（鍵はホスト名+パスのSHA-1先頭8桁） |  
+| スプリント履歴 | \`\<project\>/.pair-agent/sprints/\<sprint\_id\>.json\` | 経過（生きているものも閉じたものも同じ場所） |  
 | プロジェクト固有Skill | \`\<project\>/.pair-agent/skills/\` | そのプロジェクトだけの技術知見 |
 
 \#\# インストール
@@ -174,7 +175,7 @@ if \[\[ "${1:-}" \== "--project" \]\]; then
     else  
         cp \-r "${PROJECT\_TEMPLATE}/.pair-agent" .  
         info "Created .pair-agent/ in $(pwd)"  
-        info "Add to .gitignore if needed: .pair-agent/current-sprint.json"  
+        info "Current sprint state is tracked per workcopy under .pair-agent/current/ (safe to commit; no .gitignore entry needed)"  
     fi  
     exit 0  
 fi
@@ -305,7 +306,7 @@ info "To start: claude"
 \- \`.pair-agent/agreements/\` — 合意ドキュメント  
 \- \`.pair-agent/sprints/\` — スプリント履歴  
 \- \`.pair-agent/skills/\` — プロジェクト固有のSkill  
-\- \`.pair-agent/current-sprint.json\` — 現在のスプリント状態
+\- \`.pair-agent/current/\<鍵\>-\*.json\` — 現在地のポインタ（作業ツリーごと。鍵はホスト名+パスのSHA-1先頭8桁）
 
 \#\# Skillの成熟度と協議深度
 
@@ -350,7 +351,8 @@ Skillには3段階の成熟度がある:
 
 \#\# セッション開始時の手順
 
-1\. \`.pair-agent/current-sprint.json\` を確認する（存在すれば）  
+1\. 現在地を解決する（作業ツリーごと。鍵を計算 → \`.pair-agent/current/\<鍵\>-\*.json\`（ポインタ）を確認 →
+   あれば \`journal\` の指す先（\`.pair-agent/sprints/\<sprint\_id\>.json\`）を読む）  
 2\. 進行中のスプリントがあれば合意ドキュメントをロードして状態を報告する  
 3\. \`\~/.claude/pair-agent/skills/\` からペア固有Skillをロードする  
 4\. なければ師匠に「何を始めますか？」と問いかける
@@ -415,9 +417,15 @@ description: スプリントのライフサイクル管理。新しいタスク�
 
 \#\# スプリント開始
 
+**現在地は作業ツリーごと**（旧・単一 \`.pair-agent/current-sprint.json\` は廃止・道標のみ。
+\`.pair-agent/current-sprint.json\` があり \`.pair-agent/current/\` が無いプロジェクトは
+旧形式。初回セッションで移設する — 経過を \`sprints/\<sprint\_id\>.json\` へ写し、ポインタを作り、
+旧ファイルを道標に置き換える）。
+
 師匠がゴールを伝えたら:
 
-1\. \`.pair-agent/current-sprint.json\` を更新:  
+1\. 作業ツリーの鍵を計算する（\`ホスト名 + git rev-parse --show-toplevel\` の SHA-1 先頭 8 桁）  
+2\. \`.pair-agent/sprints/\<sprint\_id\>.json\` を新規作成し、経過を書く先とする:  
 \`\`\`json  
 {  
   "sprint\_id": "\<uuid\>",  
@@ -426,8 +434,11 @@ description: スプリントのライフサイクル管理。新しいタスク�
   "created\_at": "\<timestamp\>",  
   "agreement\_path": ".pair-agent/agreements/\<goal-slug\>.md"  
 }
+\`\`\`
+3\. \`.pair-agent/current/\<鍵\>-\<末尾ディレクトリ名\>.json\` をポインタとして作成する
+（\`journal\` に手順2のファイルを指す）
 
-2. 合意ドキュメントの起草を開始（/agreement-document を使用）
+4. 合意ドキュメントの起草を開始（/agreement-document を使用）
 
 ## **協議フェーズ**
 
@@ -446,8 +457,9 @@ description: スプリントのライフサイクル管理。新しいタスク�
 
 師匠が「これでいこう」「OK」「始めて」等と言ったとき:
 
-1. current-sprint.json の status を “executing” に更新  
-2. 合意ドキュメントの status を “executing” に更新  
+1. ジャーナル（`.pair-agent/sprints/<sprint_id>.json`・正）とポインタ（`.pair-agent/current/<鍵>-*.json`）
+   両方の status を "executing" に更新  
+2. 合意ドキュメントの status を "executing" に更新  
 3. 実行を開始
 
 ## **実行フェーズ**
@@ -462,20 +474,21 @@ description: スプリントのライフサイクル管理。新しいタスク�
 * 前提崩壊: 実装してみたら前提が間違っていた  
 * より良い方法: 合意範囲を変えると全体最適になる
 
-差し戻し後: status を “deliberating” に戻す。
+差し戻し後: ジャーナルとポインタ両方の status を "deliberating" に戻す。
 
 ## **完了→振り返り**
 
 タスク完了時:
 
-1. status を “retrospecting” に更新  
+1. `.pair-agent/sprints/<sprint_id>.json`（ジャーナル・正）と `.pair-agent/current/<鍵>-*.json`
+   （ポインタ）両方の status を "retrospecting" に更新  
 2. 「振り返りますか？」と問いかける  
 3. 師匠の回答に応じて振り返り実施 or 先送り
 
 振り返り完了後:
 
-1. status を “completed” に更新  
-2. `.pair-agent/sprints/<sprint_id>.json` に保存
+1. ジャーナルとポインタ両方の status を "completed" に更新（食い違ったらジャーナルを正とし
+   ポインタを直す）。経過はすでにジャーナルに書かれているので、改めて保存する操作は無い
 
 \---
 
@@ -886,7 +899,7 @@ description: 空のディレクトリでセッションを開始したとき。�
 
 プロジェクトの方向が決まったタイミングで:  
 「プロジェクトの作業管理用に .pair-agent/ ディレクトリを作成してよいですか？」  
-承認されたら current-sprint.json 等を配置する。
+承認されたら current/（現在地のポインタ。作業ツリーごと）等を配置する（.gitignore は不要）。
 
 ---
 
@@ -1111,15 +1124,12 @@ model: inherit
 
 ---
 
-## **project-template/.pair-agent/current-sprint.json**
+## **project-template/.pair-agent/current/**
 
-{  
-  "sprint\_id": null,  
-  "status": "idle",  
-  "goal": null,  
-  "created\_at": null,  
-  "agreement\_path": null  
-}
+新規プロジェクトには旧方式（`current-sprint.json`）の残骸を配らない。
+代わりに空の `current/` ディレクトリ（`.gitkeep` のみ）を配布する。
+現在地のポインタは各作業ツリーのセッション開始時に鍵ごとへ生成される
+（`.pair-agent/current/<鍵>-<末尾ディレクトリ名>.json`）。
 
 ---
 
@@ -1132,7 +1142,8 @@ model: inherit
 * `home-claude/pair-agent/corrections/.gitkeep`  
 * `project-template/.pair-agent/agreements/.gitkeep`  
 * `project-template/.pair-agent/sprints/.gitkeep`  
-* `project-template/.pair-agent/skills/.gitkeep`
+* `project-template/.pair-agent/skills/.gitkeep`  
+* `project-template/.pair-agent/current/.gitkeep`
 
 ---
 
@@ -1162,14 +1173,15 @@ for s in sprint-lifecycle agreement-document correction-record \\
          project-start-empty project-start-existing vocabulary-capture; do  
   mkdir \-p "${BASE}/home-claude/skills/${s}"  
 done  
-mkdir \-p "${BASE}/project-template/.pair-agent/"{agreements,sprints,skills}
+mkdir \-p "${BASE}/project-template/.pair-agent/"{agreements,sprints,skills,current}
 
 \# .gitkeep  
 for d in home-claude/pair-agent/skills home-claude/pair-agent/vision \\  
          home-claude/pair-agent/corrections \\  
          project-template/.pair-agent/agreements \\  
          project-template/.pair-agent/sprints \\  
-         project-template/.pair-agent/skills; do  
+         project-template/.pair-agent/skills \\  
+         project-template/.pair-agent/current; do  
   touch "${BASE}/${d}/.gitkeep"  
 done
 

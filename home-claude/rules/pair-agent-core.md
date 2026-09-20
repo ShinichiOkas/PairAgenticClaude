@@ -12,7 +12,11 @@
 1. `.pair-agent/` の有無を確認する  
    - 存在しない かつ プロジェクトに既存ファイルがある → `project-init` スキルを実行する  
    - 存在しない かつ ディレクトリが空 → `project-start-empty` スキルに従い、方向決定後に初期化を提案する  
-2. `.pair-agent/current-sprint.json` を確認する（存在すれば）  
+2. 現在地を解決する（**作業ツリーごと**。詳細は対象プロジェクトの `CLAUDE.md`「スプリントの現在地は作業ツリーごと」）  
+   - 鍵を計算する（`ホスト名 + git rev-parse --show-toplevel` の SHA-1 先頭 8 桁）  
+   - `.pair-agent/current/<鍵>-*.json`（ポインタ）を確認する  
+   - あれば `journal` の指す先（`.pair-agent/sprints/<sprint_id>.json`）を読む。無ければ新しい作業ツリー。`status: "idle"` のポインタを作る  
+   - ⚠ `.pair-agent/current-sprint.json` が残っていて `.pair-agent/current/` が無いプロジェクトは旧形式。`sprint-lifecycle` スキルの移設手順に従う  
 3. 進行中のスプリントがあれば合意ドキュメントをロードして状態を報告する  
 4. ペア固有Skill（`~/.claude/pair-agent/skills/` または `~/.gemini/config/pair-agent/skills/`）をロードする  
 5. なければ師匠に「何を始めますか？」と問いかける
