@@ -25,6 +25,7 @@ from typing import Dict, List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from emit_claude import Emit, Rule, base_name, dep_kind, load_slug_map  # noqa: E402
+from deny_read import glob_to_regex, norm  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 NL = "\n"
@@ -209,10 +210,10 @@ def emit_model(
                 # 1. モデル内で宣言された物理パス（agent.path）を逆引き
                 phys_path = emission.path_of(b)
                 if phys_path != b:
-                    globs.append(phys_path)
-                    if "." not in phys_path:
-                        # ディレクトリの場合
-                        globs.append(f"{phys_path}/**")
+                    globs.append(phys_path.rstrip("/"))
+                    if phys_path.endswith("/") or "." not in phys_path:
+                        # ディレクトリの場合（"src/" に "/**" を足すと "src//**" になり Read が素通りした）
+                        globs.append(f"{phys_path.rstrip('/')}/**")
                     else:
                         # ファイルの場合（例: acceptance/受入検査仕様.md）
                         # プレフィックスワイルドカードも許容して派生ファイルを防護
@@ -227,7 +228,12 @@ def emit_model(
                 else:
                     globs.append(b)
 
-            unique_globs = sorted(set(globs))
+            # 3. 自分の deps と target に当たる glob は落とす（deps は読んでよい）。
+            #    論理名の "*仕様*" が deps の "受入検査仕様.md" を塞ぎ、devops の受入検査実施者が
+            #    自分の仕様を読めなかった（2026-09-17 実測）。判定はフックと同じ関数で行う
+            allowed = [norm(emission.path_of(base_name(d))) for d in r.deps] + [norm(emission.path_of(r.node))]
+            unique_globs = sorted(g for g in set(globs)
+                                  if not any(re.search(glob_to_regex(g), p) for p in allowed))
             global_deny_map[a_name] = ",".join(unique_globs)
 
 
@@ -279,12 +285,59 @@ def emit_model(
     return counts
 
 
+def claude_hook_status(claude_dir: Path, is_global: bool, register: bool, dry_run: bool) -> None:
+    """deny_read.py は settings の PreToolUse に登録されて初めて動く。生成だけでは遮断は効かない。
+
+    未登録のまま黙らない。`register` のときだけ設定へ追記する（既定では設定を書き換えない）。
+    登録先はマシン固有の設定（プロジェクトなら settings.local.json）。インタプリタは
+    `sys.executable` の絶対パスにする —— Windows の `python3` はストアのスタブで、黙って効かない。
+    """
+    candidates = [claude_dir / "settings.json"] + ([] if is_global else [claude_dir / "settings.local.json"])
+    for s in candidates:
+        if s.exists() and "deny_read.py" in s.read_text(encoding="utf-8", errors="replace"):
+            print(f"  ✓ 遮断フックは登録済み: {s.as_posix()}")
+            return
+
+    py = Path(sys.executable).as_posix()
+    if is_global:
+        hooks = (claude_dir / "hooks").as_posix()
+        command = f'"{py}" "{hooks}/deny_read.py" --map "{hooks}/deny-map.json"'
+    else:
+        base = "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks"
+        command = f'"{py}" "{base}/deny_read.py" --map "{base}/deny-map.json"'
+    entry = {"matcher": "Read|Grep|Glob|Bash",
+             "hooks": [{"type": "command", "timeout": 10, "command": command}]}
+    settings = candidates[-1]
+
+    if not register:
+        print(f"\n  ⚠ 遮断フックが未登録です。このままでは blocks は宣言だけで、サブエージェントの読み取りは止まりません。")
+        print(f"    登録するには --register-hook を付けて再実行するか、{settings.as_posix()} の hooks.PreToolUse に次を追記する:")
+        print("    " + json.dumps(entry, ensure_ascii=False))
+        return
+    if dry_run:
+        print(f"  ＋ [dry-run] 遮断フックを登録: {settings.as_posix()}")
+        return
+    data = {}
+    if settings.exists():
+        try:
+            data = json.loads(settings.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"  ⚠ {settings.as_posix()} を JSON として読めないため登録しなかった: {e}", file=sys.stderr)
+            return
+    data.setdefault("hooks", {}).setdefault("PreToolUse", []).append(entry)
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(json.dumps(data, ensure_ascii=False, indent=2) + NL, encoding="utf-8")
+    print(f"  ＋ 遮断フックを登録: {settings.as_posix()}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Claude & Gemini マルチエージェント書式一括出力")
     parser.add_argument("models", nargs="*", help=".mk ファイル（省略時は models/*.mk 全部）")
     parser.add_argument("--target", choices=["all", "claude", "gemini", "antigravity"], default="all", help="出力対象")
     parser.add_argument("--dest", default="local", help="出力先ルート（'local' でカレント、'global' でユーザーホーム、または個別パス）")
     parser.add_argument("--dry-run", action="store_true", help="書き込まずに予定を表示")
+    parser.add_argument("--register-hook", action="store_true",
+                        help="遮断フック deny_read.py を Claude の settings に登録する（既定は未登録なら警告のみ）")
     args = parser.parse_args()
 
     if args.dest == "local":
@@ -333,6 +386,7 @@ def main() -> int:
                 shutil.copy(ROOT / "tools" / "deny_read.py", claude_hooks / "deny_read.py")
             print(f"  ＋ {claude_hooks / 'deny-map.json'}")
             total_created += 1
+            claude_hook_status(claude_hooks.parent, base_dest == Path.home(), args.register_hook, args.dry_run)
 
         if args.target in ("gemini", "antigravity", "all"):
             if base_dest == Path.home():

@@ -27,7 +27,7 @@ PairAgenticClaude/
 │   ├── watch_workflow.py               # 進行監視
 │   ├── emit_claude.py                  # Claude Code マルチエージェント生成
 │   ├── emit_agents.py                  # Claude & Gemini 統合エクスポート（deny-map生成・maxTurns注入）
-│   ├── run_workflow.py                 # 成果物 DAG ワークフロー実行ランナー
+│   ├── run_workflow.py                 # 成果物 DAG の起動判定（--dry-run。サブエージェントは起動しない）
 │   ├── deny_read.py                    # PreToolUse 実行時物理遮断フック（UTF-8・0.3秒/回）
 │   └── measure_agent_usage.py          # 会話記録からのエージェント使用量・コスト集計計器
 │  

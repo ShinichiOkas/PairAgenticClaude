@@ -3,10 +3,17 @@
 成果物 DAG ワークフロー実行ランナー（Claude & Gemini 共通）。
 AgentRoleDesign のハーネス要件（H-1〜H-8）と P-53（起動の2条件）に準拠。
 
+⚠ **この道具はサブエージェントを起動しない。** 起動判定（P-53）と段の並びを見せるだけである。
+   Claude Code での実走は `.claude/workflows/<model>.js`（Workflow: `/<model>`、args に root）を使う。
+   `--dry-run` を付けずに走らせると、以前は空のプレースホルダーを成果物の置き場に書き、
+   次回以降の起動判定がそれを「できた」と読んで全段を飛ばした（2026-09-17 実測）。
+   そのため実行は既定で拒否し、プレースホルダーは `--placeholder` を明示したときだけ書く。
+
 使用法:
-    python tools/run_workflow.py waterfall-core --root=.
+    python tools/run_workflow.py waterfall-core --root=. --dry-run
     python tools/run_workflow.py models/waterfall-core.mk --dry-run
-    python tools/run_workflow.py .agents/workflows/waterfall-core.json --stop-at-gate
+    python tools/run_workflow.py .agents/workflows/waterfall-core.json --dry-run --no-stop
+    python tools/run_workflow.py waterfall-core --root=sandbox --placeholder   # DAG の空回し用
 """
 from __future__ import annotations
 
@@ -214,7 +221,14 @@ class WorkflowRunner:
     def execute_node(self, node_info: Dict[str, Any]) -> bool:
         """ノードの実際の実行（サブエージェント起動またはスタブ処理）"""
         target = node_info.get("target")
-        path = self.resolve_path(node_info.get("path", target))
+        raw = node_info.get("path", target)
+        path = self.resolve_path(raw)
+        if raw.endswith("/"):
+            # ディレクトリの成果物（例: src/）。ファイルとして書くと src/ を作れなくなる
+            if not path.exists():
+                path.mkdir(parents=True)
+                print(f"    作成: {path.relative_to(self.work_root)}/")
+            return True
         path.parent.mkdir(parents=True, exist_ok=True)
 
         if not path.exists():
@@ -253,7 +267,16 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="起動判定のみ行い実行しない")
     parser.add_argument("--no-stop", action="store_true", help="人間ゲートで停止しない")
     parser.add_argument("--no-h8", action="store_true", help="H-8（内容不変時のmtime維持）を無効化")
+    parser.add_argument("--placeholder", action="store_true",
+                        help="サブエージェントの代わりに空のプレースホルダーを書く（DAG の空回し専用。実プロジェクトで使わない）")
     args = parser.parse_args()
+
+    if not args.dry_run and not args.placeholder:
+        print("エラー: run_workflow.py はサブエージェントを起動しません。起動判定だけなら --dry-run を付けてください。\n"
+              f"  Claude Code での実走: Workflow `/{Path(args.model).stem}`（.claude/workflows/{Path(args.model).stem}.js、args に root）\n"
+              "  DAG の空回し（プレースホルダーを書く）: --placeholder を明示し、作業根は使い捨ての場所にする",
+              file=sys.stderr)
+        return 2
 
     try:
         meta = load_workflow_meta(args.model)
