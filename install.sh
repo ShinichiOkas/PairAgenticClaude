@@ -18,9 +18,12 @@ error() { echo -e "${RED}[pair-agent]${NC} $1"; }
 
 # --- Project-only install ---  
 if [[ "${1:-}" == "--project" ]]; then  
-    if [[ -d ".pair-agent" ]]; then  
-        warn ".pair-agent/ already exists in current directory. Skipping."  
-    else  
+    if [[ -d ".pair-agent" ]]; then
+        warn ".pair-agent/ already exists in current directory. Skipping."
+        if [[ -f ".pair-agent/current-sprint.json" && ! -d ".pair-agent/current" ]]; then
+            warn "Legacy .pair-agent/current-sprint.json found. It will be migrated to .pair-agent/current/ on the next session (see sprint-lifecycle skill)."
+        fi
+    else
         if [[ -d "${CLAUDE_HOME}/pair-agent/template" ]]; then  
             cp -r "${CLAUDE_HOME}/pair-agent/template" .pair-agent  
             info "Created .pair-agent/ in $(pwd) (from ~/.claude/pair-agent/template/)"  
@@ -41,18 +44,8 @@ if [[ "${1:-}" == "--project" ]]; then
             info "Created GEMINI.md as a copy of CLAUDE.md"
         fi
 
-        # Set created_at timestamp  
-        if command -v python3 &>/dev/null; then  
-            python3 -c "  
-import json, datetime  
-with open('.pair-agent/current-sprint.json', 'r+') as f:  
-    d = json.load(f)  
-    d['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()  
-    f.seek(0); json.dump(d, f, indent=2); f.truncate()  
-" 2>/dev/null || true  
-        fi  
-        info "Add to .gitignore if needed: .pair-agent/current-sprint.json"  
-    fi  
+        info "Current sprint state is tracked per workcopy under .pair-agent/current/ (safe to commit; no .gitignore entry needed)"
+    fi
     exit 0  
 fi
 
