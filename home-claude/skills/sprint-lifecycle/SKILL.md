@@ -21,10 +21,17 @@ description: スプリントのライフサイクル管理。新しいタスク�
 `.pair-agent/current-sprint.json` が**あり**、`.pair-agent/current/` が**無い**プロジェクトでは、
 新方式へまだ移設されていない。セッション開始時にそのプロジェクトへ最初に触れる回で移設する:
 
+0. 写す前に確かめる: 旧ファイルの `sprint_id` のジャーナルが `.pair-agent/sprints/` に**既にあるか**、
+   `.pair-agent/agreements/` の**最新の合意がどれか**（status と日付）を見る。旧ファイルが閉じた
+   スプリント（ジャーナルや合意が completed）を指していたら**写さない**（閉じた記録を古い中身で
+   上書きしてしまう）。そのときは師匠に、ポインタをどのスプリントに向けるかを聞き、手順 2 へ進む
+   （由来: ray 2026-10-26。旧ポインタが閉じた repl-log を executing のまま指していて、手順 1 のとおり
+   写すと `sprints/repl-log-20261021.json` を壊すところだった。師匠承認「候補は全部承認。」）
 1. `.pair-agent/current-sprint.json` の中身（経過含む）を丸ごと
    `.pair-agent/sprints/<sprint_id>.json` へ写す（`sprint_id` が無ければゴールから採番する）
 2. 作業ツリーの鍵を計算し（下記コマンド）、`.pair-agent/current/<鍵>-<末尾ディレクトリ名>.json` を
-   ポインタとして新規作成する（`journal` に手順 1 のファイルを指す）
+   ポインタとして新規作成する（`journal` に手順 1 のファイル、手順 0 で写さなかったときは
+   師匠が選んだスプリントのジャーナルを指す）
 3. `.pair-agent/current-sprint.json` を道標に置き換える:
 ```json
 {
