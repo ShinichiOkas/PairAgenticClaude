@@ -92,4 +92,4 @@ user_model の境界タイプ:
 この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
 
 - `scripts/skill_lint.py` — Skill 群のフロントマター検査（`lint`）・maturity x category の棚卸し（`inventory`）・confirmed の数から協議深度（follow/skip/light/thorough）を決める（`depth`）（読むだけ） ／ 使い方: `python scripts/skill_lint.py --help`
-- `scripts/skill_write.py` — Skill の新規作成（`new`）と maturity の昇格・降格（`promote`。段飛ばしは原文必須、改訂履歴を自動追記）。既定は下見、`--apply` で書く ／ 使い方: `python scripts/skill_write.py --help`
+- `scripts/skill_write.py` — Skill の新規作成（`new`）と maturity の昇格・降格（`promote`。段飛ばしは原文必須、改訂履歴を自動追記）。既定は下見、`--apply` で書く。`new` は書き込み先に同じ師匠の原文（「…」15 文字以上／`> ` 引用行）を持つ既存 Skill が有れば拒否して追記を促す（外すのは `--allow-same-quote`） ／ 使い方: `python scripts/skill_write.py --help`

@@ -62,6 +62,41 @@ def append_history(text: str, line: str) -> str:
     return text.rstrip("\n") + f"\n\n## 改訂履歴\n\n{line}\n"
 
 
+MIN_QUOTE = 15
+
+
+def extract_quotes(text: str) -> list[str]:
+    """師匠の原文引用を取り出す: 「…」で囲まれた 15 文字以上（同一行内）と、`> ` で始まる引用行の 15 文字以上。
+    空白は連続を 1 つにして比べる。"""
+    found: list[str] = []
+    for ln in text.splitlines():
+        cands = re.findall(r"「([^「」]+)」", ln)
+        m = re.match(r"^\s*>\s?(.*)$", ln)
+        if m:
+            cands.append(m.group(1))
+        for c in cands:
+            n = " ".join(c.split())
+            if len(n) >= MIN_QUOTE and n not in found:
+                found.append(n)
+    return found
+
+
+def find_same_quote(base: Path, new_text: str) -> tuple[str, str] | None:
+    """書き込み先ディレクトリの既存 .md に、新しい本文と同じ引用が有れば (ファイル名, 引用) を返す。"""
+    quotes = extract_quotes(new_text)
+    if not quotes or not base.is_dir():
+        return None
+    for f in sorted(base.glob("*.md")):
+        try:
+            have = extract_quotes(f.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError):
+            continue
+        for q in quotes:
+            if q in have:
+                return f.name, q
+    return None
+
+
 def cmd_new(a) -> int:
     ts = now_stamp(a.now)
     name = a.name
@@ -96,6 +131,12 @@ def cmd_new(a) -> int:
     if a.quote:
         body += f"\n## 師匠の原文\n\n> {a.quote}\n"
     body += f"\n## 改訂履歴\n\n- [{ts}] 初版作成 (by: {proposed_by})\n"
+    if not a.allow_same_quote:
+        hit = find_same_quote(base, body)
+        if hit:
+            print(f"ERROR: 同じ宣言の既存 Skill: {hit[0]}（引用: {hit[1]}）。"
+                  "新しく作らず、その Skill へ追記する（意図して別 Skill にするなら --allow-same-quote）", file=sys.stderr)
+            return 4
     if not a.apply:
         print(f"[下見] {target}\n\n{body}")
         return 0
@@ -163,8 +204,10 @@ def main(argv: list[str] | None = None) -> int:
     n.add_argument("--quote", default="", help="師匠の原文（confirmed には必須）")
     n.add_argument("--sprint-id", default="")
     n.add_argument("--dir", default="", help="保存先（既定 <home>/skills。プロジェクト固有なら .pair-agent/skills）")
+    n.add_argument("--allow-same-quote", action="store_true",
+                   help="同じ師匠の原文を持つ既存 Skill が有っても別 Skill として書く（二重登録検査を外す）")
     n.add_argument("--apply", action="store_true")
-    pr = sub.add_parser("promote")
+    pr =sub.add_parser("promote")
     pr.add_argument("file")
     pr.add_argument("--to", required=True, choices=ORDER)
     pr.add_argument("--by", default="")

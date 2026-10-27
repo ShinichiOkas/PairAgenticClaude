@@ -110,6 +110,49 @@ def test_skill_write_new_and_promote_rules(home, capsys):
     assert "confirmed_by: null" in f.read_text(encoding="utf-8")
 
 
+LONG_QUOTE = "仕組みを変えろ、ペースを変えるな ではなく ゴールを塞ぐ仕組みを変えろ"
+
+
+def _new(w, home, name, quote, *extra):
+    return w.main(["--home", str(home), "--now", "2026-10-27 22:46", "new", "--name", name, "--category", "process",
+                   "--maturity", "confirmed", "--body", "b", "--quote", quote, *extra, "--apply"])
+
+
+def test_skill_write_rejects_same_quote_existing_skill(home, capsys):
+    w = load("skill-learning", "skill_write")
+    assert _new(w, home, "first", LONG_QUOTE) == 0
+    capsys.readouterr()
+    # 空白の違いは正規化して同一とみなす
+    assert _new(w, home, "second", LONG_QUOTE.replace(" ", "  ")) == 4
+    err = capsys.readouterr().err
+    assert "同じ宣言の既存 Skill: first.md" in err and "--allow-same-quote" in err
+    assert not (home / "skills" / "second.md").exists()
+    # 本文中の 「…」 でも検出する
+    assert w.main(["--home", str(home), "new", "--name", "third", "--category", "process", "--maturity", "forming",
+                   "--body", f"師匠は「{LONG_QUOTE}」と言った", "--apply"]) == 4
+    # 下見でも拒否する
+    assert w.main(["--home", str(home), "new", "--name", "fourth", "--category", "process", "--maturity", "confirmed",
+                   "--body", "b", "--quote", LONG_QUOTE]) == 4
+
+
+def test_skill_write_allow_same_quote(home):
+    w = load("skill-learning", "skill_write")
+    assert _new(w, home, "first", LONG_QUOTE) == 0
+    assert _new(w, home, "second", LONG_QUOTE, "--allow-same-quote") == 0
+    assert (home / "skills" / "second.md").is_file()
+
+
+def test_skill_write_short_or_no_quote_passes(home):
+    w = load("skill-learning", "skill_write")
+    assert _new(w, home, "a", "短い原文") == 0
+    assert _new(w, home, "b", "短い原文") == 0  # 15 文字未満は検査しない
+    assert w.main(["--home", str(home), "new", "--name", "c", "--category", "domain", "--body", "引用なし", "--apply"]) == 0
+    assert w.main(["--home", str(home), "new", "--name", "d", "--category", "domain", "--body", "引用なし", "--apply"]) == 0
+    # 別の dir なら同じ引用でも通る（検査は書き込み先ディレクトリ内）
+    assert _new(w, home, "e", LONG_QUOTE, "--dir", str(home / "other")) == 0
+    assert _new(w, home, "f", LONG_QUOTE, "--dir", str(home / "other2")) == 0
+
+
 def test_skill_lint_and_depth(home, capsys):
     w = load("skill-learning", "skill_write")
     lint = load("skill-learning", "skill_lint")
