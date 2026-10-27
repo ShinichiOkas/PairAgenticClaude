@@ -85,6 +85,9 @@ def test_zero_point_compare_logic():
     assert z.compare(b, slower, 2)["verdict"] == "SLOWER"
     one = {"command": ["x"], "environment": env, "stats": z.stats([1.0])}
     assert z.compare(one, same, 2)["verdict"] == "UNKNOWN"
+    # 条件（コマンド）が違えば、時間の差が閾値内でも比べない
+    other = {"command": ["y"], "environment": env, "stats": z.stats([1.0, 1.0])}
+    assert z.compare(b, other, 2)["verdict"] == "INVALID"
 
 
 # ---- 較正

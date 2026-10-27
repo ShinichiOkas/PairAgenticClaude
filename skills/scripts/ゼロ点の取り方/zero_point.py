@@ -71,6 +71,8 @@ def compare(base, cur, k):
     if base["environment"]["git"]["head"] and base["environment"]["git"]["head"] == cur["environment"]["git"]["head"] \
             and not cur["environment"]["git"]["dirty"]:
         notes.append("注意: HEAD が同じで作業ツリーも綺麗。変更前後の比較になっていない")
+    if any(n.startswith("条件不一致") for n in notes):
+        verdict = "INVALID"  # 条件が違う測定どうしは比べない（時間の差がたまたま閾値内でも SAME と言わない）
     return {"verdict": verdict, "notes": notes}
 
 
