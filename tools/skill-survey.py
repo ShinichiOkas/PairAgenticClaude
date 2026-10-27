@@ -5,8 +5,6 @@ import json
 import os
 import sys
 import re
-import threading
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -40,7 +38,6 @@ DEFAULT_CONFIG = {
     "output_dir": "~/.claude/pair-agent/skill-library",
     "model": "claude-haiku-4-5-20251001",
     "also_survey_global": True,
-    "concurrency": 8,
 }
 
 SYSTEM_PROMPT = """\
@@ -220,7 +217,7 @@ def analyze_skill(content: str, skill_info: dict, client: anthropic.Anthropic, m
     try:
         response = client.messages.create(
             model=model,
-            max_tokens=16000,
+            max_tokens=4096,
             system=[
                 {
                     "type": "text",
@@ -230,9 +227,8 @@ def analyze_skill(content: str, skill_info: dict, client: anthropic.Anthropic, m
             ],
             messages=[{"role": "user", "content": user_msg}],
         )
-        # thinking ブロックが先頭に来ることがあるので、最初の text ブロックを読む
-        text_block = next((b for b in response.content if b.type == "text"), None)
-        raw = (text_block.text if text_block else "").strip()  # type: ignore[union-attr]
+        block = response.content[0]
+        raw = (block.text if block.type == "text" else "").strip()  # type: ignore[union-attr]
         # Extract JSON block if wrapped in code fences
         m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
         if m:
@@ -318,12 +314,7 @@ def update_index(output_dir: Path, results: list, survey_date: str) -> None:
 
 
 def write_survey_report(output_dir: Path, results: list, survey_date: str, total_found: int) -> Path:
-    # 同じ日に再実行しても前の報告書を上書きしない（-2, -3 ... と別名にする）
     report_path = output_dir / f"survey-report-{survey_date[:10]}.md"
-    counter = 2
-    while report_path.exists():
-        report_path = output_dir / f"survey-report-{survey_date[:10]}-{counter}.md"
-        counter += 1
 
     pending = [r for r in results if r["status"] == "pending"]
     skipped = [r for r in results if r["status"] == "skipped"]
@@ -405,24 +396,21 @@ def main() -> None:
     processed = load_processed(output_dir)
     client = anthropic.Anthropic()
     results = []
-    lock = threading.Lock()
 
-    def process_one(skill_info: dict) -> None:
+    for skill_info in all_skills:
         path = skill_info["path"]
         print(f"\n  Analyzing: {path}")
 
         if path in processed:
             print("    → already processed, skipping")
             name = extract_frontmatter_field(read_skill_file(path) or "", "name") or Path(path).stem
-            with lock:
-                results.append({**skill_info, "status": "already_processed", "name": name})
-            return
+            results.append({**skill_info, "status": "already_processed", "name": name})
+            continue
 
         content = read_skill_file(path)
         if content is None:
-            with lock:
-                results.append({**skill_info, "status": "error", "error": "could not read file", "name": Path(path).stem})
-            return
+            results.append({**skill_info, "status": "error", "error": "could not read file", "name": Path(path).stem})
+            continue
 
         skill_info["original_content"] = content
         analysis = analyze_skill(content, skill_info, client, config["model"])
@@ -430,48 +418,39 @@ def main() -> None:
         name = extract_frontmatter_field(content, "name") or Path(path).stem
 
         if analysis is None:
-            with lock:
-                results.append({**skill_info, "status": "error", "error": "analysis failed", "name": name})
-            return
+            results.append({**skill_info, "status": "error", "error": "analysis failed", "name": name})
+            continue
 
         score = analysis.get("generalizable_score", "skip")
         print(f"    → score: {score}")
 
         if score in ("low", "skip"):
-            with lock:
-                processed.add(path)
-                results.append({
-                    **skill_info,
-                    "status": "skipped",
-                    "name": name,
-                    "generalizable_score": score,
-                    "detected_specifics": analysis.get("detected_specifics", []),
-                    "notes": analysis.get("notes", ""),
-                })
-                save_processed(output_dir, processed)
-            return
-
-        # pending の書き出し（連番の衝突回避を含む）もロックの内側で行う
-        with lock:
-            library_path = write_pending_skill(
-                analysis["generalized_content"], skill_info, analysis, output_dir, survey_date
-            )
-            print(f"    → pending: {library_path}")
             processed.add(path)
             results.append({
                 **skill_info,
-                "status": "pending",
+                "status": "skipped",
                 "name": name,
-                "library_path": library_path,
                 "generalizable_score": score,
                 "detected_specifics": analysis.get("detected_specifics", []),
                 "notes": analysis.get("notes", ""),
             })
-            save_processed(output_dir, processed)  # 途中で落ちても続きから再開できるよう毎回保存
+            continue
 
-    workers = max(1, int(config.get("concurrency", 8)))
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        list(executor.map(process_one, all_skills))
+        library_path = write_pending_skill(
+            analysis["generalized_content"], skill_info, analysis, output_dir, survey_date
+        )
+        print(f"    → pending: {library_path}")
+        processed.add(path)
+
+        results.append({
+            **skill_info,
+            "status": "pending",
+            "name": name,
+            "library_path": library_path,
+            "generalizable_score": score,
+            "detected_specifics": analysis.get("detected_specifics", []),
+            "notes": analysis.get("notes", ""),
+        })
 
     save_processed(output_dir, processed)
     print("\n[skill-survey] Updating index and writing report...")
