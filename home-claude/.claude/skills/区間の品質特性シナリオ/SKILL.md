@@ -35,3 +35,9 @@ Source＝始点メッセージの送り手／Stimulus＝始点メッセージ／
 - **Environment は SEI の意味（シナリオの実行条件）で使う。** 42010 の environment（システムを取り巻く文脈）とは別
 - **同じ区間に別の関心事の目標を並べてよい**（1 回の電力量、吹きこぼれ 0 件）。内側への配分は → 区間目標の予算配分
 - ⚠ 食い違い（師匠に確認）: 教科書 §14.4 は「Response と Response measure、場合により Environment を特定すれば十分」（他はユースケースシナリオで導出済みのため）。手法は区間から六要素すべてを決め、欠けを検出する（MD-039・T8）
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/qas_sections.py` — 品質特性シナリオ（QS）の六要素（Source／Stimulus／Environment／Artifact／Response／Response Measure）の有無を並べ、欠けを指摘する。 ／ 使い方: `python scripts/qas_sections.py --help`
