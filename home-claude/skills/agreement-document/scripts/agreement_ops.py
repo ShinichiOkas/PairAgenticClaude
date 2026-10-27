@@ -147,7 +147,7 @@ def cmd_append(a) -> int:
     if re.search(rf"^##\s*{re.escape(title)}\s*$", t, re.M):
         # その節の末尾（次の ## の直前）へ
         m = re.search(rf"^##\s*{re.escape(title)}\s*$(.*?)(?=^##\s|\Z)", t, re.S | re.M)
-        end = m.end()
+        end = m.end() if m else len(t)
         t = t[:end].rstrip("\n") + "\n\n" + entry + ("\n" if t[end:] else "") + t[end:]
     else:
         t = t.rstrip("\n") + f"\n\n## {title}\n\n{entry}"

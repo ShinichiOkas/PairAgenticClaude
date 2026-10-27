@@ -55,7 +55,7 @@ def plan(inputs, logs, env_names, now, event_time, cwd):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--input", action="append", default=[], help="入力そのもの（複数可）")
     ap.add_argument("--log", action="append", default=[], help="ログ（複数可）")
     ap.add_argument("--env", action="append", default=[], help="記録する環境変数名")
@@ -101,5 +101,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

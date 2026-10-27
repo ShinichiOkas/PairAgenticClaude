@@ -42,7 +42,7 @@ def scan_file(path, names, internal_dir):
                 mods = [node.module]
             for m in mods:
                 if m.split(".")[0] in names or any(part in names for part in m.split(".")):
-                    findings.append((path, node.lineno, "内部モジュールの import", m))
+                    findings.append((path, getattr(node, "lineno", 0), "内部モジュールの import", m))
     idir = Path(internal_dir).name if internal_dir else None
     for n, line in enumerate(text.splitlines(), start=1):
         if PATCH_PAT.search(line):

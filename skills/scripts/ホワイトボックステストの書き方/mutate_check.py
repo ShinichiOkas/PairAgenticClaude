@@ -135,7 +135,7 @@ def run_tests(cmd, cwd, timeout):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--src", required=True, help="変異させるファイル（--root からの相対）")
     ap.add_argument("--root", default=".", help="複写して試すプロジェクト根")
     ap.add_argument("--test-cmd", required=True)
@@ -200,5 +200,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

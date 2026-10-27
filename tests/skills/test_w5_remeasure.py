@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def load(skill, name):
     p = ROOT / "skills" / "scripts" / skill / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"w5_{name}", p)
+    assert spec is not None and spec.loader is not None
     m = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = m
     spec.loader.exec_module(m)

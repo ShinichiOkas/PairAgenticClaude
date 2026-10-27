@@ -99,7 +99,7 @@ def lint(text):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("ticket", nargs="?")
     ap.add_argument("--template", action="store_true", help="雛形を標準出力へ出す")
     ap.add_argument("--json", action="store_true")
@@ -123,5 +123,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

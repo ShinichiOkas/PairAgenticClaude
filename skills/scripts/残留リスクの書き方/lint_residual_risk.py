@@ -43,7 +43,7 @@ def read(path: str) -> str:
 
 def risk_section(text: str) -> list[str]:
     lines = text.splitlines()
-    start = level = None
+    start, level = None, 0
     for i, ln in enumerate(lines):
         m = re.match(r"^(#{1,6})\s+(.*)$", ln)
         if m and "残留リスク" in m.group(2):

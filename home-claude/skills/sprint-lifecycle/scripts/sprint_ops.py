@@ -26,7 +26,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 for _s in (sys.stdout, sys.stderr):
     try:
-        _s.reconfigure(encoding="utf-8")
+        _s.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -325,7 +325,7 @@ def cmd_migrate(a) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--project", default=".", help="プロジェクトルート（.pair-agent を含む）")
     p.add_argument("--host", default="", help="ホスト名（テスト用。既定は実ホスト名）")
     p.add_argument("--toplevel", default="", help="git toplevel の上書き（テスト用）")

@@ -177,7 +177,7 @@ def _write_new(path, text):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("snapshot")
     s.add_argument("paths", nargs="+")
@@ -226,5 +226,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

@@ -75,6 +75,8 @@ def load(home: Path) -> list[dict]:
         domains = fm.get("related_domains") or []
         if isinstance(domains, str):
             domains = [domains]
+        elif not isinstance(domains, list):
+            domains = [str(domains)]
         psid = str(fm.get("proposed_skill_id") or "").strip()
         out.append({
             "file": f.name, "date": date, "trigger": str(fm.get("trigger") or "(不明)"),

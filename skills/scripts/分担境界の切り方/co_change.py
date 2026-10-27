@@ -74,7 +74,7 @@ def analyze(commits, depth=1, groups=None, max_files=50):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--repo")
     src.add_argument("--log", help="git log 出力ファイル（- で標準入力）")
@@ -134,5 +134,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

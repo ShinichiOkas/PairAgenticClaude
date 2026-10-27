@@ -92,7 +92,7 @@ def iter_py(paths):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--fail-on", choices=["silent", "low-level", "never"], default="silent")
@@ -127,5 +127,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

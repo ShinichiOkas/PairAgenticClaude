@@ -117,7 +117,7 @@ def analyze(root, depth=1):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("root")
     ap.add_argument("--depth", type=int, default=1)
     ap.add_argument("--max-cross", type=int, default=None, help="括り間の辺の上限")
@@ -145,5 +145,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.exit(main())

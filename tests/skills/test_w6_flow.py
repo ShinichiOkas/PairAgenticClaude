@@ -15,6 +15,7 @@ ROOT = REPO / "home-claude" / "skills"
 
 def load(skill, name):
     spec = importlib.util.spec_from_file_location(f"w6_{name}", ROOT / skill / "scripts" / f"{name}.py")
+    assert spec is not None and spec.loader is not None
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
