@@ -4,7 +4,7 @@ description: "同期担当 — リポジトリの状態 を作る（devops）。
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: gemini-3.8-flash
 skills: ["バージョン管理の作法"]
-maxTurns: 25
+maxTurns: 200
 ---
 
 <!-- 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/devops.mk ／ 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/devops.mk -->
@@ -63,7 +63,7 @@ maxTurns: 25
 ## 文脈の節約規約（Mnemo 実測成果）
 
 - **モデル階層**: Tier 3 (定型・機械的実行) — モデル `gemini-3.8-flash` が割り当てられています。
-- **呼び出し上限 (maxTurns: 25)**: 費用は「呼び出し回数 × そのときの文脈」で決まる。上限に達した場合は完了報告とともに引き継ぎ内容を出力して終了すること。
+- **呼び出し上限 (maxTurns: 200)**: maxTurns は信用の数値である。中断は最も効率の悪い行為なので、**区切りごとに成果を書き出し、最後まで届ける**。上限に近づいたら成果を書き出して引き継ぎ内容を添えて終えること（費用は「呼び出し回数 × そのときの文脈」で決まるので、文脈を膨らませない）。大きい作業は起こす前に割って並列にする。
 - **検索パスの絞り込み**: Grep / Glob はプロジェクトルートから広範囲に打たず、必要なサブディレクトリに絞って実行すること。
 - **不要ファイルの読み出し禁止**: 巨大なログや無関係なモジュールを安易に読まないこと。
 - ⚠ **BOM の禁止**: git コミットメッセージには絶対に UTF-8 BOM (U+FEFF) を混入させてはならない。
