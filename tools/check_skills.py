@@ -12,10 +12,14 @@
 - `layer:`        どの層に装着するか（メタ／ドメイン／両方）。`.tasks` の実際の使われ方と突き合わせる
 - `applies_when:` いつ効くか。**未測定と書いてよい。書かないのは駄目**
 - `requires_deps:` この skill が働くために dep に無ければならない成果物。`.mk` と突き合わせる
+
+**装着の上限の検査（2026-10-28 追加）:** サブエージェントに本文が入る skill は先頭 32 件まで。
+`.tasks` の 1 task と、生成済みエージェント定義の `skills:` の両方を数える
 """
 from __future__ import annotations
 
 import ast
+import json
 import re
 import sys
 import unicodedata
@@ -31,6 +35,14 @@ ROOT = Path(__file__).resolve().parent.parent
 CAP_FILE = ROOT / "skills" / "capabilities.cap"
 SKILL_DIR = ROOT / "skills"
 MACHINE = "（機械）"
+# サブエージェントの frontmatter `skills:` は、先頭 32 件（重複を除く）しか本文として読み込まれない。
+#   出典: https://code.claude.com/docs/en/sub-agents 「Preload skills into subagents」
+#         "up to the first 32 distinct names in the list"
+#   2026-10-28 に実機で確かめた: 65 件を装着した役に本文が入っていたのは辞書順の先頭 32 件だけ。
+#   33 件目以降は名前と要約しか無く、**黙って落ちていた**（生成も検査も何も言わなかった）
+PRELOAD_LIMIT = 32
+# 生成済みエージェント定義の置き場（emit_agents.py の --dest=local と --dest=home-claude）
+AGENT_DIRS = (".claude/agents", ".agents/agents", "home-claude/.claude/agents")
 
 
 def parse_cap(path: Path) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
@@ -144,6 +156,83 @@ def check_weapons(skill_dir: Path, home_skills_dir: Path | None = None) -> list[
                 p = _docstring_problem(py, d.name + "/scripts/" + py.name)
                 if p:
                     problems.append(p)
+    return problems
+
+
+PRELOAD_TAIL = (" —— サブエージェントに本文が入るのは先頭 " + str(PRELOAD_LIMIT)
+                + " 件まで。超えた分は名前と要約だけになり、**黙って落ちる**")
+
+
+def check_preload_tasks(task_files: list[Path]) -> list[str]:
+    """`.tasks` の 1 task が要求する skill（重複を除く）が上限を超えていないか"""
+    problems: list[str] = []
+    for tf in task_files:
+        for task, skills in parse_tasks(tf).items():
+            n = len(set(skills))
+            if n > PRELOAD_LIMIT:
+                problems.append("[装着の上限超え] " + tf.name + " の `" + task
+                                + "` が要求する skill が " + str(n) + " 件" + PRELOAD_TAIL
+                                + "（役を割るか、装着を減らす）")
+    return problems
+
+
+def agent_skills(path: Path) -> list[str] | None:
+    """エージェント定義の frontmatter `skills:` を読む。欄が無ければ None。
+
+    emit_claude.py は `skills: ["a", "b"]`（JSON の配列）で書く。手書きの `[a, b]` と、
+    ブロック形式（次の行から `- a`）も読む
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    fm: list[str] = []
+    for ln in lines[1:]:
+        if ln.strip() == "---":
+            break
+        fm.append(ln)
+    for i, ln in enumerate(fm):
+        if not ln.startswith("skills:"):
+            continue
+        rest = ln.split(":", 1)[1].strip()
+        if rest.startswith("["):
+            try:
+                return [str(s) for s in json.loads(rest)]
+            except ValueError:
+                return [s.strip().strip("\"'") for s in rest.strip("[]").split(",") if s.strip()]
+        out: list[str] = []
+        for b in fm[i + 1:]:
+            if not b.strip().startswith("-"):
+                break
+            out.append(b.strip()[1:].strip().strip("\"'"))
+        return out
+    return None
+
+
+def check_preload_agents(agent_dirs: list[Path]) -> list[str]:
+    """生成済みエージェント定義の `skills:`（重複を除く）が上限を超えていないか。
+
+    task ごとに上限を守っても、1 役が複数の task を束ねれば超えうる（`split_by_skill`）。
+    だから生成物の側でも数える
+    """
+    problems: list[str] = []
+    for d in agent_dirs:
+        if not d.is_dir():
+            continue
+        for f in sorted(d.glob("*.md")):
+            skills = agent_skills(f)
+            if skills is None:
+                continue
+            names = list(dict.fromkeys(skills))
+            if len(names) <= PRELOAD_LIMIT:
+                continue
+            try:
+                label = f.relative_to(ROOT).as_posix()
+            except ValueError:
+                label = f.as_posix()
+            problems.append("[装着の上限超え] `" + label + "` の `skills:` が "
+                            + str(len(names)) + " 件" + PRELOAD_TAIL + "（"
+                            + str(PRELOAD_LIMIT + 1) + " 件目の `" + names[PRELOAD_LIMIT]
+                            + "` から " + str(len(names) - PRELOAD_LIMIT) + " 件）")
     return problems
 
 
@@ -261,6 +350,12 @@ def main() -> int:
                 problems.append("[dep 不足] `" + s + "` は `" + r
                                 + "` を要求するが、" + model + ".mk の `"
                                 + task + "` の deps に無い —— " + tail)
+
+    # ── 装着の上限（2026-10-28）──────────────────────────────────
+    # **65 件を装着した役が、実際には辞書順の先頭 32 件しか読んでいなかった。**
+    # 生成も検査も黙っていた。task と、生成済みの役（複数の task を束ねうる）の両方を数える
+    problems += check_preload_tasks(task_files)
+    problems += check_preload_agents([ROOT / d for d in AGENT_DIRS])
 
     problems += check_weapons(SKILL_DIR, ROOT / "home-claude" / "skills")
 

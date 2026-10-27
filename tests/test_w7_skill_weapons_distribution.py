@@ -3,7 +3,11 @@
 emit_claude / emit_agents が `skills/scripts/<名前>/` を `<dest>/skills/<名前>/scripts/` に写し
 SKILL.md に「武器」節を足すこと、無い Skill は従来どおりであること、
 check_skills が孤児ディレクトリと docstring 欠落を拾うことを、一時ディレクトリで確かめる。
+
+あわせて check_skills の装着の上限（2026-10-28）—— 1 task と生成済みエージェント定義の
+`skills:` が 32 件（重複を除く）を超えたら問題にすること —— を、32／33 の境目で確かめる。
 """
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -131,3 +135,72 @@ def test_check_weapons_home_claude(world):
     assert "proc/scripts/nodoc.py" in text
     assert "noskill/scripts/" in text and "`SKILL.md` が無い" in text
     assert "ok.py" not in text
+
+
+# ── 装着の上限（check_skills.PRELOAD_LIMIT）── 境目は 32（通る）／33（拾う）──
+
+def _names(n):
+    return ["技法" + format(i, "02d") for i in range(n)]
+
+
+def _agent(path, skills_lines):
+    path.write_text("---\nname: x\ndescription: \"d\"\ntools: Read\nmodel: inherit\n"
+                    + skills_lines + "---\n\n本文\n", encoding="utf-8")
+
+
+def test_preload_limit_is_32():
+    assert check_skills.PRELOAD_LIMIT == 32
+
+
+def test_preload_tasks_boundary(tmp_path):
+    tf = tmp_path / "m.tasks"
+    tf.write_text("ok32    : " + ", ".join(_names(32)) + "\n"
+                  "dup     : " + ", ".join(_names(32) + _names(2)) + "\n"  # 34 個書いたが重複を除くと 32
+                  "over    : " + ", ".join(_names(33)) + "\n"
+                  "machine : （機械）\n", encoding="utf-8")
+    probs = check_skills.check_preload_tasks([tf])
+    assert len(probs) == 1
+    assert probs[0].startswith("[装着の上限超え] m.tasks の `over`")
+    assert "33 件" in probs[0]
+
+
+def test_preload_agents_boundary(tmp_path):
+    d = tmp_path / "agents"
+    d.mkdir()
+    _agent(d / "a32.md", "skills: " + json.dumps(_names(32), ensure_ascii=False) + "\n")
+    _agent(d / "a33.md", "skills: " + json.dumps(_names(33), ensure_ascii=False) + "\n")
+    _agent(d / "dup.md", "skills: " + json.dumps(_names(32) + _names(3), ensure_ascii=False) + "\n")
+    _agent(d / "none.md", "")
+    (d / "notes.md").write_text("frontmatter の無い文書\nskills: " + ", ".join(_names(40)) + "\n",
+                                encoding="utf-8")
+    probs = check_skills.check_preload_agents([d, tmp_path / "無いディレクトリ"])
+    assert len(probs) == 1
+    assert "a33.md" in probs[0] and "33 件" in probs[0]
+    assert "`技法32` から 1 件" in probs[0]  # 33 件目から落ちる
+
+
+def test_preload_agents_other_forms(tmp_path):
+    d = tmp_path / "agents"
+    d.mkdir()
+    _agent(d / "flow.md", "skills: [" + ", ".join(_names(33)) + "]\n")  # 引用なしの流れ形式
+    _agent(d / "block.md", "skills:\n" + "".join("  - " + s + "\n" for s in _names(33)))
+    _agent(d / "block32.md", "skills:\n" + "".join("  - " + s + "\n" for s in _names(32)))
+    probs = check_skills.check_preload_agents([d])
+    text = "\n".join(probs)
+    assert len(probs) == 2 and "flow.md" in text and "block.md" in text
+
+
+def test_preload_reads_what_emit_writes(world, tmp_path):
+    """emit_claude が書く `skills:` を、検査が同じ名前で読む（書く側と読む側の一致）"""
+    out = tmp_path / "agents"
+    out.mkdir()
+    for name, body in make_emit(world).agent_files().items():
+        (out / name).write_text(body, encoding="utf-8")
+    got = {f.name: check_skills.agent_skills(f) for f in out.glob("*.md")}
+    dat = [v for k, v in got.items() if k.endswith("design-acceptance-tests.md")]
+    assert dat == [["武器技法", "無印技法"]]
+
+
+def test_preload_repo_tasks_within_limit():
+    """リポジトリの models/*.tasks に、上限を超える task が無い（2026-10-28 のアーキテクト分割の後）"""
+    assert check_skills.check_preload_tasks(sorted((REPO / "models").glob("*.tasks"))) == []
