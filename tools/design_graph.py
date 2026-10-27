@@ -1426,7 +1426,7 @@ class DesignGraph:
             oa = o["attrs"]
             rows.append({"dp": d["id"], "title": d["title"], "conditions": list(dec.get("conditions") or []),
                          "adopted": {"id": oid, "title": o["title"], "state": o["state"], "viewpoint": oa.get("viewpoint"),
-                                     "cons": _cons_list(oa.get("cons")), "must": oa.get("must"),
+                                     "pros": oa.get("pros"), "cons": _cons_list(oa.get("cons")), "must": oa.get("must"),
                                      "must_not": oa.get("must_not")},
                          "rejected": rejected, "relations": rels,
                          "concerns": [r["id"] for r in self.why(d["id"]) if r["kind"] == "concern"]})
