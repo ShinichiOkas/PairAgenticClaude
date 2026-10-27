@@ -182,7 +182,15 @@ python ~/.claude/pair-agent/tools/skill-survey.py discover [--since <日時>] [-
 - `.processed.json` が JSON として読めない（空ファイルを含む）・形が違う（`processed` が配列でない、`hashes` がオブジェクトでない）ときは、何も書かずにパスと理由を出して止まる（空として扱って全件を再サーベイしない）。discover・ingest とも同じ
 - ポインタのスタブ（description が「ポインタ」で始まる。正典はグローバル側）は既定で対象から外し、処理済みとして登録する（`--since` の起点以前のものも、スタブとして数える）。対象に入れるときだけ `--include-stubs`
 - ingest していない作業が残っていると止まる。捨ててよいと師匠が判断したときだけ `--force`
-- ⚠ ingest が途中まで進んだ作業（pending を 1 件以上書いたが ingest 済みでない）は、`--force` でも作り直さず、「ingest をやり直す」案内を出して終了コード 1 で止まる（作り直すと控えが失われ、pending が重複する）。どうしても捨てるときだけ `discover --discard-partial`（書き済みの pending は残る。師匠が判断したときだけ）。pending を 1 件も書いていない失敗は、これまでどおり `--force` で作り直せる
+- ⚠ ingest が途中まで進んだ作業（ingest が出力先 —— pending・`.processed.json`・index・レポートのどれか —— に実際に書いた後で落ち、ingest 済みでない。manifest の `output_touched` が真。pending が 0 件でも、`.processed.json`・index・レポートを書いた後で落ちていれば該当する）は、`--force` でも作り直さず、「ingest をやり直す」案内（出力先に実際にある pending の件数を添える）を出して終了コード 1 で止まる（作り直すと控えが失われ、pending が重複する）。どうしても捨てるときだけ `discover --discard-partial`（書き済みの pending は残る。師匠が判断したときだけ）。**書き込みがエラーで失敗して、何も書けなかったもの**（pending の場所が通常ファイルで 1 件も書けない、など）は「書いた」に数えず、`output_touched` を偽に戻す。何も書く前に落ちたもの（書き込みの前の manifest の拒否・`--dry-run` を含む）と合わせて、これまでどおり `--force` で作り直せる。真のまま残るのは、控えの保存と書き込みの間でプロセスが強制終了された場合（安全な側）
+- `--discard-partial` が外すのは「途中まで取り込んだ」状態の見張りだけ。途中まで取り込んでいない未 ingest の作業（discover の直後など）は、`--discard-partial` だけでは止まり（終了コード 1・何も消さない）、`--force` が要る。`--force` と併用すれば従来の `--force` と同じ
+- manifest が壊れているときは、`--force`（または `--discard-partial` 単独）で作り直す。「壊れた」は、JSON として読めない・形が違う・控えの値が下の検査で拒否される、のすべて。このとき、途中まで取り込んだかを判定できなかった旨の警告を 1 行出す（取り込み済みの pending が出力先に残っていれば、重複しうる）。フラグ無しでは、何も消さずに止まる
+- ingest は、書き込みの前に manifest の形を検める。控えは ingest 自身が書く形だけを通す: `pending_files`（idx → 出力先からの相対パス）の値は `pending/<名前>.md`（区切りは `/` か `\`・小文字の `.md`・名前は空でなく `:` `/` `\` と制御文字を含まない。2 つの idx が同じファイルを指すものは拒否）、`report_file`（ファイル名のみ）は `survey-report-<YYYY-MM-DD>.md` か `survey-report-<YYYY-MM-DD>-<2 以上の数>.md`（日付は `ingest_started_at` の日付と一致）、`ingest_started_at` は `YYYY-MM-DDTHH:MM:SS`（任意で小数秒と `Z` か `±HH:MM`。実在する日時）。`index.md`・`.processed.json`・`.survey-work/…` を指す値は拒否される。違えば何も書かずに終了コード 1
+- manifest の検査の補足: `targets` の各要素の `idx`・`path`・`project`・`scope` は空でない文字列（無いのも拒否）。控えのキー（`ingest_started_at`・`report_file`・`pending_files`・`index_done`・`output_touched`・`hashes`）は、**無いのは受理し、あって型が違うもの（`null` を含む）は拒否する**（`null` を欠けている扱いにすると、index の節・レポートが二重になる）。`ingested_at` だけは、discover が `null` で書く
+- 日付はこの機械のローカル日付。`ingest_started_at` はローカル時刻を UTC オフセット付きで書く（例 `2026-10-28T02:48:00+09:00`）。レポート名・index の節の日付・pending の `survey_date` は、その先頭 10 文字から作る（0 時をまたいだ再 ingest でも同じ）
+- pending のファイル名は、汎化版の `name` から作る。`name` が無い、または `|` や記号だけでファイル名の本体が空になるときは、元ファイルの stem を使う（警告を出す）。stem からも空になるときは `skill-<idx>.md`
+- meta 由来の文字列（エラー文言を含む）は、レポート・index・標準出力・標準エラーのどこでも 1 行にする: 改行と、ほかの制御文字（C0・DEL・C1〈U+0085 を含む〉・U+2028・U+2029）は空白 1 つに置き換える（repr の `
+` 表記にはしない）。NBSP・ゼロ幅・双方向制御の文字はそのまま残す
 
 書かれるもの（`<output_dir>/.survey-work/`）: `manifest.json`・`instructions.md`（判定・汎化の規約）・`batch-NN.json`・空の `out/`。
 
@@ -299,7 +307,7 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 ```
 
 プロジェクトを追加したときはこのファイルに追記する。
-`project_roots` と `output_dir` は先頭の `~` がホームに展開される。`output_dir` は空でない文字列、`project_roots` の要素も空でない文字列でなければ設定エラー。
+`project_roots` と `output_dir` は先頭の `~` がホームに展開される。`output_dir` は空でない文字列、`project_roots` の要素も空でない文字列でなければ設定エラー。展開した後で**絶対パスにならない**もの（`.`・`..`・`rel/dir`・`C:rel` など）は設定エラー（何も書かずに終了コード 1。カレントディレクトリで意味が変わるため）。
 `also_survey_global: true` はグローバルスキル（数百件ある）も対象にする。差分の棚卸しでは `false` にしておくとよい。
 harvest モードでは `project_roots` だけを使う（他のキーはスクリプト用）。
 

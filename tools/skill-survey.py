@@ -110,12 +110,16 @@ def validate_config(cfg: dict, config_path: Path) -> None:
         raise ConfigError(f"設定 `project_roots` は文字列の配列にしてください（今: {roots!r}）: {config_path}")
     if any(not r.strip() for r in roots):  # "" は Path("") = カレントディレクトリになってしまう
         raise ConfigError(f"設定 `project_roots` の要素は空でない文字列にしてください（今: {roots!r}）: {config_path}")
+    if any(not resolve_path(r).is_absolute() for r in roots):  # 相対パスは、実行したときのカレントディレクトリで意味が変わる
+        raise ConfigError(f"設定 `project_roots` の要素は絶対パス（`~` で始めてもよい）にしてください（今: {roots!r}）: {config_path}")
     depth = cfg["max_depth"]
     if isinstance(depth, bool) or not isinstance(depth, int) or depth < 1:
         raise ConfigError(f"設定 `max_depth` は 1 以上の整数にしてください（今: {depth!r}）: {config_path}")
     out = cfg["output_dir"]
     if not isinstance(out, str) or not out.strip():  # "" は Path("") = カレントディレクトリに作業ディレクトリができる
         raise ConfigError(f"設定 `output_dir` は空でない文字列にしてください（今: {out!r}）: {config_path}")
+    if not resolve_path(out).is_absolute():  # "." や ".." はカレントディレクトリ（やその親）に作業ディレクトリができてしまう
+        raise ConfigError(f"設定 `output_dir` は絶対パス（`~` で始めてもよい）にしてください（今: {out!r}）: {config_path}")
     if not isinstance(cfg["also_survey_global"], bool):
         raise ConfigError(
             f"設定 `also_survey_global` は true / false にしてください（今: {cfg['also_survey_global']!r}）: {config_path}"
@@ -220,10 +224,21 @@ def load_processed_state(output_dir: Path) -> tuple:
     return set(processed), dict(hashes)
 
 
-def save_processed(output_dir: Path, processed: set, hashes: Optional[dict] = None) -> None:
-    processed_path = output_dir / ".processed.json"
+def processed_text(processed: set, hashes: Optional[dict] = None) -> str:
     data = {"processed": sorted(processed), "hashes": dict(sorted((hashes or {}).items()))}
-    write_text_lf(processed_path, json.dumps(data, indent=2, ensure_ascii=False))
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+def save_processed(output_dir: Path, processed: set, hashes: Optional[dict] = None) -> None:
+    write_text_lf(output_dir / ".processed.json", processed_text(processed, hashes))
+
+
+def processed_written(output_dir: Path, processed: set, hashes: Optional[dict] = None) -> bool:
+    """書き込みの失敗の後で、`.processed.json` が実際に今回の中身になっているか（書けていたのに後で失敗した場合の見分け）。"""
+    try:
+        return (output_dir / ".processed.json").read_bytes() == processed_text(processed, hashes).encode("utf-8")
+    except OSError:
+        return False
 
 
 def content_hash(text: str) -> str:
@@ -250,11 +265,17 @@ def write_text_lf(path: Path, text: str) -> None:
         raise
 
 
+_LINE_BREAKERS = re.compile("\r\n|[\x00-\x1f\x7f-\x9f\u2028\u2029]")  # CRLF は 1 つの空白。C0・DEL・C1（U+0085 を含む）・U+2028・U+2029 も 1 文字ずつ空白
+
+
 def one_line(value) -> str:
-    """レポート・index の 1 行に書く文字列。改行（CR・LF）は空白に置き換える（meta 由来の文字列が行を壊さないように）。"""
+    """レポート・index・標準出力／標準エラーの 1 行に書く文字列。改行と、ほかの制御文字（C0・C1・U+2028・U+2029）は空白に置き換える。
+
+    meta 由来の文字列が行を壊さないように。repr の表記（`\\n` の 2 文字）にはしない。
+    """
     if value is None:
         return ""
-    return re.sub(r"\r\n|\r|\n", " ", value if isinstance(value, str) else str(value))
+    return _LINE_BREAKERS.sub(" ", value if isinstance(value, str) else str(value))
 
 
 def same_path(a, b) -> bool:
@@ -274,7 +295,7 @@ def read_skill_file(path: str) -> Optional[str]:
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
     except Exception as e:
-        print(f"  [warn] Could not read {path}: {e}")
+        print(f"  [warn] Could not read {one_line(path)}: {one_line(e)}")
         return None
 
 
@@ -363,13 +384,22 @@ def personal_info_hits(content: str) -> list:
 # ---------------------------------------------------------------------------
 
 
+def pending_slug(generalized_content: str, skill_info: dict) -> str:
+    """pending のファイル名の本体。name から作れない（無い・`|` や記号だけで空になる）ときは、元ファイルの stem を使う。stem からも空になるときは `skill-<idx>`。
+
+    作った名前は、必ず R13 の pending_files の規則（recorded_rel_ok）を満たす（自分で書いた控えを自分で拒否しない）。
+    """
+    for candidate in (frontmatter_field(generalized_content, "name"), Path(skill_info["path"]).stem):
+        slug = slugify(candidate)
+        if slug and recorded_rel_ok("pending", f"pending/{slug}.md"):
+            return slug
+    return f"skill-{skill_info.get('idx', '0')}"  # stem からも本体が空になるとき（idx は validate_manifest が [0-9A-Za-z_-] に限っている）
+
+
 def plan_pending_path(generalized_content: str, skill_info: dict, output_dir: Path, reserved: set) -> Path:
     """pending に書くファイルの名前を決める。既存のファイル・ディレクトリと、予約済みの名前は避ける（-1, -2 …）。"""
     pending_dir = output_dir / "pending"
-    name = frontmatter_field(generalized_content, "name")
-    if not name:
-        name = Path(skill_info["path"]).stem
-    slug = slugify(name)
+    slug = pending_slug(generalized_content, skill_info)
 
     candidate = pending_dir / f"{slug}.md"
     counter = 1
@@ -460,7 +490,10 @@ def plan_report_path(output_dir: Path, survey_date: str) -> Path:
 
     同名の「ファイルまたはディレクトリ」があればその名前は使わない（exists() はどちらも真）。
     """
-    stem = f"survey-report-{survey_date[:10]}"
+    day = survey_date[:10]
+    if not day_ok(day):  # ファイル名に入れる日付は、検めた YYYY-MM-DD だけ
+        raise SurveyError(f"レポートの名前に使う日付が YYYY-MM-DD ではありません: {day!r}")
+    stem = f"survey-report-{day}"
     n = 1
     while True:
         report_path = output_dir / (f"{stem}.md" if n == 1 else f"{stem}-{n}.md")
@@ -554,20 +587,77 @@ def save_manifest(work_dir: Path, manifest: dict) -> None:
 _IDX_OK = re.compile(r"[0-9A-Za-z_-]+")
 
 
-def _safe_rel(rel) -> bool:
-    """output_dir からの相対パスとして使ってよい文字列か（絶対パス・`..` を含むものは不可）。"""
-    if not isinstance(rel, str) or not rel:
+# manifest に控える「出力先の中のパス」と日時の定義（ここだけ）。控えの検査（validate_manifest）も、書き込みの直前に控えから
+# パスを作るところ（recorded_path）も、これを使う。ingest 自身が書く形だけを通す（`index.md`・`.processed.json`・
+# `.survey-work/…`・`..`・絶対パス・ドライブ指定などを指す値は、形が違うので通らない）。
+#   pending: `pending/<名前>.md`（pending/ の直下。区切りは `/` か `\`、1 区間目は `pending` ちょうど）。
+#            名前は空でなく、`.` `..` でなく、小文字の `.md` で終わり、`:` `/` `\` と制御文字を含まない（文字種は他に制限しない）
+#   report:  `survey-report-<YYYY-MM-DD>.md` か `survey-report-<YYYY-MM-DD>-<数>.md`（<数> は先頭ゼロ無しの 2 以上）。
+#            日付は ingest_started_at の先頭 10 文字と一致すること
+_PENDING_NAME_BAD = re.compile("[:/\\\\\x00-\x1f\x7f]")  # `:` `/` `\` と制御文字
+_REPORT_FORM = re.compile(r"survey-report-([0-9]{4}-[0-9]{2}-[0-9]{2})(?:-(?:[2-9][0-9]*|[1-9][0-9]+))?\.md")
+_DAY_FORM = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+# ingest が控える日時（ローカル時刻を UTC オフセット付きにした `datetime.now().astimezone().isoformat()`）の形: YYYY-MM-DDTHH:MM:SS ＋ 任意の小数秒 ＋ 任意の Z か ±HH:MM
+_STARTED_AT_FORM = re.compile(
+    r"([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})(?:\.[0-9]+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])?"
+)
+
+
+def day_ok(day) -> bool:
+    """実在する YYYY-MM-DD か。"""
+    if not isinstance(day, str) or not _DAY_FORM.fullmatch(day):
         return False
-    p = Path(rel)
-    # ドライブ指定（C:foo）・ルート指定（/x, \x）も外を指しうるので不可
-    return not p.is_absolute() and not p.drive and not p.root and ".." not in p.parts
+    try:
+        datetime.strptime(day, "%Y-%m-%d")
+    except ValueError:
+        return False
+    return True
+
+
+def started_at_ok(value) -> bool:
+    """ingest が書く形の日時か（暦に無い日付・時刻、改行や Markdown を含む値は不可）。"""
+    m = _STARTED_AT_FORM.fullmatch(value) if isinstance(value, str) else None
+    if not m:
+        return False
+    try:
+        datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return False
+    return True
+
+
+def _pending_name(rel) -> Optional[str]:
+    if not isinstance(rel, str):
+        return None
+    parts = rel.replace("\\", "/").split("/")
+    if len(parts) != 2 or parts[0] != "pending":
+        return None
+    name = parts[1]
+    if not name or name in (".", "..") or not name.endswith(".md") or _PENDING_NAME_BAD.search(name):
+        return None
+    return name
+
+
+def recorded_rel_ok(kind: str, rel, started_at=None) -> bool:
+    """控えの値 rel が、kind（pending / report）の形で、出力先の中を安全に指すか。report は ingest_started_at も要る。"""
+    if kind == "pending":
+        return _pending_name(rel) is not None
+    m = _REPORT_FORM.fullmatch(rel) if isinstance(rel, str) else None
+    return bool(m) and day_ok(m.group(1)) and isinstance(started_at, str) and started_at[:10] == m.group(1)
+
+
+def recorded_path(output_dir: Path, kind: str, rel, started_at=None) -> Optional[Path]:
+    """控えの値から書き先を作る。形が違えば None（呼ぶ側は書かずに止まる／控えが無いものとして扱う）。"""
+    if not recorded_rel_ok(kind, rel, started_at):
+        return None
+    return output_dir / "pending" / _pending_name(rel) if kind == "pending" else output_dir / rel
 
 
 def validate_manifest(manifest: dict, manifest_path: Path) -> None:
     """ingest が何かを書く前に、manifest の形を検める。違えば SurveyError（何も書かない）。
 
     必須: targets（要素は idx/path/project/scope が文字列）・seed_processed・stubs。
-    あれば型を検める: hashes・控え（pending_files・report_file・ingest_started_at）・ingested_at。
+    あれば型・形を検める: hashes・控え（pending_files・report_file・ingest_started_at・output_touched）・ingested_at。
     """
     def bad(reason: str) -> SurveyError:
         return SurveyError(
@@ -589,37 +679,64 @@ def validate_manifest(manifest: dict, manifest_path: Path) -> None:
         raise bad("`targets` が配列ではありません")
     seen = set()
     for i, t in enumerate(targets):
-        if not isinstance(t, dict) or not all(isinstance(t.get(k), str) for k in ("idx", "path", "project", "scope")):
-            raise bad(f"`targets[{i}]` が idx / path / project / scope を文字列で持つオブジェクトではありません")
+        if not isinstance(t, dict) or not all(isinstance(t.get(k), str) and t[k] for k in ("idx", "path", "project", "scope")):
+            raise bad(f"`targets[{i}]` が idx / path / project / scope を空でない文字列で持つオブジェクトではありません")
         if not _IDX_OK.fullmatch(t["idx"]):
-            raise bad(f"`targets[{i}].idx` が使えない文字を含みます: {t['idx']!r}")
+            raise bad(f"`targets[{i}].idx` が使えない文字を含みます: '{one_line(t['idx'])}'")
         if t["idx"] in seen:
-            raise bad(f"`targets` の idx が重複しています: {t['idx']!r}")
+            raise bad(f"`targets` の idx が重複しています: '{one_line(t['idx'])}'")
         seen.add(t["idx"])
     str_list("seed_processed")
     str_list("stubs")
+    # 控えのキーは、無いのは受理し、あって型が違うもの（null を含む）は拒否する（null を「欠けている」扱いにすると、index の節・レポートが二重になる）
     hashes = manifest.get("hashes", {})  # 古い manifest には無い（あれば型を検める）
     if not isinstance(hashes, dict) or not all(isinstance(h, str) for h in hashes.values()):
         raise bad("`hashes` が「パス → ハッシュ（文字列）」のオブジェクトではありません")
     pending_files = manifest.get("pending_files", {})
-    if not isinstance(pending_files, dict) or not all(_safe_rel(v) for v in pending_files.values()):
-        raise bad("`pending_files` が「idx → 相対パス」のオブジェクトではありません")
+    if not isinstance(pending_files, dict) or not all(recorded_rel_ok("pending", v) for v in pending_files.values()):
+        raise bad("`pending_files` が「idx → `pending/<名前>.md`」のオブジェクトではありません")
+    if len({"pending/" + _pending_name(v).casefold() for v in pending_files.values()}) != len(pending_files):
+        raise bad("`pending_files` の中で、2 つの idx が同じファイルを指しています")  # 区切りと大文字小文字の違いは同じ
     report_file = manifest.get("report_file")
-    if report_file is not None and (
-        not isinstance(report_file, str) or not report_file or Path(report_file).name != report_file or report_file in (".", "..")
-    ):
-        raise bad("`report_file` がファイル名（文字列）ではありません")
-    if manifest.get("index_done") is not None and not isinstance(manifest["index_done"], bool):
+    if "report_file" in manifest and not recorded_rel_ok("report", report_file, manifest.get("ingest_started_at")):
+        raise bad("`report_file` が `survey-report-<YYYY-MM-DD>[-<数>].md`（日付は ingest_started_at の日付）の形ではありません")
+    if "index_done" in manifest and not isinstance(manifest["index_done"], bool):
         raise bad("`index_done` が真偽値ではありません")  # 前版の控え（今は使わないが、あれば型を検める）
-    for key in ("ingest_started_at", "ingested_at"):
-        if manifest.get(key) is not None and not isinstance(manifest[key], str):
-            raise bad(f"`{key}` が文字列ではありません")
+    if manifest.get("ingested_at") is not None and not isinstance(manifest["ingested_at"], str):
+        raise bad("`ingested_at` が文字列ではありません")
+    if "ingest_started_at" in manifest and not started_at_ok(manifest["ingest_started_at"]):
+        raise bad("`ingest_started_at` が日時（`YYYY-MM-DDTHH:MM:SS` ＋ 任意の小数秒・`Z` か `±HH:MM`。ingest が書く形）ではありません")  # 先頭の日付がレポートの名前になる
+    if "output_touched" in manifest and not isinstance(manifest["output_touched"], bool):
+        raise bad("`output_touched` が真偽値ではありません")
 
 
 def partial_ingest(manifest: dict) -> bool:
-    """pending を 1 件以上書いた（控えがある）のに、ingest 済みでない状態。"""
+    """この run の ingest が出力先（pending・.processed.json・index・レポート）に書いた（書こうとした）のに、ingest 済みでない状態。
+
+    ingest は、出力先への最初の書き込みの前に `output_touched` を True で控える（書く前に控える）。その書き込みがエラーで失敗して
+    書けなかったと分かったときは、False に戻す。True のまま残るのは、控えの保存と書き込みの間でプロセスが強制終了された場合と、
+    何かを書いた後で落ちた場合。何も書く前に落ちたもの（書き込みの前の拒否・dry-run を含む）には付かない。
+    `output_touched` を持たない前版の manifest は、pending の控えがあれば途中とみなす。
+    """
+    if manifest.get("ingested_at"):
+        return False
+    if "output_touched" in manifest:  # 今の版の manifest: 書き込みがエラーで失敗したもの（書けなかったと分かっているもの）は、False に戻してある
+        return manifest["output_touched"] is True
     pending_files = manifest.get("pending_files")
-    return not manifest.get("ingested_at") and isinstance(pending_files, dict) and bool(pending_files)
+    return isinstance(pending_files, dict) and bool(pending_files)  # 前版の manifest: pending の控えがあれば途中とみなす
+
+
+def written_pending_count(manifest: dict, output_dir: Path) -> int:
+    """控えのある pending のうち、出力先に実際にあるファイルの数（控えは書く前に保存するので、控えの数とは違いうる）。"""
+    pending_files = manifest.get("pending_files")
+    if not isinstance(pending_files, dict):
+        return 0
+    n = 0
+    for rel in pending_files.values():
+        target = recorded_path(output_dir, "pending", rel)
+        if target is not None and target.is_file():
+            n += 1
+    return n
 
 
 def parse_since(text: str) -> datetime:
@@ -640,23 +757,33 @@ def cmd_discover(args) -> int:
 
     try:
         existing = load_manifest(work_dir)
-    except SurveyError:
-        if not args.force:
+        if existing is not None and not existing.get("ingested_at"):
+            validate_manifest(existing, work_dir / "manifest.json")  # 読めても、形が違う・控えの値が拒否されるものは「壊れた」
+    except SurveyError as e:
+        if not (args.force or args.discard_partial):
             raise
-        print("  [warn] 壊れた manifest を捨てて作り直します（--force）。")
+        # 壊れた manifest（JSON として読めない・形が違う・控えの値が拒否される）は、途中まで取り込んだかを判定できない。作り直す（1 行で知らせる）
+        print(f"  [warn] 壊れた manifest を捨てて作り直します。途中まで取り込んだ作業かどうかは判定できませんでした"
+              f"（取り込み済みの pending が出力先に残っていると、重複しうる: {output_dir / 'pending'}）／ 理由: {one_line(e)[:200]}")
         existing = None
-    if existing is not None and partial_ingest(existing) and not args.discard_partial:
-        # 途中まで取り込んだ作業（pending に書いた控えがある）は、--force でも作り直さない（控えを失うと pending が重複する）
+    partial = existing is not None and partial_ingest(existing)
+    if partial and not args.discard_partial:
+        # 途中まで取り込んだ作業（出力先に書いた・書こうとした）は、--force でも作り直さない（控えを失うと pending が重複する）
+        written = written_pending_count(existing, output_dir)
         print(f"[skill-survey] ingest が途中まで進んだ作業が残っています: {work_dir}")
-        print(f"  pending に {len(existing['pending_files'])} 件書き済みです。作り直すと、その控えが失われて pending が重複します。")
+        print(f"  出力先に pending が {written} 件書き済みです（.processed.json・index・レポートを書いた後で落ちた場合もあります）。"
+              "作り直すと、その控えが失われて pending が重複します。")
         print("  `skill-survey.py ingest` をやり直してください（書き済みの pending は同じファイルに書き直されます）。")
         print("  どうしても捨てるときだけ `skill-survey.py discover --discard-partial` を使ってください（書き済みの pending は残ります）。")
         return 1
-    if args.discard_partial and existing is not None and partial_ingest(existing):
+    if partial:  # --discard-partial: 途中まで取り込んだ作業だけに効く
         print(f"  [warn] 途中まで取り込んだ作業を捨てて作り直します（--discard-partial）。書き済みの pending はそのまま残ります: {output_dir / 'pending'}")
-    if existing is not None and not existing.get("ingested_at") and not args.force and not args.discard_partial:
+    elif existing is not None and not existing.get("ingested_at") and not args.force:
+        # 途中まで取り込んでいない未 ingest の作業は、--discard-partial では外れない（--force だけが外す）
         print(f"[skill-survey] まだ ingest されていない作業があります: {work_dir}")
         print("  先に `skill-survey.py ingest` を実行するか、捨ててよければ --force を付けてください。")
+        if args.discard_partial:
+            print("  （--discard-partial は、ingest が途中まで進んだ作業にだけ効きます。この作業は途中まで取り込まれていません。）")
         return 1
 
     if args.batch_size < 1:
@@ -785,7 +912,7 @@ def cmd_ingest(args) -> int:
     validate_manifest(manifest, work_dir / "manifest.json")  # 何かを書く前に形を検める（違えば何も書かずに止まる）
 
     # 日時は最初の ingest で manifest に控え、再 ingest でも同じ値を使う（index の印・レポートの名前・pending の日付がぶれない）
-    survey_date = manifest.get("ingest_started_at") or datetime.now(timezone.utc).isoformat()
+    survey_date = manifest.get("ingest_started_at") or datetime.now().astimezone().isoformat()  # 控えは validate_manifest が検め済み
     processed, hashes = load_processed_state(output_dir)  # 壊れていれば、ここで何も書かずに止まる
     results, problems = [], []
 
@@ -808,14 +935,14 @@ def cmd_ingest(args) -> int:
             continue
         if not same_path(analysis.get("path"), s["path"]):
             # 別のファイルの結果が、違う元ファイルに紐づくのを防ぐ（区切り文字と大文字小文字の違いは同じとみなす）
-            problems.append(f"{s['idx']} meta の path が manifest と違う: {analysis.get('path')!r}（manifest: {s['path']!r}）")
+            problems.append(f"{s['idx']} meta の path が manifest と違う: '{one_line(analysis.get('path'))}'（manifest: '{one_line(s['path'])}'）")
             results.append({**info, "status": "error", "name": name,
-                            "error": f"meta path mismatch: {analysis.get('path')!r} (manifest: {s['path']!r})"})
+                            "error": f"meta path mismatch: '{one_line(analysis.get('path'))}' (manifest: '{one_line(s['path'])}')"})
             continue
         score = analysis.get("generalizable_score")
         if not isinstance(score, str) or score not in VALID_SCORES:  # 完全一致（小文字）だけを受け付ける
-            problems.append(f"{s['idx']} generalizable_score が不正: {score!r}（high/medium/low/skip のどれか）")
-            results.append({**info, "status": "error", "error": f"invalid generalizable_score: {score!r}", "name": name})
+            problems.append(f"{s['idx']} generalizable_score が不正: '{one_line(score)}'（high/medium/low/skip のどれか）")
+            results.append({**info, "status": "error", "error": f"invalid generalizable_score: '{one_line(score)}'", "name": name})
             continue
         if score in ("low", "skip"):
             results.append({**info, "status": "skipped", "name": name, "generalizable_score": score,
@@ -840,8 +967,12 @@ def cmd_ingest(args) -> int:
             problems.append(f"{s['idx']} score={score} なのに .md にフロントマターが無い")
             results.append({**info, "status": "error", "error": "generalized content has no frontmatter", "name": name})
             continue
-        if not frontmatter_field(content, "name"):
+        fm_name = frontmatter_field(content, "name")
+        if not fm_name:
             problems.append(f"{s['idx']} 汎化版のフロントマターに name が無い")  # 警告（pending には書く）
+        elif not slugify(fm_name):
+            # `|` や記号だけで、ファイル名の本体が空になる: name が無いときと同じに、元ファイルの stem で名前を付ける
+            problems.append(f"{s['idx']} 汎化版の name からファイル名を作れない（記号だけ等）。元ファイルの stem を使う")
         hits = personal_info_hits(content)
         if hits:
             problems.append(f"{s['idx']} 汎化版に個人情報らしき文字列: {', '.join(hits)}")
@@ -878,16 +1009,30 @@ def cmd_ingest(args) -> int:
     pending_files = manifest.setdefault("pending_files", {})
 
     def recorded_target(idx):
-        rel = pending_files.get(idx)
-        if not isinstance(rel, str) or not rel or Path(rel).is_absolute() or ".." in Path(rel).parts:
-            return None
-        return output_dir / rel
+        return recorded_path(output_dir, "pending", pending_files.get(idx))  # 形の定義は validate_manifest と同じ 1 か所
+
+    def touch_output() -> bool:
+        """出力先への最初の書き込みの前に控える（途中まで取り込んだ、の印。discover --force が作り直さないために使う）。新しく立てたら True。"""
+        if manifest.get("output_touched") is True:
+            return False
+        manifest["output_touched"] = True
+        save_manifest(work_dir, manifest)
+        return True
+
+    def untouch_output(why: str) -> None:
+        """その書き込みがエラーで失敗し、書けなかったと分かったときに、印を戻す（何も書いていない作業を「途中まで」にしない）。"""
+        manifest["output_touched"] = False
+        try:
+            save_manifest(work_dir, manifest)
+        except OSError as e2:  # 戻せないときは、安全な側（途中まで取り込んだ扱い）のまま残る。黙らず知らせる
+            print(f"  [warn] 出力先に書けなかった（{why}）が、manifest の `output_touched` を戻せませんでした: {one_line(e2)}。"
+                  "discover --force が止まるときは --discard-partial を使ってください。")
 
     reserved = {t.as_posix() for t in map(recorded_target, list(pending_files)) if t is not None}
 
     def fail(e: OSError) -> SurveyError:
         return SurveyError(
-            f"ingest が途中で失敗しました（{step}）: {e}\n"
+            f"ingest が途中で失敗しました（{step}）: {one_line(e)}\n"
             "  原因を直してから、もう一度 `skill-survey.py ingest` を実行してください"
             "（書き済みの pending は同じファイルに書き直されるので、重複しません）。"
         )
@@ -903,7 +1048,9 @@ def cmd_ingest(args) -> int:
     for r in results:
         if r["status"] == "pending":
             content, analysis = r.pop("content"), r.pop("analysis")
+            newly, target = False, None
             try:
+                newly = touch_output()
                 target = recorded_target(r["idx"])
                 if target is None:
                     target = plan_pending_path(content, r, output_dir, reserved)
@@ -912,6 +1059,8 @@ def cmd_ingest(args) -> int:
                     save_manifest(work_dir, manifest)
                 r["library_path"] = write_pending_skill(content, r, analysis, target, survey_date)
             except OSError as e:
+                if newly and not (target is not None and target.is_file()):
+                    untouch_output("pending")  # 最初の書き込みが失敗して、何も書けていない（エラーで失敗したものは「書いた」に数えない）
                 raise fail(e)
         if r["status"] == "error" and r["path"] in processed and r["path"] not in hashes:
             # 旧来の登録のまま変わっていた対象がエラーになった: 登録を外す（残すと次の discover で更新時刻の比較をすり抜ける）
@@ -930,7 +1079,13 @@ def cmd_ingest(args) -> int:
 
     try:
         step = ".processed.json の書き込み"
-        save_processed(output_dir, processed, hashes)
+        newly = touch_output()
+        try:
+            save_processed(output_dir, processed, hashes)
+        except OSError:
+            if newly and not processed_written(output_dir, processed, hashes):
+                untouch_output(".processed.json")
+            raise
 
         # index.md・レポートは「控えてから書く」「書いたことが印で分かる」順にする。
         # どの段で落ちても、再 ingest で同じ節・同じレポートを二重に作らない。
@@ -941,7 +1096,7 @@ def cmd_ingest(args) -> int:
             update_index(output_dir, results, survey_date, survey_date)  # 節に印（run_id）を入れ、印があれば足し直さない
 
         step = "レポートの書き込み"
-        report_path = output_dir / manifest["report_file"] if manifest.get("report_file") else None
+        report_path = recorded_path(output_dir, "report", manifest.get("report_file"), survey_date)
         if report_path is None or report_path.is_dir():
             # 名前を先に決めて manifest に控えてから書く。再 ingest では同じ名前に書き直す（-2 の別レポートを作らない）
             report_path = plan_report_path(output_dir, survey_date)
@@ -996,9 +1151,10 @@ def main() -> int:
     p_disc.add_argument("--since", help="この日時以前に更新されたファイルは対象にせず、処理済みとして登録する（ISO 8601）")
     p_disc.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"1 バッチの件数（既定 {DEFAULT_BATCH_SIZE}）")
     p_disc.add_argument("--include-stubs", action="store_true", help="ポインタのスタブも対象にする")
-    p_disc.add_argument("--force", action="store_true", help="ingest していない作業ディレクトリを捨てて作り直す")
+    p_disc.add_argument("--force", action="store_true", help="ingest していない作業ディレクトリを捨てて作り直す（途中まで取り込んだ作業は、--discard-partial が要る）")
     p_disc.add_argument("--discard-partial", action="store_true",
-                        help="ingest が途中まで進んだ作業（pending を書き済み）を、控えごと捨てて作り直す（pending は重複しうる）")
+                        help="ingest が途中まで進んだ作業（出力先に書き済み）だけを、控えごと捨てて作り直す（pending は重複しうる）。"
+                             "途中まで取り込んでいない未 ingest の作業は、これでは捨てられない（--force を使う）")
     p_disc.set_defaults(func=cmd_discover)
 
     p_ing = sub.add_parser("ingest", help="out/ の結果を pending・index・レポート・.processed.json へ取り込む")
@@ -1012,7 +1168,7 @@ def main() -> int:
         print(f"[skill-survey] {e}")
         return 1
     except OSError as e:  # Traceback ではなく、何が失敗したかを出す
-        print(f"[skill-survey] 失敗しました: {type(e).__name__}: {e}")
+        print(f"[skill-survey] 失敗しました: {type(e).__name__}: {one_line(e)}")
         return 1
 
 
