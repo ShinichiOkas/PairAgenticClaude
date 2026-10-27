@@ -176,6 +176,8 @@ python ~/.claude/pair-agent/tools/skill-survey.py discover [--since <日時>] [-
 ```
 
 - `--since` — この日時（ISO 8601）以前に更新されたファイルは対象にせず、ingest で処理済みとして登録する。前回の取り込み（harvest のコミット時刻など）以降の差分だけを拾うときに使う
+- 処理済みの判定は**パスと中身のハッシュ**で行う（`.processed.json` の `processed` ＋ `hashes`。ハッシュは改行を LF にそろえて取る）。取り込み後に中身が変わったファイルは対象に戻り、更新時刻だけが新しいファイル（git のチェックアウト等）は `--since` に拾われても再サーベイされない。`--since` は既処理でないファイルにだけ効く
+- ハッシュの記録が無い旧来の登録は、ファイルの更新時刻が `.processed.json` の最終更新時刻（＝最後の ingest）以前なら既処理、それより新しければ対象に戻る。既処理にした分は、次の ingest でハッシュが記録される
 - ポインタのスタブ（description が「ポインタ」で始まる。正典はグローバル側）は既定で対象から外し、処理済みとして登録する。対象に入れるときだけ `--include-stubs`
 - ingest していない作業が残っていると止まる。捨ててよいと師匠が判断したときだけ `--force`
 
@@ -201,8 +203,10 @@ python ~/.claude/pair-agent/tools/skill-survey.py ingest
 ```
 
 - `--dry-run` の「problems」を先に見る。特に **個人情報らしき文字列**（ユーザー名・ホームのパス）は、`out/<idx>.md` を直してから取り込む
-- 結果ファイルが欠けた件はエラーとして扱われ、処理済みに登録されない（次の discover で再び対象になる）
-- 取り込み後、`survey-report-<date>.md` を読んで結果を要約して師匠に伝える。skip（low）になった件は 1 件ずつ理由を添える
+- 次の件はエラーとして扱われ、pending に書かれず、処理済みにも登録されない（次の discover で再び対象になる）: 結果ファイルが欠けた／読めない、`generalizable_score` が `high`/`medium`/`low`/`skip`（小文字の完全一致）以外、high / medium なのに `.md` が空またはフロントマター（先頭の `---` で始まり `---` で閉じる区画）が無い。フロントマターに `name` が無いだけのものは警告で、pending には書かれる
+- 処理済みに登録するときは、discover の時点の中身のハッシュを記録する（discover と ingest のあいだに変わったファイルは、次の discover で対象に戻る）
+- 設定ファイルが JSON として読めない・型が違う（`project_roots` が文字列の配列でない等）ときは、何も書かずに理由を出して終わる
+- 取り込み後、`survey-report-<date>.md`（同じ日の 2 回目以降は `survey-report-<date>-2.md`、`-3.md` …）を読んで結果を要約して師匠に伝える。skip（low）になった件は 1 件ずつ理由を添える
 
 ## 3. Pending スキルのレビュー
 
@@ -233,7 +237,7 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 ## 5. Reject 処理
 
 - `pending/<slug>.md` を削除
-- `.processed.json` には既にエントリがあるので再サーベイ対象にはならない
+- `.processed.json` に既にエントリがあり、ソースの中身（ハッシュ）が変わらない限り再サーベイ対象にはならない（ソースが更新されたときは、reject したスキルも対象に戻る）
 - 必要なら理由をメモとしてレポートに追記
 
 ## 6. 完了報告
@@ -247,14 +251,14 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 ```
 ~/.claude/pair-agent/skill-library/
 ├── index.md                  # 全エントリカタログ
-├── .processed.json           # 処理済みソースパス追跡
+├── .processed.json           # 処理済みソースの追跡（processed: パスの配列 / hashes: パス → 中身のハッシュ）
 ├── pending/                  # 承認待ち
 │   └── <slug>.md
 ├── approved/                 # 承認済み
 │   └── <slug>.md
 ├── survey-report-<date>.md   # サーベイレポート
 └── .survey-work/             # discover が作り ingest が読む作業ディレクトリ
-    ├── manifest.json         # 対象・起点以前・スタブの一覧（ingest 済みなら ingested_at）
+    ├── manifest.json         # 対象・起点以前・スタブ・discover 時点のハッシュ（ingest 済みなら ingested_at）
     ├── instructions.md       # サブエージェントに渡す判定・汎化の規約
     ├── batch-NN.json         # サブエージェント 1 体ぶんの対象
     └── out/                  # <idx>.meta.json・<idx>.md（サブエージェントが書く）
