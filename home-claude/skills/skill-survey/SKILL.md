@@ -81,7 +81,7 @@ Get-ChildItem -Path <PROJECT_ROOT> -Directory | ForEach-Object {
 
 - 固有のプロジェクト名 → 概念説明に置換（`Mnemo で` → `この製品で` / `実際に`）
 - 固有のパス・モジュール名 → 役割で言い換える（`core/topic_tree_hook.py` → `先行実装`）
-- 固有の環境変数 → `{ENV_VAR_NAME}` または「データルートの環境変数」
+- 固有の環境変数 → 「データルートの環境変数」のように概念の説明に置換（`{ENV_VAR_NAME}` のようなプレースホルダは、コードの中を除いて残さない）
 - **本質的なルール・原則・実測値・コード例は保持する。** 削ると「もっともらしいが使えない一般論」になる
 - **師匠の言葉（原文引用）は残す。** これが判断の根拠であり、Pair Agent の資産の中核
 - フロントマターの `source_sprint_ids` / `source_project` / `provenance` の固有部分は削除。`name` / `description` / `type` / `maturity` は残す
@@ -182,6 +182,7 @@ python ~/.claude/pair-agent/tools/skill-survey.py discover [--since <日時>] [-
 - `.processed.json` が JSON として読めない（空ファイルを含む）・形が違う（`processed` が配列でない、`hashes` がオブジェクトでない）ときは、何も書かずにパスと理由を出して止まる（空として扱って全件を再サーベイしない）。discover・ingest とも同じ
 - ポインタのスタブ（description が「ポインタ」で始まる。正典はグローバル側）は既定で対象から外し、処理済みとして登録する（`--since` の起点以前のものも、スタブとして数える）。対象に入れるときだけ `--include-stubs`
 - ingest していない作業が残っていると止まる。捨ててよいと師匠が判断したときだけ `--force`
+- ⚠ ingest が途中まで進んだ作業（pending を 1 件以上書いたが ingest 済みでない）は、`--force` でも作り直さず、「ingest をやり直す」案内を出して終了コード 1 で止まる（作り直すと控えが失われ、pending が重複する）。どうしても捨てるときだけ `discover --discard-partial`（書き済みの pending は残る。師匠が判断したときだけ）。pending を 1 件も書いていない失敗は、これまでどおり `--force` で作り直せる
 
 書かれるもの（`<output_dir>/.survey-work/`）: `manifest.json`・`instructions.md`（判定・汎化の規約）・`batch-NN.json`・空の `out/`。
 
@@ -207,7 +208,13 @@ python ~/.claude/pair-agent/tools/skill-survey.py ingest
 - `--dry-run` の「problems」を先に見る。特に **個人情報らしき文字列**（ユーザー名・ホームのパス）は、`out/<idx>.md` を直してから取り込む
 - 次の件はエラーとして扱われ、pending に書かれず、処理済みにも登録されない（次の discover で再び対象になる）: 結果ファイルが欠けた／読めない、`generalizable_score` が `high`/`medium`/`low`/`skip`（小文字の完全一致）以外、high / medium なのに `.md` が空またはフロントマター（先頭の `---` で始まり `---` で閉じる区画）が無い。フロントマターに `name` が無いだけのものは警告で、pending には書かれる
 - meta の `path` が manifest の `path` と違う結果（別のファイルの結果を書いた）もエラーになる（区切り文字と大文字小文字の違いは同じとみなす）
-- ingest が途中で失敗したら、原因を直してもう一度 `ingest` を実行する。pending に書いたファイルは manifest に控えてあり、同じファイルに書き直されるので重複しない（失敗時は Traceback ではなく、失敗した段階を出して終了コード 1）
+- ingest が途中で失敗したら、原因を直してもう一度 `ingest` を実行する（失敗時は Traceback ではなく、失敗した段階を出して終了コード 1）。どの段で落ちても、再 ingest で二重にならない:
+  - pending: 書き先を manifest（`pending_files`）に控えてから書く。再 ingest では同じファイルに書き直す
+  - レポート: 名前を manifest（`report_file`）に控えてから書く。再 ingest では同じ名前に書き直す（`-2` の別レポートを作らない）
+  - index.md: 節の見出しに今回の ingest を識別する印（`<!-- skill-survey-run: … -->`）を入れる。印のある節は足し直さない（直して再 ingest した分の行だけが、その節の末尾に足される）
+  - ingest の開始日時は最初の ingest で manifest（`ingest_started_at`）に控え、再 ingest でも同じ値を使う
+- ingest は、何かを書く前に manifest の形（`targets`・`seed_processed`・`stubs`・`hashes`・控えの各キー）を検める。違えば何も書かずに理由を出して終了コード 1（控えのキーが無いのは受理。あるが型が違う・出力先の外を指すのは拒否）
+- エラーの件を含んでいても、最後まで走った ingest は「ingest 済み」（終了コード 0）。エラーの件は処理済みにならず、次の discover で再び対象になる
 - 処理済みに登録するときは、discover の時点の中身のハッシュを記録する（discover と ingest のあいだに変わったファイルは、次の discover で対象に戻る）
 - 設定ファイルが JSON として読めない・型が違う（`project_roots` が文字列の配列でない等）ときは、何も書かずに理由を出して終わる
 - 取り込み後、`survey-report-<date>.md`（同じ日の 2 回目以降は `survey-report-<date>-2.md`、`-3.md` …）を読んで結果を要約して師匠に伝える。skip（low）になった件は 1 件ずつ理由を添える
@@ -272,8 +279,8 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 │   └── <slug>.md
 ├── survey-report-<date>.md   # サーベイレポート
 └── .survey-work/             # discover が作り ingest が読む作業ディレクトリ
-    ├── manifest.json         # 対象・起点以前・スタブ・discover 時点のハッシュ（ingest 済みなら ingested_at）
-    ├── instructions.md       # サブエージェントに渡す判定・汎化の規約
+    ├── manifest.json         # 対象・起点以前・スタブ・discover 時点のハッシュ・ingest の控え（pending_files・report_file・ingest_started_at。ingest 済みなら ingested_at）
+    ├── instructions.md       # サブエージェントに渡す判定・汎化の規約（固有名は概念の説明に置き換える。プレースホルダはコードの中を除いて残さない）
     ├── batch-NN.json         # サブエージェント 1 体ぶんの対象
     └── out/                  # <idx>.meta.json・<idx>.md（サブエージェントが書く）
 ```

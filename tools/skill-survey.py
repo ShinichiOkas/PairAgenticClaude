@@ -70,9 +70,8 @@ AIと人間のペア作業における学習知識（プロセスルール、ド
 
 ## 汎化の方針
 
-- 固有のプロジェクト名 → `{{PROJECT_NAME}}` または概念説明に置換
-- 固有のパス → `{{PROJECT_ROOT}}/...` または概念説明に置換
-- 固有の環境変数 → `{{ENV_VAR_NAME}}` に置換
+- 固有のプロジェクト名・パス・環境変数名などは、概念の説明に置き換える（例: 「Mnemo で」→「この製品で」、`src/mnemo/core/hook.py` → 「先行実装」、`MNEMO_WORK_DIR` → 「データルートの環境変数」）
+- `{{PROJECT_NAME}}` のようなプレースホルダは、コードの中（コードブロック・インラインコード）を除いて残さない
 - 本質的なルール・原則は保持する
 - 師匠（ユーザー）の発言の原文引用（`>` で始まる引用や「」内の発言）は削らずに残す。実際に踏んだ失敗・実測値・コード例も保持する。削ると「もっともらしいが使えない一般論」になる
 - ユーザー名やホームディレクトリの絶対パスを本文に残さない
@@ -280,7 +279,8 @@ def read_skill_file(path: str) -> Optional[str]:
 
 
 def extract_frontmatter_field(content: str, field: str) -> str:
-    pattern = rf"^{re.escape(field)}:\s*(.+)$"
+    # 値が空の行（`name:`）の値は空。`\s*` は改行をまたぐので使わない（次の行を値として読んでしまう）
+    pattern = rf"^{re.escape(field)}:[ \t]*(.*)$"
     m = re.search(pattern, content, re.MULTILINE)
     return m.group(1).strip() if m else ""
 
@@ -392,33 +392,53 @@ def write_pending_skill(
     return str(target)
 
 
-def update_index(output_dir: Path, results: list, survey_date: str) -> None:
+def index_run_mark(run_id: str) -> str:
+    """index.md の節に入れる、今回の ingest を識別する印（再 ingest で同じ節を足し直さないため）。"""
+    return f"<!-- skill-survey-run: {run_id} -->"
+
+
+def update_index(output_dir: Path, results: list, survey_date: str, run_id: str) -> None:
+    """index.md に今回の節を足す。節には run_id の印を入れ、印のある節は足し直さない（再 ingest で二重にならない）。
+
+    印のある節に載っていない行（前回は error だったものを直して再 ingest した、など）だけは、その節の末尾に足す。
+    """
     index_path = output_dir / "index.md"
 
-    # New entries for this run
+    # New entries for this run: (相対パス, 行)
     new_rows = []
     for r in results:
         if r["status"] in ("pending",):
             rel = Path(r["library_path"]).relative_to(output_dir).as_posix()
-            new_rows.append(
+            new_rows.append((rel, (
                 f"| [{one_line(r['name'])}]({rel}) "
                 f"| {one_line(r['project'])} "
                 f"| {one_line(r.get('generalizable_score', '-'))} "
                 f"| pending "
                 f"| {survey_date[:10]} |"
-            )
+            )))
 
     if not new_rows and index_path.exists():
         return  # nothing to add
 
     existing = index_path.read_text(encoding="utf-8") if index_path.exists() else "# Skill Library Index\n\n"
 
+    mark = index_run_mark(run_id)
+    if new_rows and mark in existing:
+        # 前回の ingest が、この節を書いた後に落ちた。節は足し直さない（載っていない行だけを、その節の末尾に足す）
+        start = existing.index(mark)
+        end = existing.find("\n## ", start)
+        end = len(existing) if end < 0 else end
+        missing = [row for rel, row in new_rows if f"]({rel})" not in existing[start:end]]
+        if missing:
+            write_text_lf(index_path, existing[:end].rstrip("\n") + "\n" + "\n".join(missing) + "\n" + existing[end:])
+        return
+
     if new_rows:
         section = (
-            f"\n## Survey {survey_date[:10]}\n\n"
+            f"\n## Survey {survey_date[:10]} {mark}\n\n"  # 印は見出しの行に入れる（表の行や本文の行を増やさない）
             "| Skill | Source Project | Score | Status | Date |\n"
             "|-------|----------------|-------|--------|------|\n"
-            + "\n".join(new_rows)
+            + "\n".join(row for _, row in new_rows)
             + "\n"
         )
         write_text_lf(index_path, existing + section)
@@ -435,8 +455,22 @@ def spec_lines(r: dict) -> list:
     return [f"  - {one_line(spec)}" for spec in specs]
 
 
+def plan_report_path(output_dir: Path, survey_date: str) -> Path:
+    """レポートの名前を決める（まだ書かない）。同日 2 回目以降は上書きせず、-2, -3 … の空いている名前にする。
+
+    同名の「ファイルまたはディレクトリ」があればその名前は使わない（exists() はどちらも真）。
+    """
+    stem = f"survey-report-{survey_date[:10]}"
+    n = 1
+    while True:
+        report_path = output_dir / (f"{stem}.md" if n == 1 else f"{stem}-{n}.md")
+        if not report_path.exists():
+            return report_path
+        n += 1
+
+
 def write_survey_report(
-    output_dir: Path, results: list, survey_date: str, total_found: int, extra_lines: Optional[list] = None
+    report_path: Path, results: list, survey_date: str, total_found: int, extra_lines: Optional[list] = None
 ) -> Path:
     """レポートを 1 回の書き込みで作る。meta 由来の文字列の改行は空白にして、行を壊さない。"""
     pending = [r for r in results if r["status"] == "pending"]
@@ -487,17 +521,8 @@ def write_survey_report(
         lines.append("")
 
     text = "\n".join(lines) + (("\n".join(extra_lines) + "\n") if extra_lines else "")
-
-    # 同日 2 回目以降は上書きせず、-2, -3 … の空いている名前に書く。
-    # 同名の「ファイルまたはディレクトリ」があればその名前は使わない（exists() はどちらも真）。
-    stem = f"survey-report-{survey_date[:10]}"
-    n = 1
-    while True:
-        report_path = output_dir / (f"{stem}.md" if n == 1 else f"{stem}-{n}.md")
-        if not report_path.exists():
-            write_text_lf(report_path, text)
-            return report_path
-        n += 1
+    write_text_lf(report_path, text)
+    return report_path
 
 
 # ---------------------------------------------------------------------------
@@ -526,6 +551,77 @@ def save_manifest(work_dir: Path, manifest: dict) -> None:
     write_text_lf(work_dir / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
 
 
+_IDX_OK = re.compile(r"[0-9A-Za-z_-]+")
+
+
+def _safe_rel(rel) -> bool:
+    """output_dir からの相対パスとして使ってよい文字列か（絶対パス・`..` を含むものは不可）。"""
+    if not isinstance(rel, str) or not rel:
+        return False
+    p = Path(rel)
+    # ドライブ指定（C:foo）・ルート指定（/x, \x）も外を指しうるので不可
+    return not p.is_absolute() and not p.drive and not p.root and ".." not in p.parts
+
+
+def validate_manifest(manifest: dict, manifest_path: Path) -> None:
+    """ingest が何かを書く前に、manifest の形を検める。違えば SurveyError（何も書かない）。
+
+    必須: targets（要素は idx/path/project/scope が文字列）・seed_processed・stubs。
+    あれば型を検める: hashes・控え（pending_files・report_file・ingest_started_at）・ingested_at。
+    """
+    def bad(reason: str) -> SurveyError:
+        return SurveyError(
+            f"{manifest_path} の形が違います（{reason}）。何も書かずに止めます。"
+            "捨ててよければ discover --force（途中まで取り込んだ状態なら --discard-partial）で作り直してください。"
+        )
+
+    def str_list(key: str, required: bool = True):
+        if key not in manifest:
+            if required:
+                raise bad(f"`{key}` がありません")
+            return
+        v = manifest[key]
+        if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+            raise bad(f"`{key}` が文字列の配列ではありません")
+
+    targets = manifest.get("targets")
+    if not isinstance(targets, list):
+        raise bad("`targets` が配列ではありません")
+    seen = set()
+    for i, t in enumerate(targets):
+        if not isinstance(t, dict) or not all(isinstance(t.get(k), str) for k in ("idx", "path", "project", "scope")):
+            raise bad(f"`targets[{i}]` が idx / path / project / scope を文字列で持つオブジェクトではありません")
+        if not _IDX_OK.fullmatch(t["idx"]):
+            raise bad(f"`targets[{i}].idx` が使えない文字を含みます: {t['idx']!r}")
+        if t["idx"] in seen:
+            raise bad(f"`targets` の idx が重複しています: {t['idx']!r}")
+        seen.add(t["idx"])
+    str_list("seed_processed")
+    str_list("stubs")
+    hashes = manifest.get("hashes", {})  # 古い manifest には無い（あれば型を検める）
+    if not isinstance(hashes, dict) or not all(isinstance(h, str) for h in hashes.values()):
+        raise bad("`hashes` が「パス → ハッシュ（文字列）」のオブジェクトではありません")
+    pending_files = manifest.get("pending_files", {})
+    if not isinstance(pending_files, dict) or not all(_safe_rel(v) for v in pending_files.values()):
+        raise bad("`pending_files` が「idx → 相対パス」のオブジェクトではありません")
+    report_file = manifest.get("report_file")
+    if report_file is not None and (
+        not isinstance(report_file, str) or not report_file or Path(report_file).name != report_file or report_file in (".", "..")
+    ):
+        raise bad("`report_file` がファイル名（文字列）ではありません")
+    if manifest.get("index_done") is not None and not isinstance(manifest["index_done"], bool):
+        raise bad("`index_done` が真偽値ではありません")  # 前版の控え（今は使わないが、あれば型を検める）
+    for key in ("ingest_started_at", "ingested_at"):
+        if manifest.get(key) is not None and not isinstance(manifest[key], str):
+            raise bad(f"`{key}` が文字列ではありません")
+
+
+def partial_ingest(manifest: dict) -> bool:
+    """pending を 1 件以上書いた（控えがある）のに、ingest 済みでない状態。"""
+    pending_files = manifest.get("pending_files")
+    return not manifest.get("ingested_at") and isinstance(pending_files, dict) and bool(pending_files)
+
+
 def parse_since(text: str) -> datetime:
     dt = datetime.fromisoformat(text)
     return dt if dt.tzinfo else dt.astimezone()  # naive → local time
@@ -549,7 +645,16 @@ def cmd_discover(args) -> int:
             raise
         print("  [warn] 壊れた manifest を捨てて作り直します（--force）。")
         existing = None
-    if existing is not None and not existing.get("ingested_at") and not args.force:
+    if existing is not None and partial_ingest(existing) and not args.discard_partial:
+        # 途中まで取り込んだ作業（pending に書いた控えがある）は、--force でも作り直さない（控えを失うと pending が重複する）
+        print(f"[skill-survey] ingest が途中まで進んだ作業が残っています: {work_dir}")
+        print(f"  pending に {len(existing['pending_files'])} 件書き済みです。作り直すと、その控えが失われて pending が重複します。")
+        print("  `skill-survey.py ingest` をやり直してください（書き済みの pending は同じファイルに書き直されます）。")
+        print("  どうしても捨てるときだけ `skill-survey.py discover --discard-partial` を使ってください（書き済みの pending は残ります）。")
+        return 1
+    if args.discard_partial and existing is not None and partial_ingest(existing):
+        print(f"  [warn] 途中まで取り込んだ作業を捨てて作り直します（--discard-partial）。書き済みの pending はそのまま残ります: {output_dir / 'pending'}")
+    if existing is not None and not existing.get("ingested_at") and not args.force and not args.discard_partial:
         print(f"[skill-survey] まだ ingest されていない作業があります: {work_dir}")
         print("  先に `skill-survey.py ingest` を実行するか、捨ててよければ --force を付けてください。")
         return 1
@@ -677,13 +782,10 @@ def cmd_ingest(args) -> int:
         print(f"[skill-survey] この manifest は ingest 済みです（{manifest['ingested_at']}）。")
         return 1
 
-    if not isinstance(manifest.get("targets"), list) or not isinstance(manifest.get("seed_processed"), list):
-        raise SurveyError(
-            f"{work_dir / 'manifest.json'} の形が違います（targets / seed_processed が配列ではありません）。"
-            "捨ててよければ discover --force で作り直してください。"
-        )
+    validate_manifest(manifest, work_dir / "manifest.json")  # 何かを書く前に形を検める（違えば何も書かずに止まる）
 
-    survey_date = datetime.now(timezone.utc).isoformat()
+    # 日時は最初の ingest で manifest に控え、再 ingest でも同じ値を使う（index の印・レポートの名前・pending の日付がぶれない）
+    survey_date = manifest.get("ingest_started_at") or datetime.now(timezone.utc).isoformat()
     processed, hashes = load_processed_state(output_dir)  # 壊れていれば、ここで何も書かずに止まる
     results, problems = [], []
 
@@ -774,8 +876,6 @@ def cmd_ingest(args) -> int:
     # 再 ingest では、控えのある idx は前回と同じファイルに書き直す。
     step = "pending の書き込み"
     pending_files = manifest.setdefault("pending_files", {})
-    if not isinstance(pending_files, dict):
-        pending_files = manifest["pending_files"] = {}
 
     def recorded_target(idx):
         rel = pending_files.get(idx)
@@ -791,6 +891,14 @@ def cmd_ingest(args) -> int:
             "  原因を直してから、もう一度 `skill-survey.py ingest` を実行してください"
             "（書き済みの pending は同じファイルに書き直されるので、重複しません）。"
         )
+
+    try:
+        step = "manifest への控え（ingest の開始日時）"
+        if not manifest.get("ingest_started_at"):
+            manifest["ingest_started_at"] = survey_date
+            save_manifest(work_dir, manifest)
+    except OSError as e:
+        raise fail(e)
 
     for r in results:
         if r["status"] == "pending":
@@ -824,30 +932,30 @@ def cmd_ingest(args) -> int:
         step = ".processed.json の書き込み"
         save_processed(output_dir, processed, hashes)
 
+        # index.md・レポートは「控えてから書く」「書いたことが印で分かる」順にする。
+        # どの段で落ちても、再 ingest で同じ節・同じレポートを二重に作らない。
         step = "index.md の更新"
-        if not manifest.get("index_done"):  # 再 ingest で同じ節を二重に足さない
-            update_index(output_dir, results, survey_date)
-            manifest["index_done"] = True
-            save_manifest(work_dir, manifest)
+        if manifest.get("index_done") is True:
+            pass  # 前版（印を入れる前）の ingest が節を書き終えて控えた manifest。足し直すと二重になる
+        else:
+            update_index(output_dir, results, survey_date, survey_date)  # 節に印（run_id）を入れ、印があれば足し直さない
 
         step = "レポートの書き込み"
-        report_path = None
-        if isinstance(manifest.get("report_file"), str):  # 前回書き終えたレポートがあれば、もう 1 通は作らない
-            report_path = output_dir / manifest["report_file"]
-            if not report_path.is_file():
-                report_path = None
-        if report_path is None:
-            total = len(manifest["seed_processed"]) + len(manifest["targets"])
-            notes = ["", "## Run Notes", "",
-                     "- 汎化は Claude Code のサブエージェントが行った（skill-survey.py は LLM を呼ばない）",
-                     f"- since: {manifest.get('since') or '(指定なし)'}"]
-            notes.append("- ポインタのスタブ（処理済みとして登録）:" if manifest["stubs"] else "- ポインタのスタブ: なし")
-            notes += [f"  - `{one_line(p)}`" for p in manifest["stubs"]]
-            if problems:
-                notes += ["", "## Problems — 要確認", ""] + [f"- {p}" for p in problems]
-            report_path = write_survey_report(output_dir, results, survey_date, total, notes)
+        report_path = output_dir / manifest["report_file"] if manifest.get("report_file") else None
+        if report_path is None or report_path.is_dir():
+            # 名前を先に決めて manifest に控えてから書く。再 ingest では同じ名前に書き直す（-2 の別レポートを作らない）
+            report_path = plan_report_path(output_dir, survey_date)
             manifest["report_file"] = report_path.name
             save_manifest(work_dir, manifest)
+        total = len(manifest["seed_processed"]) + len(manifest["targets"])
+        notes = ["", "## Run Notes", "",
+                 "- 汎化は Claude Code のサブエージェントが行った（skill-survey.py は LLM を呼ばない）",
+                 f"- since: {manifest.get('since') or '(指定なし)'}"]
+        notes.append("- ポインタのスタブ（処理済みとして登録）:" if manifest["stubs"] else "- ポインタのスタブ: なし")
+        notes += [f"  - `{one_line(p)}`" for p in manifest["stubs"]]
+        if problems:
+            notes += ["", "## Problems — 要確認", ""] + [f"- {p}" for p in problems]
+        write_survey_report(report_path, results, survey_date, total, notes)
 
         step = "manifest の更新"
         manifest["ingested_at"] = survey_date
@@ -889,6 +997,8 @@ def main() -> int:
     p_disc.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"1 バッチの件数（既定 {DEFAULT_BATCH_SIZE}）")
     p_disc.add_argument("--include-stubs", action="store_true", help="ポインタのスタブも対象にする")
     p_disc.add_argument("--force", action="store_true", help="ingest していない作業ディレクトリを捨てて作り直す")
+    p_disc.add_argument("--discard-partial", action="store_true",
+                        help="ingest が途中まで進んだ作業（pending を書き済み）を、控えごと捨てて作り直す（pending は重複しうる）")
     p_disc.set_defaults(func=cmd_discover)
 
     p_ing = sub.add_parser("ingest", help="out/ の結果を pending・index・レポート・.processed.json へ取り込む")
