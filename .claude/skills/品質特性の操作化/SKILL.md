@@ -42,3 +42,9 @@ description: "「速い」「安全」を、測れる量と閾値と測定条件
 - **語の意味を固定する。** 品質特性は SEI の quality attribute（ISO/IEC 25010 の quality characteristic とは別）。Environment は SEI の意味（シナリオの実行条件）で、42010 の environment とは別（part1_概念編.md §4.3 注記・appendix.md §E.2、MD-066）
 - **Source（発生源）を省かない。** 省くと要求が広く読まれ、存在しない矛盾が作られた（→ 区間の品質特性シナリオ）。閾値の出どころと並べて、その関心事の重みと根拠も書く（→ 重みのラベル付け）
 - ⚠ 所属: この skill は新設の「品質要求の獲得」（区間の品質特性シナリオ ほか）と一緒に習得される見込み。技能領域を移すかは師匠に確認中（capabilities.cap の注記）
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/quality_operationalize.py` — 品質特性シナリオを「測れる量・閾値・測定条件」の三点で読み、数値の無い測定値を示す。 ／ 使い方: `python scripts/quality_operationalize.py --help`
