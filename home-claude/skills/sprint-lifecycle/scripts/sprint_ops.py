@@ -71,7 +71,6 @@ def legacy_variant_keys(host: str, top: str) -> dict:
                 k = hashlib.sha1((hv + sv + tv).encode("utf-8")).hexdigest()[:8]
                 if k != canon:
                     out.setdefault(k, f"{hn}+{sn}+{tn}")
-            # 小文字化した全体（'ancient|s:/work/...' 型）
     return out
 
 

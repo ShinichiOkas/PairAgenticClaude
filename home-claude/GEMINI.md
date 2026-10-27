@@ -67,7 +67,7 @@
 - `.pair-agent/assurance/` — 設計保証
 - `.pair-agent/skills/` — プロジェクト固有のSkill（Claude Code用）
 - `.agents/skills/` — プロジェクト固有のSkill（Antigravity用。必要に応じて `.pair-agent/skills/` と同期）
-- `.pair-agent/current/<鍵>-*.json` — 現在地のポインタ（**作業ツリーごと**。鍵は `ホスト名 + git rev-parse --show-toplevel` の SHA-1 先頭 8 桁。詳細はプロジェクトの `CLAUDE.md`「スプリントの現在地は作業ツリーごと」）
+- `.pair-agent/current/<鍵>-*.json` — 現在地のポインタ（**作業ツリーごと**。鍵は `socket.gethostname()`（大文字小文字そのまま）+ `git rev-parse --show-toplevel`（そのまま・前後の空白を除く）を区切りなしで連結し UTF-8 で SHA-1、16 進の先頭 8 文字。詳細はプロジェクトの `CLAUDE.md`「スプリントの現在地は作業ツリーごと」）
 
 ## 主エージェントとサブエージェント（マルチエージェント協調）
 

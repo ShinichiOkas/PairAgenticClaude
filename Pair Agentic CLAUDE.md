@@ -95,7 +95,7 @@ Claude Codeの上に「徒弟制度」を実現するものです。
 | ビジョン記録 | \`\~/.claude/pair-agent/vision/\` | 師匠の思考パターン。プロジェクトを跨ぐ |  
 | 叱責・修正記録 | \`\~/.claude/pair-agent/corrections/\` | 境界線はペア固有 |  
 | 合意ドキュメント | \`\<project\>/.pair-agent/agreements/\` | スプリントはプロジェクトに紐づく |  
-| 現在地（スプリント状態） | \`\<project\>/.pair-agent/current/\<鍵\>-\*.json\` | 作業ツリーごとのポインタ（鍵はホスト名+パスのSHA-1先頭8桁） |  
+| 現在地（スプリント状態） | \`\<project\>/.pair-agent/current/\<鍵\>-\*.json\` | 作業ツリーごとのポインタ（鍵はホスト名（大文字小文字そのまま）+toplevel（そのまま）を区切りなしで連結したSHA-1先頭8桁） |  
 | スプリント履歴 | \`\<project\>/.pair-agent/sprints/\<sprint\_id\>.json\` | 経過（生きているものも閉じたものも同じ場所） |  
 | プロジェクト固有Skill | \`\<project\>/.pair-agent/skills/\` | そのプロジェクトだけの技術知見 |
 
@@ -306,7 +306,7 @@ info "To start: claude"
 \- \`.pair-agent/agreements/\` — 合意ドキュメント  
 \- \`.pair-agent/sprints/\` — スプリント履歴  
 \- \`.pair-agent/skills/\` — プロジェクト固有のSkill  
-\- \`.pair-agent/current/\<鍵\>-\*.json\` — 現在地のポインタ（作業ツリーごと。鍵はホスト名+パスのSHA-1先頭8桁）
+\- \`.pair-agent/current/\<鍵\>-\*.json\` — 現在地のポインタ（作業ツリーごと。鍵はホスト名（大文字小文字そのまま）+toplevel（そのまま）を区切りなしで連結したSHA-1先頭8桁）
 
 \#\# Skillの成熟度と協議深度
 
@@ -424,7 +424,7 @@ description: スプリントのライフサイクル管理。新しいタスク�
 
 師匠がゴールを伝えたら:
 
-1\. 作業ツリーの鍵を計算する（\`ホスト名 + git rev-parse --show-toplevel\` の SHA-1 先頭 8 桁）  
+1\. 作業ツリーの鍵を計算する（\`socket.gethostname()\` の値（大文字小文字そのまま）と \`git rev-parse --show-toplevel\` の出力（そのまま・前後の空白を除く）を区切りなしで連結し、UTF-8 で SHA-1、16 進の先頭 8 文字）  
 2\. \`.pair-agent/sprints/\<sprint\_id\>.json\` を新規作成し、経過を書く先とする:  
 \`\`\`json  
 {  

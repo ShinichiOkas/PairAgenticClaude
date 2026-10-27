@@ -43,7 +43,7 @@ description: スプリントのライフサイクル管理。新しいタスク�
 
 師匠がゴールを伝えたら:
 
-1. 作業ツリーの鍵を計算する（`ホスト名 + git rev-parse --show-toplevel` の SHA-1 先頭 8 桁）
+1. 作業ツリーの鍵を計算する（`socket.gethostname()` の値（大文字小文字そのまま）と `git rev-parse --show-toplevel` の出力（そのまま・前後の空白を除く）を区切りなしで連結し、UTF-8 で SHA-1、16 進の先頭 8 文字。道具は `sprint_ops.py key`）
 2. `.pair-agent/sprints/<sprint_id>.json` を新規作成し、経過（`経過` 配列）を書く先とする:
 ```json
 {

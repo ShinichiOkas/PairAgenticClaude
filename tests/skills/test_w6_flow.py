@@ -96,6 +96,67 @@ def test_sprint_migrate_legacy_and_closed_guard(proj, capsys):
     assert json.loads((p2 / ".pair-agent" / "sprints" / "CLOSED.json").read_text(encoding="utf-8"))["keep"] == 1
 
 
+def test_sprint_key_rule_case_sensitive_no_separator_trimmed(proj, capsys):
+    s = load("sprint-lifecycle", "sprint_ops")
+    assert s.worktree_key("ANCIENT", "S:/work/x") == hashlib.sha1(b"ANCIENTS:/work/x").hexdigest()[:8]
+    assert s.worktree_key("ANCIENT", "S:/work/x\n") == s.worktree_key("ANCIENT", "S:/work/x")  # 前後の空白は除く
+    assert s.worktree_key("ancient", "S:/work/x") != s.worktree_key("ANCIENT", "S:/work/x")  # 大文字小文字は区別
+
+
+def _put_ptr(proj, name, **body):
+    d = proj / ".pair-agent" / "current"
+    d.mkdir(parents=True, exist_ok=True)
+    f = d / name
+    f.write_text(json.dumps(body), encoding="utf-8")
+    return f
+
+
+def test_sprint_status_reports_foreign_key_pointers(proj, capsys):
+    s = load("sprint-lifecycle", "sprint_ops")
+    canon = hashlib.sha1(b"HOST/top/myproj").hexdigest()[:8]
+    lower_pipe = hashlib.sha1(b"host|/top/myproj").hexdigest()[:8]
+    _put_ptr(proj, f"{lower_pipe}-myproj.json", sprint_id="S-OLD", status="executing", journal="j")
+    _put_ptr(proj, "b665f4f8-other.json", sprint_id="S-ALIEN", status="agreed")
+    capsys.readouterr()
+    rc = s.main(sargs(proj, "status"))
+    out = capsys.readouterr().out
+    assert rc == 1  # 正本のポインタは無い
+    assert f"規則の違う鍵: {lower_pipe}-myproj.json" in out and "sprint_id=S-OLD" in out and "migrate で移せる" in out
+    assert "b665f4f8-other.json" in out and "別 PC 由来" in out and "sprint_id=S-ALIEN" in out
+    # 正本のポインタが正常なら、規則の違う鍵が有るだけで 5
+    assert s.main(sargs(proj, "start", "--goal", "g", "--sprint-id", "S1", "--apply")) == 0
+    assert (proj / ".pair-agent" / "current" / f"{canon}-myproj.json").is_file()
+    assert s.main(sargs(proj, "status")) == 5
+    capsys.readouterr()
+    for f in (proj / ".pair-agent" / "current").glob("*.json"):
+        if not f.name.startswith(canon):
+            f.unlink()
+    assert s.main(sargs(proj, "status")) == 0
+
+
+def test_sprint_migrate_rekeys_pointer(proj, capsys):
+    s = load("sprint-lifecycle", "sprint_ops")
+    canon = hashlib.sha1(b"HOST/top/myproj").hexdigest()[:8]
+    old = hashlib.sha1(b"host|/top/myproj").hexdigest()[:8]
+    cur = proj / ".pair-agent" / "current"
+    f = _put_ptr(proj, f"{old}-myproj.json", sprint_id="S9", status="executing", journal="j",
+                 workcopy={"host": "HOST", "path": "/top/myproj", "key": old})
+    alien = _put_ptr(proj, "b665f4f8-other.json", sprint_id="A")
+    assert s.main(sargs(proj, "migrate")) == 0  # 下見は動かさない
+    assert f.is_file() and "[下見]" in capsys.readouterr().out
+    assert s.main(sargs(proj, "migrate", "--apply")) == 0
+    assert not f.exists() and alien.is_file()  # 別 PC 由来は移さない
+    new = cur / f"{canon}-myproj.json"
+    d = json.loads(new.read_text(encoding="utf-8"))
+    assert d["sprint_id"] == "S9" and d["workcopy"]["key"] == canon
+    # 移す先が既に有れば止める（どちらも触らない）
+    f2 = _put_ptr(proj, f"{old}-myproj.json", sprint_id="S10")
+    capsys.readouterr()
+    assert s.main(sargs(proj, "migrate", "--apply")) == 4
+    assert "NEEDS-DECISION" in capsys.readouterr().out
+    assert f2.is_file() and json.loads(new.read_text(encoding="utf-8"))["sprint_id"] == "S9"
+
+
 # ------------------------------------------------------------ agreement-document
 def test_agreement_new_bump_append_check(tmp_path, capsys):
     a = load("agreement-document", "agreement_ops")
