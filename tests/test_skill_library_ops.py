@@ -68,6 +68,12 @@ def test_verify_ignores_placeholders_in_code(home, tmp_path):
     assert ops.find_placeholders("{REAL_ONE} と `{CODE_ONE}`") == ["{REAL_ONE}"]
 
 
+def test_placeholders_in_indented_code_block_are_ignored():
+    # リスト項目の中で字下げした ``` ブロックもコードとして除外する（2026-10-27 の実データで誤検知した形）
+    text = "- 手順:\n   ```powershell\n   $env:{ENV_VAR_NAME} = 'x'\n   ```\n- 本文の {REAL_ONE}\n"
+    assert ops.find_placeholders(text) == ["{REAL_ONE}"]
+
+
 def test_verify_frontmatter_and_source_missing(home, tmp_path, capsys):
     (home / "skill-library/approved/nofm.md").write_text("本文だけ\n", encoding="utf-8")
     make_approved(home, "nosrc", tmp_path / "無い.md", "x\n")

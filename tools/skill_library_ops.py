@@ -56,7 +56,7 @@ def write_text(path: Path, text: str) -> None:
 
 _NORM = re.compile(r"[\s　「」『』\"'`*]")
 _PLACEHOLDER = re.compile(r"\{[A-Z][A-Z0-9_]+\}")
-_FENCE = re.compile(r"^(```|~~~).*?^\1[ \t]*$", re.M | re.S)
+_FENCE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$", re.M | re.S)
 _INLINE = re.compile(r"`[^`\n]*`")
 
 
