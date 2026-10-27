@@ -38,6 +38,7 @@
 """
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
@@ -142,6 +143,51 @@ def skill_description(sk: dict) -> str:
     if tail:
         parts.append("（" + " ／ ".join(tail) + "）")
     return "".join(parts).replace("\n", " ")
+
+
+# ---------------------------------------------------------------- 武器（Skill 専用スクリプト）
+
+def weapon_files(name: str) -> dict[str, str | None]:
+    """`skills/scripts/<名前>/` の中身（相対パス → 本文）。無ければ空。
+    UTF-8 として読めないファイルは本文を None にする（呼び出し側が報告する）"""
+    d = SKILL_DIR / "scripts" / name
+    if not d.is_dir():
+        return {}
+    out: dict[str, str | None] = {}
+    for p in sorted(d.rglob("*")):
+        if not p.is_file() or "__pycache__" in p.parts or p.suffix == ".pyc":
+            continue
+        try:
+            out[p.relative_to(d).as_posix()] = p.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            out[p.relative_to(d).as_posix()] = None
+    return out
+
+
+def docstring_line(text: str | None) -> str:
+    """モジュール docstring の 1 行目。無ければ空文字"""
+    if not text:
+        return ""
+    try:
+        doc = ast.get_docstring(ast.parse(text)) or ""
+    except SyntaxError:
+        return ""
+    return next((ln.strip() for ln in doc.splitlines() if ln.strip()), "")
+
+
+def weapon_section(weapons: dict[str, str | None]) -> list[str]:
+    """SKILL.md 末尾に足す `## 武器（スクリプト）` 節（行のリスト）"""
+    L = ["## 武器（スクリプト）", "",
+         "この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。"
+         "機械にできる部分はこれに任せ、判断だけを自分でする。", ""]
+    for rel, text in weapons.items():
+        if "/" in rel or not rel.endswith(".py"):
+            continue
+        desc = docstring_line(text) or "（説明なし）"
+        L.append("- `scripts/" + rel + "` — " + desc
+                 + " ／ 使い方: `python scripts/" + rel + " --help`")
+    L.append("")
+    return L
 
 
 # ---------------------------------------------------------------- 導出
@@ -410,6 +456,15 @@ class Emit:
                 L += ["> ⚠ **draft —— これは仮説である。**"
                       "当てて、効かなければ「効かなかった」と報告してよい。", ""]
             L += [sk["body"], ""]
+            weapons = weapon_files(s)
+            if weapons:
+                L += weapon_section(weapons)
+                for rel, text in weapons.items():
+                    if text is None:
+                        self.notes.append("[武器を写せない] skills/scripts/" + s + "/" + rel
+                                          + " が UTF-8 のテキストでない（写さなかった）")
+                        continue
+                    files[key + "/scripts/" + rel] = text
             files[key + "/SKILL.md"] = NL.join(L)
         return files
 
@@ -824,7 +879,8 @@ def main() -> int:
         notes += [mk.name + ": " + n for n in e.notes]
         print("- **" + mk.name + "** → 役 " + str(len(e.roles)) + " ／ 機械 "
               + str(len(e.machines)) + " ／ 人間 " + str(len(e.humans))
-              + " ／ skill " + str(len(skills)) + " ／ 段 " + str(len(e.levels())))
+              + " ／ skill " + str(sum(1 for k in skills if k.endswith("/SKILL.md")))
+              + " ／ 段 " + str(len(e.levels())))
     print("")
 
     print("## 書き出し")

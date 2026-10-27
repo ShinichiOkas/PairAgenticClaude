@@ -15,6 +15,7 @@
 """
 from __future__ import annotations
 
+import ast
 import re
 import sys
 import unicodedata
@@ -97,6 +98,53 @@ def norm(s: str) -> str:
     """比較用の正規化 —— 全半角・記号・送り仮名の揺れを落とす"""
     s = unicodedata.normalize("NFKC", s)
     return re.sub(r"[のをにはがへとで・\s]", "", s)
+
+
+def _docstring_problem(py: Path, label: str) -> str | None:
+    try:
+        tree = ast.parse(py.read_text(encoding="utf-8"))
+    except (SyntaxError, UnicodeDecodeError) as e:
+        return "[武器] `" + label + "` を解析できない（" + type(e).__name__ + "）"
+    doc = ast.get_docstring(tree) or ""
+    if not any(ln.strip() for ln in doc.splitlines()):
+        return ("[武器] `" + label + "` にモジュール docstring が無い"
+                " —— 配布時に SKILL.md の「武器」節の説明になる 1 行目が要る")
+    return None
+
+
+def check_weapons(skill_dir: Path, home_skills_dir: Path | None = None) -> list[str]:
+    """Skill 専用スクリプト（武器）の検査。
+
+    - `skills/scripts/<名前>/` の `<名前>` が `skills/<名前>.md` と対応するか（孤児ディレクトリ）
+    - `home-claude/skills/<名前>/scripts/` は `SKILL.md` を伴うか
+    - 各 `.py` にモジュール docstring（1 行目の説明）があるか
+    """
+    problems: list[str] = []
+    wroot = skill_dir / "scripts"
+    if wroot.is_dir():
+        for d in sorted(p for p in wroot.iterdir() if p.is_dir() and p.name != "__pycache__"):
+            if not (skill_dir / (d.name + ".md")).exists():
+                problems.append("[武器の孤児] `skills/scripts/" + d.name + "/` —— 対応する Skill"
+                                " `skills/" + d.name + ".md` が無い")
+            for py in sorted(d.glob("*.py")):
+                p = _docstring_problem(py, "skills/scripts/" + d.name + "/" + py.name)
+                if p:
+                    problems.append(p)
+        for f in sorted(p for p in wroot.iterdir() if p.is_file()):
+            problems.append("[武器の孤児] `skills/scripts/" + f.name
+                            + "` —— Skill 名のディレクトリの外に置かれている")
+    if home_skills_dir is not None and home_skills_dir.is_dir():
+        for d in sorted(p for p in home_skills_dir.iterdir() if p.is_dir()):
+            sd = d / "scripts"
+            if not sd.is_dir():
+                continue
+            if not (d / "SKILL.md").exists():
+                problems.append("[武器の孤児] `" + d.name + "/scripts/` —— `SKILL.md` が無い")
+            for py in sorted(sd.glob("*.py")):
+                p = _docstring_problem(py, d.name + "/scripts/" + py.name)
+                if p:
+                    problems.append(p)
+    return problems
 
 
 def main() -> int:
@@ -213,6 +261,8 @@ def main() -> int:
                 problems.append("[dep 不足] `" + s + "` は `" + r
                                 + "` を要求するが、" + model + ".mk の `"
                                 + task + "` の deps に無い —— " + tail)
+
+    problems += check_weapons(SKILL_DIR, ROOT / "home-claude" / "skills")
 
     print("## 技能領域")
     print("")

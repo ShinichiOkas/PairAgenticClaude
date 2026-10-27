@@ -100,6 +100,15 @@ for /d %%d in ("%PAIR_AGENT_SRC%\skills\*") do (
     :: Antigravity
     if not exist "%ANTIGRAVITY_CONFIG%\skills\!skill_name!" mkdir "%ANTIGRAVITY_CONFIG%\skills\!skill_name!"
     copy /y "%%d\SKILL.md" "%ANTIGRAVITY_CONFIG%\skills\!skill_name!\" >nul
+    :: Weapons (Skill-specific deterministic scripts): copy scripts\ as well
+    if exist "%%d\scripts" (
+        if exist "%CLAUDE_HOME%\skills\!skill_name!\scripts" rmdir /s /q "%CLAUDE_HOME%\skills\!skill_name!\scripts"
+        xcopy /e /i /y /q "%%d\scripts" "%CLAUDE_HOME%\skills\!skill_name!\scripts" >nul
+        if exist "%CLAUDE_HOME%\skills\!skill_name!\scripts\__pycache__" rmdir /s /q "%CLAUDE_HOME%\skills\!skill_name!\scripts\__pycache__"
+        if exist "%ANTIGRAVITY_CONFIG%\skills\!skill_name!\scripts" rmdir /s /q "%ANTIGRAVITY_CONFIG%\skills\!skill_name!\scripts"
+        xcopy /e /i /y /q "%%d\scripts" "%ANTIGRAVITY_CONFIG%\skills\!skill_name!\scripts" >nul
+        if exist "%ANTIGRAVITY_CONFIG%\skills\!skill_name!\scripts\__pycache__" rmdir /s /q "%ANTIGRAVITY_CONFIG%\skills\!skill_name!\scripts\__pycache__"
+    )
     echo !GREEN![pair-agent]!NC! Installed skills/!skill_name!
 )
 

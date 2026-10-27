@@ -170,6 +170,14 @@ for skill_dir in "${PAIR_AGENT_SRC}/skills/"*/; do
     # Antigravity
     mkdir -p "${ANTIGRAVITY_CONFIG}/skills/${skill_name}"
     cp "${skill_dir}SKILL.md" "${ANTIGRAVITY_CONFIG}/skills/${skill_name}/"
+    # Weapons (Skill-specific deterministic scripts): copy scripts/ as well
+    if [[ -d "${skill_dir}scripts" ]]; then
+        for dest in "${CLAUDE_HOME}" "${ANTIGRAVITY_CONFIG}"; do
+            rm -rf "${dest}/skills/${skill_name}/scripts"
+            cp -r "${skill_dir}scripts" "${dest}/skills/${skill_name}/scripts"
+            find "${dest}/skills/${skill_name}/scripts" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+        done
+    fi
     info "Installed skills/${skill_name}"  
 done
 
