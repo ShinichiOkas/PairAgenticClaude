@@ -66,7 +66,7 @@ def legacy_variant_keys(host: str, top: str) -> dict:
     canon = worktree_key(host, top)
     out: dict = {}
     for hn, hv in (("ホスト名そのまま", host), ("ホスト名小文字", host.lower())):
-        for tn, tv in (("パスそのまま", top), ("パス小文字", top.lower()), ("パス\区切り", top.replace("/", "\\"))):
+        for tn, tv in (("パスそのまま", top), ("パス小文字", top.lower()), ("パス\\区切り",top.replace("/", "\\"))):
             for sn, sv in (("区切りなし", ""), ("|区切り", "|"), (":区切り", ":"), ("/区切り", "/"), ("-区切り", "-"), ("空白区切り", " ")):
                 k = hashlib.sha1((hv + sv + tv).encode("utf-8")).hexdigest()[:8]
                 if k != canon:
