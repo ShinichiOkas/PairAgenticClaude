@@ -13,13 +13,12 @@ description: プロジェクトに .pair-agent/ が存在しないとき、作�
 
 ## 手順
 
-1. 師匠に確認を求める:
+1. 1 行告げて、そのまま初期化する（追加だけで git で戻せる。応答を待たない。2026-10-27 改め: 師匠の宣言『とにかく速度！回転！不停止！』『ユーザーの応答待ちは悪！』。旧: 師匠に確認を求める）:
 
-   > `.pair-agent/` がありません。  
-   > Pair Agent の作業ディレクトリを初期化してよいですか？  
-   > （`agreements/`, `sprints/`, `acceptance/`, `assurance/`, `skills/`, `current/` が作成されます）
+   > `.pair-agent/` がありません。Pair Agent の作業ディレクトリを初期化します。  
+   > （`agreements/`, `sprints/`, `acceptance/`, `assurance/`, `skills/`, `current/` が作成されます。要らなければ言ってください、戻します）
 
-2. 承認されたら、以下の手順で初期化を実行する:
+2. 以下の手順で初期化を実行する:
    - テンプレートの内容を `.pair-agent/` へコピーする
      - 優先パス: `~/.claude/pair-agent/template/` または `~/.gemini/config/pair-agent/template/`
    - `.agents/skills/`, `.agents/agents/`, `.agents/workflows/` を作成する（Antigravity 用。install の `--project` と同じ）
@@ -35,9 +34,9 @@ description: プロジェクトに .pair-agent/ が存在しないとき、作�
 
 ## 注意
 
-- 師匠に確認せずに勝手に作成しない
+- 既存ファイルは上書きしない（追加だけ）。初期化は告げて即実行し、師匠に止められたら戻す
 - `.pair-agent/` がすでに存在する場合はこのスキルを発動しない
 - 空ディレクトリ（`project-start-empty` の管轄）では発動しない。  
-  空プロジェクトでは、プロジェクト方向が決まったタイミングで師匠の承認を得てから初期化する
+  空プロジェクトでは、プロジェクト方向が決まったタイミングで告げて初期化する
 - テンプレートがユーザーホームに見つからない場合は  
   「`install.sh`（または `install.bat`）を再実行してください」と案内する
