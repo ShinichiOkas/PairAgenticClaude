@@ -192,7 +192,8 @@ def cmd_index(a) -> int:
     n_in = len(src.splitlines())
     if len(out) != n_in:
         raise OpsError(f"行数が合わない: {n_in} -> {len(out)}")
-    left = sum("(pending/" in l and not (lib / "pending" / re.search(r"\(pending/([^)]+)\)", l)[1]).exists() for l in out)
+    links = [m[1] for l in out if (m := re.search(r"\(pending/([^)]+)\)", l))]
+    left = sum(not (lib / "pending" / f).exists() for f in links)
     if a.apply:
         write_text(Path(a.out) if a.out else idx, "\n".join(out) + "\n")
     print(("書いた" if a.apply else "下見"), "| lines in/out:", n_in, len(out), "| approved:", n_app,
