@@ -26,6 +26,17 @@
       確定・却下・廃止への変更、決断（decide）、閉じ方（close）、仕分け（triage）、検出の見送り（waive）、
       根拠（evidence）のリンクは --actor human だけ。
 
+規則が読む属性（Skill ごと。API は budgets／coupling／state_space／views／tradeoffs）:
+  予算     目標を持つ要素（QS など）の attrs.target（数）・unit と、そこから出る allocates の attrs.budget（数）・unit・basis
+  括り     --parent の親子（構造の要素）と relation。括りの attrs.max_coupling は外部結合の上限。
+           上限を宣言した括りだけを検出する（結合の数が大きいこと自体は検出しない）
+  状態     WS（世界）・SS（システム）・CS（論理コンポーネント。--parent に LC を指す）。
+           SS の attrs.of=[CS…] で組合せを定義する（指さない部品は「どちらでもよい」）。attrs.forbidden=true＋reason で禁止。
+           transitions（同じ種類の状態どうし）と attrs.mark（initial／goal／external）で供給元・行き止まり・到達性を見る
+  ビュー   PT（実装部品）と MO（モデル＝1 枚の図。attrs.viewpoint=logical／implementation／allocation）。
+           shows で要素を載せる。要素の種類は attrs.stereotype があればそれ。attrs.whiteboard=true の図は混在してよい
+  代償     採用した案の attrs.cons（[{text, origin}]）。捨てたもの（却下した案・代償・案どうしの関係）は tradeoffs()
+
 サブコマンド（共通: --db PATH --backend json|sqlite --actor ai|human --json）:
   init                       空の DB を作る
   add KIND TITLE             要素を足す（--parent --attr k=v --attrs-json --state --evidence）→ ID を出す
@@ -41,6 +52,7 @@
   why ID / impact ID         上流へ辿る（各段の根拠つき）/ 下流へ辿る（--depth）
   recheck                    要再確認の一覧（一段先だけ）
   check                      検出（規則, 対象 で安定した ID）。検出があれば終了コード 1（--all で見送りも出す）
+                             対象が要素でない検出（view:…・system_state）の見送りは、版が無いので切れない
   status                     未決・要再確認・未解決・検出の件数と、完了の条件
   export                     Markdown に書き出す（決定性。「生成物。手で直さない」と書く）（--out）
   convert --to PATH          別の保存形式へ写す（--to-backend）
@@ -51,13 +63,16 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
+import math
 import re
 import sqlite3
 import sys
 from collections import deque
 from contextlib import closing
 from datetime import datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -81,8 +96,13 @@ KINDS: dict[str, tuple[str, str]] = {
     "requirement": ("RQ", "要求"),
     "actor": ("AC", "アクター"),
     "usecase": ("UC", "ユースケース"),
+    "world_state": ("WS", "世界の状態"),
+    "system_state": ("SS", "システムの状態"),
     "component": ("LC", "論理コンポーネント"),
+    "component_state": ("CS", "論理コンポーネントの状態"),
+    "part": ("PT", "実装部品"),
     "interface": ("IF", "インタフェース"),
+    "model": ("MO", "モデル（1 枚の図）"),
     "constraint": ("CT", "制約"),
     "issue": ("IS", "アーキテクチャ課題"),
     "risk": ("RK", "リスク"),
@@ -94,17 +114,35 @@ KINDS: dict[str, tuple[str, str]] = {
 LINK_PREFIX = "L"
 # 確定に根拠（evidence → record）が要る種類
 NEEDS_EVIDENCE = frozenset({"concern", "qas", "requirement", "usecase", "component", "interface",
-                            "constraint", "decision_point"})
+                            "constraint", "decision_point", "part", "world_state", "system_state", "component_state"})
 # 割り付け先（allocates）が要る種類
 MUST_ALLOCATE = frozenset({"requirement"})
 # 上流（決断・導出・割り付け・親）が要る種類。attrs.obvious が真なら免除（自明な要素）
-NEEDS_UPSTREAM = frozenset({"component", "interface", "decision_point"})
+#   実装部品は論理上の役割（allocates LC → PT）か親が要る（部品はあるが役割が無い、を孤児として出す）
+NEEDS_UPSTREAM = frozenset({"component", "interface", "decision_point", "part"})
 CLOSABLE = frozenset({"issue", "risk"})
 CLOSURES = ("resolved", "accepted", "dismissed", "deferred", "open")
 CLOSURE_LABEL = {"resolved": "解決", "accepted": "受容", "dismissed": "退ける", "deferred": "保留", "open": "未解決"}
 QAS_FIELDS = ("source", "stimulus", "environment", "artifact", "response", "response_measure")
 QAS_ALIASES = {"response_measure": ("measure",)}
 CONS_ORIGINS = frozenset({"means", "essential", "手段由来", "本質的"})
+# 状態の三段導出
+STATE_KINDS = ("world_state", "system_state", "component_state")
+STATE_MARKS = {"initial": ("initial", "初め", "初めの状態"), "goal": ("goal", "目的達成", "目的達成の状態"),
+               "external": ("external", "外", "外の状態")}
+STATE_PROBLEMS = {"no_source": "供給元なし", "dead_end": "行き止まり", "unreachable": "初めの状態から到達できない"}
+STATE_PRODUCT_LIMIT = 4096   # 直積をこれより多く数え上げない（超えたら網羅の検査をしていないと出す）
+STATE_EXAMPLES = 10          # 網羅漏れ・重複の検出に添える組合せの数（全部は state_space() にある）
+# 三つの基本ビュー（viewpoint の値と別名）
+VIEWPOINTS = {"logical": ("logical", "論理", "論理ビュー"),
+              "implementation": ("implementation", "実装", "実装ビュー"),
+              "allocation": ("allocation", "割り付け", "割り付けビュー", "配置", "配置ビュー")}
+VIEW_LABEL = {"logical": "論理ビュー", "implementation": "実装ビュー", "allocation": "割り付けビュー"}
+VIEW_OF_KIND = {"component": "logical", "part": "implementation"}  # どのビューに載るべき要素か
+# 括り（構造の要素。括りの中身として数える）
+STRUCTURE_KINDS = frozenset({"component", "part", "interface"})
+COUPLING_GROUP_KINDS = frozenset({"component", "part", "interface", "option"})  # 案も構造の候補の括りになる
+SOFT_RELATIONS = ("excludes", "conflicts", "synergy", "linked")
 
 # リンクの種類 -> (上流の端 src|dst|None, 因果の鎖か, 表示)
 #   上流の端があるリンクは、上流の版を seen に覚え、要再確認の対象になる
@@ -121,6 +159,8 @@ LINK_KINDS: dict[str, tuple[str | None, bool, str]] = {
     "verifies": ("dst", False, "検証する（設計ノート → 要求）"),
     "about": ("dst", False, "について書く（メモ・課題 → 対象）"),
     "relation": (None, False, "構造の関連（述語 predicate が要る）"),
+    "transitions": (None, False, "遷移する（状態 → 次の状態。同じ種類の状態どうし。attrs.event）"),
+    "shows": ("dst", False, "載せる（モデル → 要素。要素が変わるとモデルに要再確認）"),
     "excludes": (None, False, "排他（案どうし・硬い）"),
     "conflicts": (None, False, "衝突（案どうし・柔らかい）"),
     "synergy": (None, False, "相乗（案どうし・柔らかい）"),
@@ -145,6 +185,18 @@ RULES: dict[str, tuple[str, str, str]] = {
     "no_source": ("出所の無い関心事", "関心事の出所", "warn"),
     "no_weight": ("重み（1〜5）の無い関心事", "重みのラベル付け", "warn"),
     "closure_incomplete": ("閉じ方の記録が欠ける", "課題の閉じ方", "warn"),
+    "no_cons": ("採用した案に代償（cons）が無い", "トレードオフの明示", "warn"),
+    "budget_over": ("予算の合計が区間の目標を超える", "区間目標の予算配分", "warn"),
+    "budget_unreadable": ("突き合わせられない予算（数でない・単位が違う・目標が無い）", "区間目標の予算配分", "warn"),
+    "coupling_over": ("括りの外部結合が宣言した上限を超える", "括りと結合上限", "warn"),
+    "state_flow": ("状態遷移の供給元なし・行き止まり・到達できない", "状態の三段導出", "warn"),
+    "state_undefined": ("システム状態の定義が欠ける・誤る", "状態の三段導出", "warn"),
+    "state_gap": ("どのシステム状態にも禁止にも当たらない組合せ（網羅漏れ）", "状態の三段導出", "warn"),
+    "state_overlap": ("2 つ以上のシステム状態に当たる組合せ（重複）", "状態の三段導出", "warn"),
+    "view_missing": ("三つの基本ビューの欠け", "三つの基本ビュー", "warn"),
+    "no_view": ("どのビューのモデルにも載らない要素", "三つの基本ビュー", "warn"),
+    "mixed_kinds": ("1 枚のモデルに要素の種類が混ざる", "一モデル一要素種", "warn"),
+    "state_dont_care": ("「どちらでもよい」部品のあるシステム状態（未決事項）", "状態の三段導出", "info"),
     "undecided": ("未決の決定点", "未決の渡し方", "info"),
 }
 RULE_ORDER = {r: i for i, r in enumerate(RULES)}
@@ -203,6 +255,55 @@ def _dumps(v: Any) -> str:
 
 def _empty(v: Any) -> bool:
     return v is None or (isinstance(v, (str, list, dict, tuple)) and len(v) == 0) or (isinstance(v, str) and not v.strip())
+
+
+def _is_number(v: Any) -> bool:
+    """数（真偽値・NaN・無限大は除く）。"""
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _dec(v: int | float) -> Decimal:
+    """十進で足す（0.1 + 0.2 が 0.3 を超えない）。"""
+    return Decimal(v) if isinstance(v, int) else Decimal(repr(v))
+
+
+def _num(d: Decimal) -> int | float:
+    return int(d) if d == d.to_integral_value() else float(d)
+
+
+def _aliases(v: Any, table: dict[str, tuple[str, ...]]) -> set[str]:
+    """値（文字列か文字列の配列）を、別名の表の鍵の集合に直す。表に無い値は落とす。"""
+    vals = v if isinstance(v, list) else [v]
+    out = set()
+    for x in vals:
+        if isinstance(x, str):
+            out |= {k for k, names in table.items() if x.strip() in names}
+    return out
+
+
+def _viewpoint(v: Any) -> str | None:
+    """attrs.viewpoint を三つの基本ビューの鍵（logical／implementation／allocation）に直す。
+    それ以外の視点はそのままの文字列、無ければ None。"""
+    if not isinstance(v, str) or not v.strip():
+        return None
+    keys = _aliases(v, VIEWPOINTS)
+    return next(iter(keys)) if keys else v.strip()
+
+
+def _cons_list(v: Any) -> list[dict]:
+    """attrs.cons を [{text, origin, …}] に揃える（文字列だけの欠点は origin なし）。"""
+    if _empty(v):
+        return []
+    out = []
+    for c in v if isinstance(v, list) else [v]:
+        if isinstance(c, dict):
+            e = dict(c)
+            if _empty(e.get("text")):
+                e["text"] = _dumps(c)
+            out.append(e)
+        else:
+            out.append({"text": str(c)})
+    return out
 
 
 def parse_value(text: str) -> Any:
@@ -526,6 +627,8 @@ class DesignGraph:
                 raise DesignGraphError("案（option）の parent には決定点（D…）を指す")
         elif parent is not None and parent not in self.nodes:
             raise NotFound(f"親が無い: {parent}")
+        if kind == "component_state" and (not parent or self.nodes[parent]["kind"] != "component"):
+            raise DesignGraphError("論理コンポーネントの状態（component_state）の parent には論理コンポーネント（LC…）を指す")
         if attrs is not None and not isinstance(attrs, dict):
             raise DesignGraphError("attrs はオブジェクト（dict）")
         records = self._check_evidence(evidence)
@@ -598,6 +701,19 @@ class DesignGraph:
             self._check_evidence([dst])
         if kind == "source" and self.nodes[dst]["kind"] != "stakeholder":
             raise DesignGraphError(f"source の dst はステークホルダ（SH）: {dst}（規格・戦略も SH として置く）")
+        if kind == "transitions":
+            a, b = self.nodes[src], self.nodes[dst]
+            if a["kind"] not in STATE_KINDS or a["kind"] != b["kind"]:
+                raise DesignGraphError(f"遷移は同じ種類の状態どうし（WS→WS・SS→SS・CS→CS）: {src}（{a['kind']}）→ "
+                                       f"{dst}（{b['kind']}）")
+            if a["kind"] == "component_state" and a.get("parent") != b.get("parent"):
+                raise DesignGraphError(f"論理コンポーネントの状態の遷移は同じ部品の中だけ: {src}（{a.get('parent')}）→ "
+                                       f"{dst}（{b.get('parent')}）")
+        if kind == "shows":
+            if self.nodes[src]["kind"] != "model":
+                raise DesignGraphError(f"shows の src はモデル（MO）: {src}")
+            if self.nodes[dst]["kind"] == "model":
+                raise DesignGraphError(f"モデルにモデルは載せない: {dst}")
         if state is None:
             state = "confirmed" if kind == "evidence" else "hypothesis"
         if state not in ("hypothesis", "confirmed"):
@@ -938,6 +1054,10 @@ class DesignGraph:
                 add("no_predicate", l["id"], f"{l['id']}（{l['src']} — {l['dst']}）に述語が無い")
             if l["kind"] == "excludes" and self._adopted(l["src"]) and self._adopted(l["dst"]):
                 add("excluded_both", l["id"], f"{l['src']} と {l['dst']} は排他（{l['id']}）なのに両方とも採用されている")
+        self._check_budgets(add)
+        self._check_coupling(add)
+        self._check_states(add)
+        self._check_views(add)
         return sorted(out, key=lambda f: (RULE_ORDER[f["rule"]], natkey(f["target"])))
 
     def _check_dp(self, n: dict, add: Callable[..., None]) -> None:
@@ -969,12 +1089,348 @@ class DesignGraph:
             add("no_must", ident, f"{ident} は採用されたが、実装者への制約 must／must_not が無い")
         if (adopted or a.get("recommended")) and _empty(a.get("verification")):
             add("no_verification", ident, f"{ident} は{'採用' if adopted else '推奨'}だが、検証方法（verification）が無い")
+        if adopted and _empty(a.get("cons")):
+            add("no_cons", ident, f"{ident} は採用されたが、代償（cons）が書かれていない。"
+                                  "「代償なし」は測っていないだけかもしれない")
         cons = a.get("cons")
         if not _empty(cons):
             entries = cons if isinstance(cons, list) else [cons]
             bad = sum(1 for c in entries if not (isinstance(c, dict) and c.get("origin") in CONS_ORIGINS))
             if bad:
                 add("cons_no_origin", ident, f"{ident} の欠点 {bad} 件に由来（origin: means／essential）が無い", count=bad)
+
+    def _check_budgets(self, add: Callable[..., None]) -> None:
+        for b in self.budgets():
+            u = f" {b['unit']}" if b["unit"] else ""
+            if b["over"]:
+                add("budget_over", b["id"], f"{b['id']} の目標 {b['target']}{u} に対し、配分の合計 {b['total']}{u}"
+                    f"（超過 {b['excess']}{u}）。予算の取り合いを課題にする", goal=b["target"], total=b["total"],
+                    excess=b["excess"])
+            if b["problem"] == "no_target":
+                add("budget_unreadable", b["id"], f"{b['id']} から予算を配分しているが、目標値（attrs.target の数）が無い")
+            elif b["problem"] == "target_not_number":
+                add("budget_unreadable", b["id"], f"{b['id']} の目標値（attrs.target）が数でない: {b['target']!r}")
+            for i in b["items"]:
+                if i["problem"] == "not_number":
+                    add("budget_unreadable", i["link"],
+                        f"{i['link']}（{b['id']} → {i['to']}）の予算（attrs.budget）が数でない: {i['budget']!r}")
+                elif i["problem"] == "unit":
+                    add("budget_unreadable", i["link"], f"{i['link']}（{b['id']} → {i['to']}）の予算の単位 {i['unit']} が"
+                        f"目標の単位 {b['unit']} と違う（関心事ごとに別の予算表にする）")
+
+    def _check_coupling(self, add: Callable[..., None]) -> None:
+        for g in self.coupling()["groups"]:
+            if g["limit_valid"] is None:  # 上限を宣言していない括りは検出しない（数の大きさは課題の種別にしない）
+                continue
+            if not g["limit_valid"]:
+                add("coupling_over", g["id"], f"{g['id']} の上限（attrs.max_coupling）が 0 以上の整数でない: "
+                    f"{g['max_coupling']!r}")
+            elif g["over"]:
+                add("coupling_over", g["id"], f"{g['id']} の外部結合 {g['external']} が、宣言した上限 {g['max_coupling']} を超える",
+                    external=g["external"], limit=g["max_coupling"])
+
+    def _check_states(self, add: Callable[..., None]) -> None:
+        sp = self.state_space()
+        for f in sp["flows"]:
+            for ident, ps in f["problems"].items():
+                add("state_flow", ident, f"{ident} は{'・'.join(STATE_PROBLEMS[p] for p in ps)}（{f['group']} の遷移）。"
+                    "初め・目的達成・外の状態なら attrs.mark で印を付ける", problems=ps)
+        for d in sp["definitions"]:
+            if d["problems"]:
+                add("state_undefined", d["id"], f"{d['id']}: {'／'.join(d['problems'])}", problems=d["problems"])
+            if d["dont_care"] and not d["issues"]:
+                add("state_dont_care", d["id"], f"{d['id']} は {', '.join(d['dont_care'])} の状態を決めていない（どちらでもよい）。"
+                    f"未決事項として課題に載せる（課題 → about → {d['id']}）", components=d["dont_care"])
+        if sp["active"] and not sp["enumerated"]:
+            add("state_gap", "system_state", f"部品の状態の直積 {sp['size']} 通りが数え上げの上限 {sp['limit']} を超えるので、"
+                "網羅の検査をしていない", count=None, examples=[])
+        if sp["gaps"]:
+            ex = sp["gaps"][:STATE_EXAMPLES]
+            add("state_gap", "system_state", f"{len(sp['gaps'])} 通りがどのシステム状態にも禁止にも当たらない"
+                f"（例: {', '.join('∧'.join(g) for g in ex)}）。状態の定義に当てるか、理由を付けて禁止にする",
+                count=len(sp["gaps"]), examples=ex)
+        if sp["overlaps"]:
+            by: dict[tuple[str, ...], list[list[str]]] = {}
+            for o in sp["overlaps"]:
+                by.setdefault(tuple(o["by"]), []).append(o["states"])
+            parts = [f"{'・'.join(k)}（{len(v)} 通り。例 {'∧'.join(v[0])}）" for k, v in list(by.items())[:STATE_EXAMPLES]]
+            add("state_overlap", "system_state", f"{len(sp['overlaps'])} 通りが 2 つ以上の定義に当たる: {', '.join(parts)}",
+                count=len(sp["overlaps"]), examples=sp["overlaps"][:STATE_EXAMPLES])
+
+    def _check_views(self, add: Callable[..., None]) -> None:
+        v = self.views()
+        for vp in v["missing"]:
+            add("view_missing", f"view:{vp}", f"{VIEW_LABEL[vp]}のモデルが無い（attrs.viewpoint={vp} のモデル MO を作り、"
+                "shows で要素を載せる）", viewpoint=vp)
+        view_of = {e["id"]: e["view"] for e in v["elements"]}
+        for ident in v["unviewed"]:
+            add("no_view", ident, f"{ident} はどのビューのモデルにも載っていない（{VIEW_LABEL[view_of[ident]]}のモデルに載せる）")
+        for m in v["models"]:
+            if m["mixed"]:
+                vp = m["viewpoint"]
+                kinds = "・".join(f"{k}（{', '.join(ids)}）" for k, ids in m["kinds"].items())
+                add("mixed_kinds", m["id"], f"{m['id']}（{VIEW_LABEL.get(vp or '', vp or '視点なし')}）に要素の種類が "
+                    f"{len(m['kinds'])} つ: {kinds}。図を分ける（議論中のホワイトボードなら attrs.whiteboard=true）",
+                    kinds=list(m["kinds"]))
+
+    # ------------------------------------------------ Skill の観点の表（規則が使い、入口が読む）
+
+    def _alive_nodes(self, kind: str | None = None) -> list[dict]:
+        return [n for n in sorted(self.nodes.values(), key=lambda n: natkey(n["id"]))
+                if n["state"] in ALIVE and (kind is None or n["kind"] == kind)]
+
+    def _title(self, ident: str) -> str:
+        e = self._entity(ident)
+        return e.get("title") or self._link_text(e)
+
+    def budgets(self) -> list[dict]:
+        """予算表（区間目標の予算配分）。目標値（attrs.target）か、予算（attrs.budget）つきの割り付けを持つ
+        生きた要素ごとに 1 表。予算は十進で足す。数でない予算・単位が目標と違う予算は合計に入れず problem に出す。"""
+        out = []
+        for n in self._alive_nodes():
+            a = n["attrs"]
+            allocs = self.links_from(n["id"], "allocates")
+            if "target" not in a and not any("budget" in l["attrs"] for l in allocs):
+                continue
+            unit = a["unit"].strip() if isinstance(a.get("unit"), str) and a["unit"].strip() else None
+            items = []
+            total = Decimal(0)
+            for l in allocs:
+                la = l["attrs"]
+                b = la.get("budget")
+                bu = la["unit"].strip() if isinstance(la.get("unit"), str) and la["unit"].strip() else None
+                problem: str | None = None
+                if "budget" not in la:
+                    problem = "no_budget"
+                elif not _is_number(b):
+                    problem = "not_number"
+                elif unit and bu and bu != unit:
+                    problem = "unit"
+                else:
+                    total += _dec(b)
+                items.append({"link": l["id"], "to": l["dst"], "to_title": self._title(l["dst"]), "budget": b,
+                              "unit": bu, "basis": la.get("basis"), "state": l["state"], "problem": problem})
+            target = a.get("target")
+            row: dict[str, Any] = {"id": n["id"], "kind": n["kind"], "title": n["title"], "state": n["state"],
+                                   "target": target, "unit": unit, "items": items, "total": _num(total), "over": False,
+                                   "excess": None, "remaining": None, "problem": None}
+            if _is_number(target):
+                diff = total - _dec(target)
+                row["over"] = diff > 0
+                row["excess" if diff > 0 else "remaining"] = _num(abs(diff))
+            else:
+                row["problem"] = "no_target" if "target" not in a else "target_not_number"
+            out.append(row)
+        return out
+
+    def coupling(self) -> dict:
+        """括りと結合の数の表（括りと結合上限）。数は案を比べる材料。検出に使うのは上限（attrs.max_coupling）を宣言した括りだけ。
+        結合は生きた relation の両端の組（同じ組に述語が 2 つあっても 1 つ）。括りの中身は --parent の親子を辿った構造の要素。"""
+        alive = {n["id"]: n for n in self._alive_nodes()}
+        children: dict[str, list[str]] = {}
+        for n in alive.values():
+            p = n.get("parent")
+            if isinstance(p, str) and p in alive and n["kind"] in STRUCTURE_KINDS:
+                children.setdefault(p, []).append(n["id"])
+        pairs = sorted({tuple(sorted((l["src"], l["dst"]), key=natkey)) for l in self.links.values()
+                        if l["kind"] == "relation" and l["state"] in ALIVE and l["src"] in alive and l["dst"] in alive})
+
+        def inside(root: str) -> set[str]:
+            seen, q = {root}, deque([root])
+            while q:
+                for c in children.get(q.popleft(), []):
+                    if c not in seen:
+                        seen.add(c)
+                        q.append(c)
+            return seen
+
+        def count(members: set[str]) -> tuple[int, int]:
+            return (sum(1 for a, b in pairs if a in members and b in members),
+                    sum(1 for a, b in pairs if (a in members) != (b in members)))
+
+        structure = {i for i, n in alive.items() if n["kind"] in STRUCTURE_KINDS}
+        internal, external = count(structure)
+        groups = []
+        for ident, node in alive.items():
+            declared = "max_coupling" in node["attrs"]
+            if not declared and not (node["kind"] in COUPLING_GROUP_KINDS and ident in children):
+                continue
+            members = inside(ident)
+            gi, ge = count(members)
+            lim = node["attrs"].get("max_coupling")
+            valid = isinstance(lim, int) and not isinstance(lim, bool) and lim >= 0
+            groups.append({"id": ident, "kind": node["kind"], "title": node["title"],
+                           "children": len(children.get(ident, [])), "elements": len(members) - 1,
+                           "internal": gi, "external": ge, "max_coupling": lim if declared else None,
+                           "limit_valid": valid if declared else None, "over": bool(declared and valid and ge > lim)})
+        n_all = len(structure)
+        return {"elements": n_all, "couplings": internal, "external": external, "max_pairs": n_all * (n_all - 1) // 2,
+                "sqrt_n": round(math.sqrt(n_all), 2), "groups": groups}
+
+    def state_space(self) -> dict:
+        """状態の三段導出の表。第 3 段（SS の attrs.of による部品の状態の組合せ）の網羅漏れ・重複・「どちらでもよい」と、
+        各段の遷移（transitions）の供給元・行き止まり・到達性。of で指さない部品は「どちらでもよい」（どの状態にも当たる）。"""
+        cs_alive = {n["id"]: n for n in self._alive_nodes("component_state")
+                    if self._alive(n.get("parent") or "") and self.nodes[n["parent"]]["kind"] == "component"}
+        defs = []
+        for s in self._alive_nodes("system_state"):
+            a = s["attrs"]
+            of = a.get("of")
+            refs = [] if _empty(of) else (list(of) if isinstance(of, list) else [of])
+            spec: dict[str, str] = {}
+            problems: list[str] = []
+            if not refs:
+                problems.append("組合せ（attrs.of=[CS…]）が無い")
+            for c in refs:
+                if not isinstance(c, str) or c not in cs_alive:
+                    problems.append(f"{c!r} は生きた論理コンポーネントの状態（CS）ではない")
+                    continue
+                lc = cs_alive[c]["parent"]
+                if lc in spec and spec[lc] != c:
+                    problems.append(f"{lc} の状態を 2 つ指している（{spec[lc]}・{c}）")
+                else:
+                    spec[lc] = c
+            valid = not problems
+            forbidden = bool(a.get("forbidden"))
+            if forbidden and _empty(a.get("reason")):
+                problems.append("禁止の理由（attrs.reason）が無い")
+            defs.append({"id": s["id"], "title": s["title"], "forbidden": forbidden, "reason": a.get("reason"),
+                         "of": refs, "spec": dict(sorted(spec.items(), key=lambda kv: natkey(kv[0]))), "valid": valid,
+                         "problems": problems, "dont_care": [], "issues": []})
+        usable = [d for d in defs if d["valid"]]
+        comps = sorted({lc for d in usable for lc in d["spec"]}, key=natkey)
+        states = {lc: [c for c in sorted(cs_alive, key=natkey) if cs_alive[c]["parent"] == lc] for lc in comps}
+        size = math.prod(len(states[lc]) for lc in comps) if comps else 0
+        about: dict[str, set[str]] = {}
+        for l in self.links.values():
+            if l["kind"] == "about" and l["state"] in ALIVE and self._alive(l["src"]) and \
+                    self.nodes.get(l["src"], {}).get("kind") == "issue":
+                about.setdefault(l["dst"], set()).add(l["src"])
+        for d in usable:
+            if not d["forbidden"]:
+                d["dont_care"] = [lc for lc in comps if lc not in d["spec"]]
+                d["issues"] = sorted(about.get(d["id"], set()), key=natkey)
+        active = bool(usable)
+        enumerated = active and size <= STATE_PRODUCT_LIMIT
+        gaps: list[list[str]] = []
+        overlaps: list[dict] = []
+        if enumerated:
+            idx = {lc: i for i, lc in enumerate(comps)}
+            for combo in itertools.product(*(states[lc] for lc in comps)):
+                hits = [d for d in usable if all(combo[idx[lc]] == c for lc, c in d["spec"].items())]
+                allowed = [d for d in hits if not d["forbidden"]]
+                if not hits:
+                    gaps.append(list(combo))
+                elif len(allowed) >= 2 or (allowed and len(allowed) < len(hits)):  # 禁止どうしの重なりは問わない
+                    overlaps.append({"states": list(combo), "by": [d["id"] for d in hits]})
+        groups: dict[str, list[str]] = {"world_state": [n["id"] for n in self._alive_nodes("world_state")],
+                                        "system_state": [d["id"] for d in defs if not d["forbidden"]]}
+        for lc in sorted({n["parent"] for n in cs_alive.values()}, key=natkey):
+            groups[f"component_state:{lc}"] = [c for c in sorted(cs_alive, key=natkey) if cs_alive[c]["parent"] == lc]
+        trans = [l for l in sorted(self.links.values(), key=lambda l: natkey(l["id"]))
+                 if l["kind"] == "transitions" and l["state"] in ALIVE]
+        flows = []
+        for key, members in groups.items():
+            mem = set(members)
+            edges = [(l["src"], l["dst"]) for l in trans if l["src"] in mem and l["dst"] in mem]
+            if not edges:  # 遷移を描いていない段は見ない
+                continue
+            inc = {d for s, d in edges if s != d}
+            outg = {s for s, d in edges if s != d}
+            marks = {m: _aliases(self.nodes[m]["attrs"].get("mark"), STATE_MARKS) for m in members}
+            initial = [m for m in members if "initial" in marks[m]]
+            reach: set[str] = set()
+            if initial:
+                adj: dict[str, list[str]] = {}
+                for s, d in edges:
+                    adj.setdefault(s, []).append(d)
+                start = [m for m in members if marks[m] & {"initial", "external"}]
+                reach, q = set(start), deque(start)
+                while q:
+                    for nx in adj.get(q.popleft(), []):
+                        if nx not in reach:
+                            reach.add(nx)
+                            q.append(nx)
+            problems_of: dict[str, list[str]] = {}
+            for m in members:
+                ps = []
+                if not marks[m] & {"initial", "external"}:
+                    if m not in inc:
+                        ps.append("no_source")
+                    elif initial and m not in reach:
+                        ps.append("unreachable")
+                if m not in outg and not marks[m] & {"goal", "external"}:
+                    ps.append("dead_end")
+                if ps:
+                    problems_of[m] = ps
+            flows.append({"group": key, "states": members, "transitions": len(edges), "initial": initial,
+                          "problems": problems_of})
+        return {"active": active, "size": size, "limit": STATE_PRODUCT_LIMIT, "enumerated": enumerated,
+                "components": [{"id": lc, "title": self.nodes[lc]["title"], "states": states[lc]} for lc in comps],
+                "unused_states": sorted((c for c in cs_alive if cs_alive[c]["parent"] not in states), key=natkey),
+                "definitions": defs, "gaps": gaps, "overlaps": overlaps, "flows": flows}
+
+    def views(self) -> dict:
+        """三つの基本ビューの表。モデル（MO・1 枚の図）を attrs.viewpoint でビューに束ね、shows で載せた要素を数える。
+        モデルが 1 枚も無いあいだは検査しない（active=False）。視点の無いモデルはどのビューにも属さない。"""
+        models = []
+        on: dict[str, list[str]] = {}
+        present: set[str] = set()
+        for m in self._alive_nodes("model"):
+            a = m["attrs"]
+            vp = _viewpoint(a.get("viewpoint"))
+            kinds: dict[str, list[str]] = {}
+            els = []
+            for l in self.links_from(m["id"], "shows"):
+                e = self.nodes[l["dst"]]
+                els.append(e["id"])
+                st = e["attrs"].get("stereotype")
+                kinds.setdefault(st.strip() if isinstance(st, str) and st.strip() else e["kind"], []).append(e["id"])
+                if vp is not None:
+                    on.setdefault(e["id"], []).append(m["id"])
+            if vp in VIEWPOINTS:
+                present.add(vp)
+            allowed = 2 if vp == "allocation" else 1  # 割り付けの図だけは 2 種類を許す
+            whiteboard = bool(a.get("whiteboard"))
+            models.append({"id": m["id"], "title": m["title"], "viewpoint": vp, "basic": vp in VIEWPOINTS,
+                           "elements": els, "kinds": dict(sorted(kinds.items())), "allowed": allowed,
+                           "whiteboard": whiteboard, "mixed": len(kinds) > allowed and not whiteboard})
+        active = bool(models)
+        elements = [{"id": n["id"], "kind": n["kind"], "title": n["title"], "view": VIEW_OF_KIND[n["kind"]],
+                     "models": on.get(n["id"], [])} for n in self._alive_nodes() if n["kind"] in VIEW_OF_KIND]
+        return {"active": active, "present": [vp for vp in VIEWPOINTS if vp in present],
+                "missing": [vp for vp in VIEWPOINTS if vp not in present] if active else [],
+                "models": models, "elements": elements,
+                "unviewed": [e["id"] for e in elements if not e["models"] and e["view"] in present]}
+
+    def tradeoffs(self) -> list[dict]:
+        """決断ごとの「捨てたもの」: 採用した案とその代償（cons）、却下した案、採用した案と案どうしの関係
+        （排他・衝突・相乗・関係）、決定点の上流の関心事。未決の決定点は入れない（まだ何も捨てていない）。"""
+        rows = []
+        for d in self._alive_nodes("decision_point"):
+            dec = d.get("decision")
+            if not dec or dec["option"] not in self.nodes:
+                continue
+            oid = dec["option"]
+            o = self.nodes[oid]
+            rels = []
+            for l in sorted(self.links.values(), key=lambda l: natkey(l["id"])):
+                if l["kind"] not in SOFT_RELATIONS or l["state"] not in ALIVE or oid not in (l["src"], l["dst"]):
+                    continue
+                other = l["dst"] if l["src"] == oid else l["src"]
+                on = self.nodes.get(other) or {}
+                rels.append({"link": l["id"], "kind": l["kind"], "other": other, "other_title": on.get("title", ""),
+                             "other_state": on.get("state"), "other_adopted": self._adopted(other)})
+            rejected = [{"id": s["id"], "title": s["title"], "state": s["state"], "viewpoint": s["attrs"].get("viewpoint"),
+                         "cons": _cons_list(s["attrs"].get("cons"))} for s in self._options(d["id"]) if s["id"] != oid]
+            oa = o["attrs"]
+            rows.append({"dp": d["id"], "title": d["title"], "conditions": list(dec.get("conditions") or []),
+                         "adopted": {"id": oid, "title": o["title"], "state": o["state"], "viewpoint": oa.get("viewpoint"),
+                                     "cons": _cons_list(oa.get("cons")), "must": oa.get("must"),
+                                     "must_not": oa.get("must_not")},
+                         "rejected": rejected, "relations": rels,
+                         "concerns": [r["id"] for r in self.why(d["id"]) if r["kind"] == "concern"]})
+        return rows
 
     # ------------------------------------------------ 状況
 

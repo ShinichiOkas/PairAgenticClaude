@@ -12,7 +12,7 @@ import pytest
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-import design_graph as dg  # noqa: E402
+import design_graph as dg  # noqa: E402  # pyright: ignore[reportMissingImports]
 
 BACKENDS = ["json", "sqlite"]
 
@@ -521,6 +521,303 @@ def test_export_is_deterministic_and_marked_generated(tmp_path, backend):
     assert "LC1 —温度を知らせる→ LC2" in md
     assert "must_not: 圧力の機構を混ぜない" in md
     assert str(tmp_path) not in md  # 置き場所に依らない
+
+
+# ---------------------------------------------------------------- W8b: 予算・括り・状態・ビュー・代償
+
+def test_new_kinds_and_their_link_rules(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    lc = g.add("component", "保持")
+    lc2 = g.add("component", "加熱")
+    assert (g.add("world_state", "炊いていない"), g.add("system_state", "待機"), g.add("part", "マイコン"),
+            g.add("model", "論理の図")) == ("WS1", "SS1", "PT1", "MO1")
+    with pytest.raises(dg.DesignGraphError, match="論理コンポーネント"):
+        g.add("component_state", "親なし")
+    with pytest.raises(dg.DesignGraphError, match="論理コンポーネント"):
+        g.add("component_state", "親が要素でない", parent="WS1")
+    cs1 = g.add("component_state", "空", parent=lc)
+    cs2 = g.add("component_state", "保持中", parent=lc)
+    cs3 = g.add("component_state", "停止", parent=lc2)
+    assert (cs1, cs2, cs3) == ("CS1", "CS2", "CS3")
+    assert g.link("transitions", cs1, cs2)
+    with pytest.raises(dg.DesignGraphError, match="同じ部品"):
+        g.link("transitions", cs2, cs3)
+    with pytest.raises(dg.DesignGraphError, match="同じ種類"):
+        g.link("transitions", "WS1", "SS1")
+    with pytest.raises(dg.DesignGraphError, match="同じ種類"):
+        g.link("transitions", lc, lc2)
+    with pytest.raises(dg.DesignGraphError, match="src はモデル"):
+        g.link("shows", lc, "PT1")
+    with pytest.raises(dg.DesignGraphError, match="モデルにモデル"):
+        g.link("shows", "MO1", g.add("model", "別の図"))
+    assert g.link("shows", "MO1", lc)
+
+
+def test_budget_over_fires_only_when_the_sum_exceeds_the_target(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    qs = g.add("qas", "炊飯の区間", {"target": 60, "unit": "分"})
+    steps = [g.add("component", t) for t in ("浸水", "昇温", "沸騰の維持", "蒸らし")]
+    links = [g.link("allocates", qs, lc, attrs={"budget": b, "unit": "分", "basis": "仮説"})
+             for lc, b in zip(steps, (30, 15, 5, 10))]
+    assert "budget_over:" + qs not in ids(g.check())  # 60 ちょうどは超えていない（境目）
+    b = g.budgets()[0]
+    assert (b["total"], b["over"], b["remaining"], b["excess"]) == (60, False, 0, None)
+    g.update(links[1], attrs={"budget": 20})
+    f = {x["id"]: x for x in g.check()}
+    assert f["budget_over:" + qs]["excess"] == 5 and "65" in f["budget_over:" + qs]["message"]
+    # 十進で足す（0.1 + 0.2 は 0.3 を超えない）
+    rq = g.add("requirement", "待機電力", {"target": 0.3})
+    a1, a2 = g.add("component", "電源"), g.add("component", "表示")
+    g.link("allocates", rq, a1, attrs={"budget": 0.1})
+    g.link("allocates", rq, a2, attrs={"budget": 0.2})
+    assert "budget_over:" + rq not in ids(g.check())
+
+
+def test_budget_unreadable_is_not_silently_dropped(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    qs = g.add("qas", "区間", {"target": 60, "unit": "分"})
+    lcs = [g.add("component", t) for t in ("A", "B", "C", "D")]
+    ok = g.link("allocates", qs, lcs[0], attrs={"budget": 50})
+    words = g.link("allocates", qs, lcs[1], attrs={"budget": "十分"})                 # 数でない
+    kwh = g.link("allocates", qs, lcs[2], attrs={"budget": 30, "unit": "Wh"})         # 単位が違う（混ぜない）
+    g.link("allocates", qs, lcs[3])                                                   # 予算なしは検出しない
+    rq = g.add("requirement", "目標の無い要求")
+    lc = g.add("component", "E")
+    g.link("allocates", rq, lc, attrs={"budget": 3})
+    bad = g.add("qas", "目標が文字", {"target": "60 分"})
+    f = ids(g.check())
+    for want in ("budget_unreadable:" + words, "budget_unreadable:" + kwh, "budget_unreadable:" + rq,
+                 "budget_unreadable:" + bad):
+        assert want in f, want
+    assert "budget_unreadable:" + ok not in f and "budget_over:" + qs not in f  # 単位違いの 30 は合計に入れない
+    row = next(b for b in g.budgets() if b["id"] == qs)
+    assert row["total"] == 50 and [i["problem"] for i in row["items"]] == [None, "not_number", "unit", "no_budget"]
+
+
+def test_coupling_counts_are_a_table_not_a_finding(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    lcs = [g.add("component", f"要素 {i}") for i in range(6)]
+    for i, a in enumerate(lcs):
+        for b in lcs[i + 1:]:
+            g.link("relation", a, b, predicate="知らせる")
+    g.link("relation", lcs[0], lcs[1], predicate="電力を渡す")  # 同じ組の 2 つ目の述語は 1 つと数える
+    c = g.coupling()
+    assert (c["elements"], c["couplings"], c["max_pairs"], c["sqrt_n"]) == (6, 15, 15, 2.45)
+    assert not [f for f in g.check() if f["rule"] == "coupling_over"]  # 上限を宣言していなければ、多くても出さない
+
+
+def test_coupling_over_fires_only_on_a_declared_limit(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    grp = g.add("component", "括り")
+    kids = [g.add("component", f"子 {i}", parent=grp) for i in range(3)]
+    g.add("component_state", "停止", parent=kids[0])  # 部品の状態は括りの中身に数えない
+    out = [g.add("component", f"外 {i}") for i in range(2)]
+    g.link("relation", kids[0], kids[1], predicate="渡す")
+    g.link("relation", kids[0], out[0], predicate="渡す")
+    g.link("relation", kids[2], out[1], predicate="渡す")
+    ac = g.add("actor", "利用者")
+    g.link("relation", ac, out[0], predicate="操作する")
+    row = next(r for r in g.coupling()["groups"] if r["id"] == grp)
+    assert (row["children"], row["elements"], row["internal"], row["external"]) == (3, 3, 1, 2)
+    assert row["max_coupling"] is None and "coupling_over:" + grp not in ids(g.check())
+    g.update(grp, attrs={"max_coupling": 2})
+    assert "coupling_over:" + grp not in ids(g.check())  # 上限ちょうどは超えていない
+    g.update(grp, attrs={"max_coupling": 1})
+    f = {x["id"]: x for x in g.check()}
+    assert f["coupling_over:" + grp]["external"] == 2 and "宣言した上限 1" in f["coupling_over:" + grp]["message"]
+    g.update(grp, attrs={"max_coupling": "少なめ"})
+    assert "0 以上の整数でない" in {x["id"]: x for x in g.check()}["coupling_over:" + grp]["message"]
+    whole = g.coupling()
+    assert (whole["elements"], whole["couplings"], whole["external"]) == (6, 3, 1)  # 外部はアクターとの組
+
+
+def rice_states(g: dg.DesignGraph) -> dict:
+    """炊飯器の部品の状態（2 × 2 × 2 = 8 通り）。"""
+    hold, heat, ctl = g.add("component", "保持"), g.add("component", "加熱"), g.add("component", "制御")
+    s = {name: g.add("component_state", name, parent=p) for name, p in
+         (("空", hold), ("保持中", hold), ("停止", heat), ("通電中", heat), ("待機", ctl), ("実行中", ctl))}
+    return {"hold": hold, "heat": heat, "ctl": ctl, **s}
+
+
+def test_state_gap_overlap_and_dont_care(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    s = rice_states(g)
+    assert not [f for f in g.check() if f["rule"].startswith("state_")]  # 第 3 段を始めるまでは何も出さない
+    wait = g.add("system_state", "待機", {"of": [s["停止"], s["待機"]]})                       # 保持はどちらでもよい
+    cook = g.add("system_state", "炊飯中", {"of": [s["保持中"], s["通電中"], s["実行中"]]})
+    g.add("system_state", "空焚き", {"of": [s["空"], s["通電中"]], "forbidden": True, "reason": "空焚きになる"})
+    sp = g.state_space()
+    assert sp["size"] == 8 and sp["enumerated"] and len(sp["gaps"]) == 3 and sp["overlaps"] == []
+    f = {x["id"]: x for x in g.check()}
+    assert f["state_gap:system_state"]["count"] == 3
+    assert f["state_dont_care:" + wait]["level"] == "info" and f["state_dont_care:" + wait]["components"] == [s["hold"]]
+    assert "state_dont_care:" + cook not in f and "state_overlap:system_state" not in f
+    keep = g.add("system_state", "保温", {"of": [s["保持中"], s["通電中"]]})  # 炊飯中と重なる
+    sp = g.state_space()
+    assert len(sp["gaps"]) == 2 and sp["overlaps"] == [{"states": [s["保持中"], s["通電中"], s["実行中"]], "by": [cook, keep]}]
+    assert {x["id"]: x for x in g.check()}["state_overlap:system_state"]["count"] == 1
+    # 「どちらでもよい」は課題に載せると消える
+    is_ = g.add("issue", "待機のとき保持はどちらでもよいか（待機電力が決める）")
+    g.link("about", is_, wait)
+    assert "state_dont_care:" + wait not in ids(g.check())
+    # 全部当てれば網羅漏れは消える
+    g.add("system_state", "準備中", {"of": [s["停止"], s["実行中"]]})
+    g.update(keep, attrs={"of": [s["保持中"], s["通電中"], s["待機"]]})
+    f = ids(g.check())
+    assert "state_gap:system_state" not in f and "state_overlap:system_state" not in f
+
+
+def test_state_undefined(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    s = rice_states(g)
+    two = g.add("system_state", "矛盾", {"of": [s["空"], s["保持中"]]})
+    empty = g.add("system_state", "空の定義")
+    wrong = g.add("system_state", "要素を指す", {"of": [s["hold"]]})
+    why_not = g.add("system_state", "理由なしの禁止", {"of": [s["空"], s["通電中"]], "forbidden": True})
+    f = {x["id"]: x for x in g.check()}
+    assert "2 つ指している" in f["state_undefined:" + two]["message"]
+    assert "attrs.of" in f["state_undefined:" + empty]["message"]
+    assert "CS" in f["state_undefined:" + wrong]["message"]
+    assert "理由" in f["state_undefined:" + why_not]["message"]
+    # 定義の誤った状態は網羅の数え上げに使わない（理由なしの禁止は使う）
+    assert [d["id"] for d in g.state_space()["definitions"] if d["valid"]] == [why_not]
+
+
+def test_state_gap_is_not_enumerated_beyond_the_limit(tmp_path, backend, monkeypatch):
+    monkeypatch.setattr(dg, "STATE_PRODUCT_LIMIT", 4)
+    g = open_graph(tmp_path, backend)
+    s = rice_states(g)
+    g.add("system_state", "全部", {"of": [s["空"], s["停止"], s["待機"]]})
+    sp = g.state_space()
+    assert sp["size"] == 8 and not sp["enumerated"] and sp["gaps"] == []
+    f = {x["id"]: x for x in g.check()}
+    assert "網羅の検査をしていない" in f["state_gap:system_state"]["message"]
+
+
+def test_state_flow_reachability(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    w = [g.add("world_state", t, a) for t, a in (
+        ("米と水がある", {"mark": "initial"}), ("炊いている", {}), ("取り出した", {"mark": "目的達成"}),
+        ("どこからも来ない", {}), ("輪 1", {}), ("輪 2", {}), ("停電", {"mark": ["external"]}))]
+    for a, b in ((0, 1), (1, 2), (3, 1), (4, 5), (5, 4), (6, 1)):
+        g.link("transitions", w[a], w[b], attrs={"event": "e"})
+    flows = g.state_space()["flows"]
+    assert [f["group"] for f in flows] == ["world_state"]  # 遷移の無い段は見ない
+    assert flows[0]["problems"] == {w[3]: ["no_source"], w[4]: ["unreachable"], w[5]: ["unreachable"]}
+    f = ids(g.check())
+    assert {"state_flow:" + w[i] for i in (3, 4, 5)} <= f
+    assert not {"state_flow:" + w[i] for i in (0, 1, 2, 6)} & f
+    g.update(w[2], attrs={"mark": None})
+    assert "行き止まり" in {x["id"]: x for x in g.check()}["state_flow:" + w[2]]["message"]
+
+
+def test_views_need_three_basic_viewpoints_once_models_exist(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    lc1, lc2 = g.add("component", "加熱", {"obvious": True}), g.add("component", "計測", {"obvious": True})
+    pt = g.add("part", "マイコン")
+    f = ids(g.check())
+    assert not {x for x in f if x.split(":")[0] in ("view_missing", "no_view", "mixed_kinds")}  # 図が無いあいだは出さない
+    assert "orphan:" + pt in f  # 部品はあるが役割が無い
+    g.link("allocates", lc1, pt)
+    assert "orphan:" + pt not in ids(g.check())
+    mo1 = g.add("model", "論理の図", {"viewpoint": "論理"})
+    g.link("shows", mo1, lc1)
+    f = ids(g.check())
+    assert {"view_missing:view:implementation", "view_missing:view:allocation", "no_view:" + lc2} <= f
+    assert "view_missing:view:logical" not in f and "no_view:" + pt not in f  # 実装ビューが無いうちは部品を問わない
+    mo2 = g.add("model", "実装の図", {"viewpoint": "implementation"})
+    g.link("shows", mo2, pt)
+    g.link("shows", mo2, lc2)
+    mo3 = g.add("model", "割り付けの図", {"viewpoint": "割り付け"})
+    g.link("shows", mo3, lc1)
+    g.link("shows", mo3, pt)
+    f = {x["id"]: x for x in g.check()}
+    assert not [x for x in f if x.startswith(("view_missing", "no_view"))]
+    assert f["mixed_kinds:" + mo2]["kinds"] == ["component", "part"] and "mixed_kinds:" + mo3 not in f
+    g.update(mo2, attrs={"whiteboard": True})
+    assert "mixed_kinds:" + mo2 not in ids(g.check())
+    # 要素の種類はステレオタイプで見る
+    who = g.add("component", "利用者の手順", {"obvious": True, "stereotype": "人"})
+    g.link("shows", mo1, who)
+    assert {x["id"]: x for x in g.check()}["mixed_kinds:" + mo1]["kinds"] == ["component", "人"]
+    # 要素が変わると、載せたモデルに要再確認の印が付く
+    g.update(lc1, title="加熱する")
+    assert {m["downstream"] for m in g.recheck() if m["kind"] == "shows"} == {mo1, mo3}
+
+
+def test_view_missing_waiver_on_a_pseudo_target_holds(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    g.add("model", "論理の図", {"viewpoint": "logical"})
+    g.actor = "human"
+    g.waive("view_missing:view:allocation", "割り付けは二週目で描く")
+    f = ids(g.check())
+    assert "view_missing:view:allocation" not in f and "view_missing:view:implementation" in f
+
+
+def test_no_cons_and_tradeoffs(tmp_path, backend):
+    g = open_graph(tmp_path, backend)
+    x = chain(g)
+    d2 = g.add("decision_point", "保温の方式")
+    k = g.add("option", "常時保温", parent=d2)
+    g.add("option", "保温しない", parent=d2)
+    g.link("conflicts", x["a"], k)
+    g.link("synergy", x["b"], k)
+    g.update(x["b"], attrs={"cons": [{"text": "部品が増える", "origin": "means"}]})
+    g.actor = "human"
+    g.decide(x["d"], x["a"], conditions=["家庭用 100V"])
+    assert "no_cons:" + x["a"] in ids(g.check())
+    assert "no_cons:" + x["b"] not in ids(g.check())  # 採用していない案には問わない
+    g.update(x["a"], attrs={"cons": [{"text": "電力を食う", "origin": "essential", "measure": "1.2 kW"}, "高い"]})
+    assert "no_cons:" + x["a"] not in ids(g.check())
+    rows = g.tradeoffs()
+    assert [r["dp"] for r in rows] == [x["d"]]  # 未決の D2 はまだ何も捨てていない
+    r = rows[0]
+    assert r["adopted"]["cons"] == [{"text": "電力を食う", "origin": "essential", "measure": "1.2 kW"}, {"text": "高い"}]
+    assert [o["id"] for o in r["rejected"]] == [x["b"], x["c"]] and r["rejected"][0]["cons"][0]["origin"] == "means"
+    assert [(rel["kind"], rel["other"], rel["other_adopted"]) for rel in r["relations"]] == [("conflicts", k, False)]
+    assert r["concerns"] == [x["cn"]] and r["conditions"] == ["家庭用 100V"]
+    g.decide(d2, k)
+    assert g.tradeoffs()[0]["relations"][0]["other_adopted"] is True
+
+
+def w8b_scenario(g: dg.DesignGraph) -> None:
+    x = chain(g)
+    qs = g.add("qas", "区間", {"target": 10})
+    g.link("allocates", qs, x["lc"], attrs={"budget": 7.5})
+    g.add("component", "子", {"max_coupling": 0}, parent=x["lc"])
+    s = rice_states(g)
+    g.add("system_state", "待機", {"of": [s["停止"]]})
+    mo = g.add("model", "図", {"viewpoint": "logical"})
+    g.link("shows", mo, x["lc"])
+    g.actor = "human"
+    g.decide(x["d"], x["a"])
+
+
+def test_w8b_tables_are_the_same_on_json_and_sqlite(tmp_path):
+    out = {}
+    for b in BACKENDS:
+        d = tmp_path / b
+        d.mkdir()
+        g = open_graph(d, b)
+        w8b_scenario(g)
+        g2 = open_graph(d, b)
+        out[b] = {"budgets": g2.budgets(), "coupling": g2.coupling(), "states": g2.state_space(), "views": g2.views(),
+                  "tradeoffs": g2.tradeoffs(), "check": g2.check(include_waived=True)}
+        assert out[b]["check"] == g.check(include_waived=True)
+    assert out["json"] == out["sqlite"]
+    json.dumps(out["json"], ensure_ascii=False)  # 入口の --json で出せる
+
+
+def test_kinds_lists_the_w8b_rules(capsys):
+    code = dg.main(["kinds", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert code == 0
+    for r in ("budget_over", "coupling_over", "state_gap", "state_overlap", "view_missing", "mixed_kinds", "no_cons"):
+        assert r in data["rules"]
+    assert data["rules"]["state_dont_care"]["level"] == "info"
+    assert {"part", "model", "world_state", "system_state", "component_state"} <= set(data["kinds"])
+    assert data["links"]["shows"]["upstream"] == "dst" and data["links"]["transitions"]["upstream"] is None
+    assert list(dg.RULES)[-1] == "undecided"
 
 
 # ---------------------------------------------------------------- CLI
