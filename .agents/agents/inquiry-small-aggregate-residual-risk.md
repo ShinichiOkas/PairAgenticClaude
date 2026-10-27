@@ -6,12 +6,12 @@ model: gemini-3.8-flash
 maxTurns: 200
 ---
 
-<!-- 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/inquiry-small.mk ／ 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/inquiry-small.mk -->
+<!-- 自動生成。手で編集しない。正は models/inquiry-small.mk ／ 生成: python tools/emit_claude.py models/inquiry-small.mk -->
 
 **この定義は自動生成である。姿勢は書かれていない（P-3 改訂）。**
 **deps に無いものは読んではならない。読んだ時点で定義違反である。**
 
-> ⚠ **この rule は `by: machine` である**（P-11: 機械は役割ではない）。**決定論的に出せ。** 判断が要ると思ったら、見たことだけの票にして親に上げる（調査しない・流さない）。
+> ⚠ **この rule は `by: machine` である**（P-11: 機械は役割ではない）。**決定論的に出せ。** 判断が要ると思ったら、それは見たことだけの票にして親に上げる（調査しない・流さない）。
 
 ## 担当: `残留リスク報告`
 

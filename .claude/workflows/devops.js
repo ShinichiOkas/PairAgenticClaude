@@ -15,8 +15,8 @@ export const meta = {
   ],
 }
 
-// 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/devops.mk
-// 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/devops.mk
+// 自動生成。手で編集しない。正は models/devops.mk
+// 生成: python tools/emit_claude.py models/devops.mk
 //
 // ⚠ 段ごとに parallel（バリア）を張っている。**ここでは正しい** ——
 //    次の段の担い手は、前の段が**ファイルとして置いた成果物**を読む。

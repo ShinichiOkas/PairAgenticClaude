@@ -7,7 +7,7 @@ skills: ["ホワイトボックステストの書き方", "実装言語・基盤
 maxTurns: 600
 ---
 
-<!-- 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/waterfall-small.mk ／ 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/waterfall-small.mk -->
+<!-- 自動生成。手で編集しない。正は models/waterfall-small.mk ／ 生成: python tools/emit_claude.py models/waterfall-small.mk -->
 
 **この定義は自動生成である。姿勢は書かれていない（P-3 改訂）。**
 **deps に無いものは読んではならない。読んだ時点で定義違反である。**

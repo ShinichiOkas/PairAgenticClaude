@@ -13,8 +13,8 @@ export const meta = {
   ],
 }
 
-// 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/waterfall-core.mk
-// 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/waterfall-core.mk
+// 自動生成。手で編集しない。正は models/waterfall-core.mk
+// 生成: python tools/emit_claude.py models/waterfall-core.mk
 //
 // ⚠ 段ごとに parallel（バリア）を張っている。**ここでは正しい** ——
 //    次の段の担い手は、前の段が**ファイルとして置いた成果物**を読む。
@@ -181,7 +181,7 @@ const NODES = {
       "不足なし —— 要求の項目が黙って落ちていない",
       "過剰なし —— 要求と用語定義から**導出できない**ものを足していない（P-24）",
       "各項目が判定手続きに落とせる（検査するのは 受入検査仕様 の担い手）",
-      "「不可能」と判定した項目は範囲外として上げている（deps を満たす OUT が存在しないため）",
+      "「不可能」と判定した項目は範囲外として上げている（流さず、見たことだけの票にして託している）（deps を満たす OUT が存在しないため）",
       "**暫定**として置いた項目には、**解除条件**（誰が何を答えたら差し替えるか）が付いている"
     ],
     "out": [

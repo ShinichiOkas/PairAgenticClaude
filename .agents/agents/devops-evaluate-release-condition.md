@@ -7,7 +7,7 @@ skills: ["実データでの棚卸し", "記録の腐敗の検出"]
 maxTurns: 300
 ---
 
-<!-- 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/devops.mk ／ 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/devops.mk -->
+<!-- 自動生成。手で編集しない。正は models/devops.mk ／ 生成: python tools/emit_claude.py models/devops.mk -->
 
 **この定義は自動生成である。姿勢は書かれていない（P-3 改訂）。**
 **deps に無いものは読んではならない。読んだ時点で定義違反である。**

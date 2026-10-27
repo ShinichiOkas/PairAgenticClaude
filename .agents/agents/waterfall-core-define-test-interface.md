@@ -7,7 +7,7 @@ skills: ["インタフェース設計", "判定可能な仕様の書き方", "�
 maxTurns: 300
 ---
 
-<!-- 自動生成。手で編集しない。正は /Users/shinichi/work/PairAgenticClaude/models/waterfall-core.mk ／ 生成: python tools/emit_claude.py /Users/shinichi/work/PairAgenticClaude/models/waterfall-core.mk -->
+<!-- 自動生成。手で編集しない。正は models/waterfall-core.mk ／ 生成: python tools/emit_claude.py models/waterfall-core.mk -->
 
 **この定義は自動生成である。姿勢は書かれていない（P-3 改訂）。**
 **deps に無いものは読んではならない。読んだ時点で定義違反である。**
