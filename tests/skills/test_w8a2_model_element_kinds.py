@@ -20,14 +20,44 @@ def build(tmp_path, mixed):
     return db
 
 
-def test_mixed_kinds_in_one_model_is_a_problem(tmp_path, capsys):
+def test_no_model_infers_mixed_kinds_with_distinct_id(tmp_path, capsys):
     db = build(tmp_path, mixed=True)
     rc, data = run_json(m, capsys, "--db", db)
     assert rc == 1
-    assert [p["id"] for p in data["problems"]] == ["mixed_kinds:IF1"]
+    assert [p["id"] for p in data["problems"]] == ["inferred_mixed_kinds:IF1"]
+    assert "図が DB に無いので関連のつながりから推定した" in data["problems"][0]["message"]
     mixed = [x for x in data["models"] if x["mixed"]]
     assert mixed[0]["kinds"] == ["component", "interface"]
-    assert data["findings"] == []  # 述語は付いている
+    assert data["findings"] == []  # 述語は付いている、MO が無いので中核の mixed_kinds も出ない
+    rc2, out, _ = run(m, capsys, "--db", db)
+    assert rc2 == 1 and "図が DB に無いので関連のつながりから推定した" in out
+
+
+def test_with_model_uses_core_mixed_kinds(tmp_path, capsys):
+    db = build(tmp_path, mixed=True)
+    g, _ = graph(tmp_path)
+    mo = g.add("model", "混ざった図", {"viewpoint": "logical"})
+    g.link("shows", mo, "LC1")
+    g.link("shows", mo, "IF1")
+    rc, data = run_json(m, capsys, "--db", db)
+    assert rc == 1
+    assert data["problems"] == []  # 連結成分の推定は出さない
+    assert not any(x["mixed"] for x in data["models"])
+    ids = [f["id"] for f in data["findings"] if f["rule"] == "mixed_kinds"]
+    assert len(ids) == 1 and ids[0].startswith("mixed_kinds")
+    assert data["findings"][0]["target"] == mo
+
+
+def test_with_model_single_kind_and_whiteboard_are_clean(tmp_path, capsys):
+    db = build(tmp_path, mixed=True)
+    g, _ = graph(tmp_path)
+    ok = g.add("model", "論理の図", {"viewpoint": "logical"})
+    g.link("shows", ok, "LC1")
+    wb = g.add("model", "ホワイトボード", {"viewpoint": "logical", "whiteboard": True})
+    g.link("shows", wb, "LC1")
+    g.link("shows", wb, "IF1")
+    rc, data = run_json(m, capsys, "--db", db)
+    assert rc == 0 and data["problems"] == [] and data["findings"] == []
 
 
 def test_single_kind_models_are_clean(tmp_path, capsys):
