@@ -62,7 +62,7 @@ graph TD
 
 ### スキルカタログ (`skills/`)
 - 27 領域 / 113 スキル（QAW, ATAM, 同値分割, 境界値分析, ホワイトボックステストの書き方, 縮退経路のログ設計, 判定可能な仕様の書き方, 受入検査の隔離規約 など）。
-- うち 62 件はアーキテクト用（2026-10-27 追加。AIdedArchitecture の教科書と手法から抽出・全件 draft 未実走）。技能領域: スコープ設計・品質要求の獲得・構造導出・分解設計・抽象度の操作・ビューの整合・アーキテクチャ記述・案の検討・決断の統合・決断の追跡・ステークホルダ調整（＋既存のアーキテクチャ設計）。`design_architecture`（pair-agent-l・waterfall-extended）に装着。
+- うち 62 件はアーキテクト用（2026-10-27 追加。AIdedArchitecture の教科書と手法から抽出・全件 draft 未実走）。技能領域: スコープ設計・品質要求の獲得・構造導出・分解設計・抽象度の操作・ビューの整合・アーキテクチャ記述・案の検討・決断の統合・決断の追跡・ステークホルダ調整（＋既存のアーキテクチャ設計）。決定ループの段で役を割って装着する（2026-10-28）。pair-agent-l は 4 役（`design_architecture_frame` 19 件・`_structure` 13 件・`_approach` 15 件・`design_architecture` 18 件）、waterfall-extended は 3 役（`_structure` 20 件・`_approach` 15 件・`design_architecture` 20 件）。どれも装着 32 件以下（Claude Code は `skills:` の先頭 32 件しか本文を読まないため・2026-10-28 実機で確認）。
 
 ---
 
