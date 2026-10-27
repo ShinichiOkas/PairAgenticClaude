@@ -117,7 +117,7 @@ if [[ ! -f "${CLAUDE_HOME}/pair-agent/skill-survey-config.json" ]]; then
 fi
 
 # Copy tools
-for tool in skill-survey.py survey-dev-prefs.py derive_roles.py simulate_mk.py check_skills.py check_report.py emit_claude.py emit_agents.py run_workflow.py deny_read.py measure_agent_usage.py; do
+for tool in skill-survey.py survey-dev-prefs.py derive_roles.py simulate_mk.py check_skills.py check_report.py emit_claude.py emit_agents.py run_workflow.py deny_read.py measure_agent_usage.py design_graph.py; do
     if [[ -f "${SCRIPT_DIR}/tools/${tool}" ]]; then
         cp "${SCRIPT_DIR}/tools/${tool}" "${CLAUDE_HOME}/pair-agent/tools/"
         cp "${SCRIPT_DIR}/tools/${tool}" "${ANTIGRAVITY_CONFIG}/pair-agent/tools/"

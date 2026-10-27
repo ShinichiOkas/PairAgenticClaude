@@ -45,7 +45,7 @@ if not exist "%CLAUDE_HOME%\pair-agent\skill-survey-config.json" (
 )
 
 :: Copy tools
-for %%t in (skill-survey.py survey-dev-prefs.py derive_roles.py simulate_mk.py check_skills.py check_report.py emit_claude.py emit_agents.py run_workflow.py deny_read.py measure_agent_usage.py) do (
+for %%t in (skill-survey.py survey-dev-prefs.py derive_roles.py simulate_mk.py check_skills.py check_report.py emit_claude.py emit_agents.py run_workflow.py deny_read.py measure_agent_usage.py design_graph.py) do (
     if exist "%SCRIPT_DIR%tools\%%t" (
         copy /y "%SCRIPT_DIR%tools\%%t" "%CLAUDE_HOME%\pair-agent\tools\" >nul
         copy /y "%SCRIPT_DIR%tools\%%t" "%ANTIGRAVITY_CONFIG%\pair-agent\tools\" >nul
