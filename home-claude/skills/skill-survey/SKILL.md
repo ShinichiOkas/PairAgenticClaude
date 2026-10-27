@@ -178,7 +178,9 @@ python ~/.claude/pair-agent/tools/skill-survey.py discover [--since <日時>] [-
 - `--since` — この日時（ISO 8601）以前に更新されたファイルは対象にせず、ingest で処理済みとして登録する。前回の取り込み（harvest のコミット時刻など）以降の差分だけを拾うときに使う
 - 処理済みの判定は**パスと中身のハッシュ**で行う（`.processed.json` の `processed` ＋ `hashes`。ハッシュは改行を LF にそろえて取る）。取り込み後に中身が変わったファイルは対象に戻り、更新時刻だけが新しいファイル（git のチェックアウト等）は `--since` に拾われても再サーベイされない。`--since` は既処理でないファイルにだけ効く
 - ハッシュの記録が無い旧来の登録は、ファイルの更新時刻が `.processed.json` の最終更新時刻（＝最後の ingest）以前なら既処理、それより新しければ対象に戻る。既処理にした分は、次の ingest でハッシュが記録される
-- ポインタのスタブ（description が「ポインタ」で始まる。正典はグローバル側）は既定で対象から外し、処理済みとして登録する。対象に入れるときだけ `--include-stubs`
+- ⚠ 受け入れているリスク: 旧来の登録のうち、discover で読めなかったもの・走査範囲の外のものにはハッシュが付かない。走査範囲から外したプロジェクトを後で戻すと、その間の変更は拾えないことがある
+- `.processed.json` が JSON として読めない（空ファイルを含む）・形が違う（`processed` が配列でない、`hashes` がオブジェクトでない）ときは、何も書かずにパスと理由を出して止まる（空として扱って全件を再サーベイしない）。discover・ingest とも同じ
+- ポインタのスタブ（description が「ポインタ」で始まる。正典はグローバル側）は既定で対象から外し、処理済みとして登録する（`--since` の起点以前のものも、スタブとして数える）。対象に入れるときだけ `--include-stubs`
 - ingest していない作業が残っていると止まる。捨ててよいと師匠が判断したときだけ `--force`
 
 書かれるもの（`<output_dir>/.survey-work/`）: `manifest.json`・`instructions.md`（判定・汎化の規約）・`batch-NN.json`・空の `out/`。
@@ -204,6 +206,8 @@ python ~/.claude/pair-agent/tools/skill-survey.py ingest
 
 - `--dry-run` の「problems」を先に見る。特に **個人情報らしき文字列**（ユーザー名・ホームのパス）は、`out/<idx>.md` を直してから取り込む
 - 次の件はエラーとして扱われ、pending に書かれず、処理済みにも登録されない（次の discover で再び対象になる）: 結果ファイルが欠けた／読めない、`generalizable_score` が `high`/`medium`/`low`/`skip`（小文字の完全一致）以外、high / medium なのに `.md` が空またはフロントマター（先頭の `---` で始まり `---` で閉じる区画）が無い。フロントマターに `name` が無いだけのものは警告で、pending には書かれる
+- meta の `path` が manifest の `path` と違う結果（別のファイルの結果を書いた）もエラーになる（区切り文字と大文字小文字の違いは同じとみなす）
+- ingest が途中で失敗したら、原因を直してもう一度 `ingest` を実行する。pending に書いたファイルは manifest に控えてあり、同じファイルに書き直されるので重複しない（失敗時は Traceback ではなく、失敗した段階を出して終了コード 1）
 - 処理済みに登録するときは、discover の時点の中身のハッシュを記録する（discover と ingest のあいだに変わったファイルは、次の discover で対象に戻る）
 - 設定ファイルが JSON として読めない・型が違う（`project_roots` が文字列の配列でない等）ときは、何も書かずに理由を出して終わる
 - 取り込み後、`survey-report-<date>.md`（同じ日の 2 回目以降は `survey-report-<date>-2.md`、`-3.md` …）を読んで結果を要約して師匠に伝える。skip（low）になった件は 1 件ずつ理由を添える
@@ -288,7 +292,7 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 ```
 
 プロジェクトを追加したときはこのファイルに追記する。
-`project_roots` と `output_dir` は先頭の `~` がホームに展開される。
+`project_roots` と `output_dir` は先頭の `~` がホームに展開される。`output_dir` は空でない文字列、`project_roots` の要素も空でない文字列でなければ設定エラー。
 `also_survey_global: true` はグローバルスキル（数百件ある）も対象にする。差分の棚卸しでは `false` にしておくとよい。
 harvest モードでは `project_roots` だけを使う（他のキーはスクリプト用）。
 
