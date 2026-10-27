@@ -578,6 +578,17 @@ def test_cli_infers_backend_from_suffix(tmp_path, capsys):
     assert code == 0 and (tmp_path / "graph.jsonl").exists()
 
 
+def test_cli_export_json_and_kinds_without_db(tmp_path, capsys):
+    db = tmp_path / "g.jsonl"
+    run(capsys, "add", "requirement", "要求", "--db", db)
+    code, out, _ = run(capsys, "export", "--json", "--db", db)
+    assert code == 0 and json.loads(out)["markdown"].startswith("<!-- 生成物。手で直さない")
+    broken = tmp_path / "broken.jsonl"
+    broken.write_text("{broken\n", encoding="utf-8")
+    code, out, _ = run(capsys, "kinds", "--json", "--db", broken)  # kinds は DB を読まない
+    assert code == 0 and "contains" in json.loads(out)["links"]
+
+
 def test_cli_relation_without_predicate_warns(tmp_path, capsys):
     db = tmp_path / "g.jsonl"
     run(capsys, "add", "component", "A", "--db", db)

@@ -1307,7 +1307,7 @@ def cmd_export(g: DesignGraph, args: argparse.Namespace) -> int:
             f.write(md)
         _out(args, {"out": str(p)}, f"書き出した: {p}")
     else:
-        print(md)
+        _out(args, {"markdown": md}, md)
     return 0
 
 
@@ -1317,7 +1317,7 @@ def cmd_convert(g: DesignGraph, args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_kinds(g: DesignGraph, args: argparse.Namespace) -> int:
+def cmd_kinds(g: DesignGraph | None, args: argparse.Namespace) -> int:
     data = {"kinds": {k: {"prefix": p, "label": lb} for k, (p, lb) in KINDS.items()},
             "links": {k: {"upstream": u, "causal": c, "label": lb} for k, (u, c, lb) in LINK_KINDS.items()},
             "rules": {r: {"label": lb, "skill": s, "level": lv} for r, (lb, s, lv) in RULES.items()}}
@@ -1440,6 +1440,8 @@ def main(argv: list[str] | None = None) -> int:
         if not hasattr(args, k):
             setattr(args, k, v)
     try:
+        if args.func is cmd_kinds:  # DB を読まない（壊れた DB があっても一覧は出す）
+            return cmd_kinds(None, args)
         g = DesignGraph(args.db, args.backend, args.actor)
         return args.func(g, args)
     except DesignGraphError as e:
