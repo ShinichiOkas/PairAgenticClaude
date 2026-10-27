@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from emit_claude import Emit, Rule, base_name, dep_kind, load_slug_map  # noqa: E402
+from emit_claude import Emit, Rule, base_name, dep_kind, load_slug_map, prune_skills, report_pruned  # noqa: E402
 from deny_read import glob_to_regex, norm  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -194,6 +194,7 @@ def emit_model(
     base_dest: Path,
     dry_run: bool,
     global_deny_map: Dict[str, str],
+    kept_skills: Dict[Path, set[str]] | None = None,
 ) -> Dict[str, int]:
     counts = {"created": 0, "unchanged": 0}
     agent_files = emission.agent_files()
@@ -256,9 +257,14 @@ def emit_model(
         print(f"  ＋ {path.as_posix()}")
         counts["created"] += 1
 
+    def keep(skills_root: Path, names: list[str]) -> None:
+        if kept_skills is not None:
+            kept_skills.setdefault(skills_root, set()).update(n.split("/")[0] for n in names)
+
     # 1. Claude Code 書式の書き出し
     if target in ("claude", "all"):
         claude_dir = base_dest / ".claude" if base_dest.name != ".claude" else base_dest
+        keep(claude_dir / "skills", list(skill_files))
         for name, body in agent_files.items():
             enhanced = enhance_agent_markdown(name, body, emission.produced, platform="claude")
             write_target(claude_dir / "agents" / name, enhanced)
@@ -272,6 +278,7 @@ def emit_model(
             agents_dir = base_dest / ".gemini" / "config"
         else:
             agents_dir = base_dest / ".agents" if base_dest.name != ".agents" else base_dest
+        keep(agents_dir / "skills", list(skill_files) + [Path(n).stem + "/" for n in agent_files])
 
         for name, body in agent_files.items():
             enhanced = enhance_agent_markdown(name, body, emission.produced, platform="gemini")
@@ -340,6 +347,9 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="書き込まずに予定を表示")
     parser.add_argument("--register-hook", action="store_true",
                         help="遮断フック deny_read.py を Claude の settings に登録する（既定は未登録なら警告のみ）")
+    parser.add_argument("--prune", action="store_true",
+                        help="今回の書き出しに含まれない生成物の skill（出力先の skills/<名>/）を削除する。"
+                             "SKILL.md に生成物の印があるものだけ。印が無いものは残して一覧に出す。--dry-run では消さない")
     args = parser.parse_args()
 
     if args.dest == "local":
@@ -358,6 +368,7 @@ def main() -> int:
     total_created = 0
     total_unchanged = 0
     global_deny_map: Dict[str, str] = {}
+    kept_skills: Dict[Path, set[str]] = {}
 
     for mk in mk_files:
         tasks = mk.with_suffix(".tasks")
@@ -366,7 +377,7 @@ def main() -> int:
             continue
         print(f"\n## モデル: {mk.name}")
         emission = Emit(mk, tasks)
-        c = emit_model(emission, args.target, base_dest, args.dry_run, global_deny_map)
+        c = emit_model(emission, args.target, base_dest, args.dry_run, global_deny_map, kept_skills)
         total_created += c["created"]
         total_unchanged += c["unchanged"]
 
@@ -402,6 +413,12 @@ def main() -> int:
                 shutil.copy(ROOT / "tools" / "deny_read.py", agents_hooks / "deny_read.py")
             print(f"  ＋ {agents_hooks / 'deny-map.json'}")
             total_created += 1
+
+    for skills_root, kept in sorted(kept_skills.items()):
+        rows = prune_skills(skills_root, kept, args.prune, args.dry_run)
+        if rows:
+            print(f"\n## 古い skill（今回の書き出しに含まれない）: {skills_root.as_posix()}")
+            report_pruned(rows, args.prune)
 
     print(f"\n合計: 新規/更新 {total_created} 件、変化なし {total_unchanged} 件")
     return 0

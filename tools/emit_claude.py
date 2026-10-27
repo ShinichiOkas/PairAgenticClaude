@@ -842,6 +842,50 @@ def write_all(files: dict[Path, str], dry: bool) -> tuple[int, int, int]:
     return new, changed, same
 
 
+GENERATED_MARK = "自動生成。手で編集しない"
+
+
+def prune_skills(skills_dir: Path, kept: set[str], prune: bool, dry: bool) -> list[tuple[str, Path]]:
+    """`skills_dir/<名>/` のうち、今回の書き出し（`kept` = 名の集合）に無いものを扱う。
+
+    SKILL.md に生成器の印（自動生成の注記）があるものだけを削除の対象にする（`scripts/` ごと）。
+    印が無い（手で置いた）ものは消さず「?」で返す。削除するのは `prune` かつ非 `dry` のときだけ。
+    戻り値は (印: "−" 削除した／"・" 削除予定／"?" 手置き, パス) の一覧。
+    """
+    import shutil
+    out: list[tuple[str, Path]] = []
+    if not skills_dir.is_dir():
+        return out
+    for d in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
+        if d.name in kept:
+            continue
+        sk = d / "SKILL.md"
+        marked = False
+        if sk.is_file():
+            try:
+                marked = GENERATED_MARK in sk.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                marked = False
+        if not marked:
+            out.append(("?", d))
+        elif prune and not dry:
+            shutil.rmtree(d)
+            out.append(("−", d))
+        else:
+            out.append(("・", d))
+    return out
+
+
+def report_pruned(rows: list[tuple[str, Path]], prune: bool) -> None:
+    for mark, p in rows:
+        if mark == "−":
+            print("  − " + p.as_posix() + "（削除した）")
+        elif mark == "・":
+            print("  ・ " + p.as_posix() + ("（削除予定・dry-run）" if prune else "（`--prune` で削除する）"))
+        else:
+            print("  ? " + p.as_posix() + "（生成物の印が無い。手で置いたものとして残す）")
+
+
 def main() -> int:
     argv = sys.argv[1:]
     flags = [a for a in argv if a.startswith("--")]
@@ -861,6 +905,7 @@ def main() -> int:
     files: dict[Path, str] = {}
     notes: list[str] = []
     kept_agents: set[str] = set()
+    kept_skills: set[str] = set()
     prefixes: set[str] = set()
     for mk in mks:
         tasks_path = mk.with_suffix(".tasks")
@@ -875,6 +920,7 @@ def main() -> int:
             kept_agents.add(rel)
         for rel, text in skills.items():
             files[dest / "skills" / rel] = text
+            kept_skills.add(rel)
         files[dest / "workflows" / (e.model + ".js")] = e.workflow()
         notes += [mk.name + ": " + n for n in e.notes]
         print("- **" + mk.name + "** → 役 " + str(len(e.roles)) + " ／ 機械 "
@@ -908,6 +954,14 @@ def main() -> int:
                 print("  − " + p.as_posix() + "（削除した）")
             else:
                 print("  ? " + p.as_posix() + "（`--prune` で削除する）")
+        print("")
+
+    stale_skills = prune_skills(dest / "skills", {k.split("/")[0] for k in kept_skills},
+                                prune, dry)
+    if stale_skills:
+        print("## 古い skill（今回の書き出しに含まれない）")
+        print("")
+        report_pruned(stale_skills, prune)
         print("")
 
     legacy = [p for p in sorted(adir.glob("*.md"))
