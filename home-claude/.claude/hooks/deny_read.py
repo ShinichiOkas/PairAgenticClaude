@@ -25,7 +25,8 @@ from pathlib import Path
 
 
 def norm(p: str) -> str:
-    return (p or "").replace("\\", "/").rstrip("/").lower()
+    # "src//**"（生成器の旧出力）を "src/**" として読む
+    return re.sub(r"/{2,}", "/", (p or "").replace("\\", "/")).rstrip("/").lower()
 
 
 def glob_to_regex(glob: str) -> str:
@@ -86,10 +87,19 @@ def decide(payload: dict, deny: str, root: str) -> tuple[str | None, str]:
     if tool == "Bash":
         cmd = str(ti.get("command") or "")
         low = cmd.lower()
+        fwd = low.replace("\\", "/")
         for g in globs:
             dr = deny_root(g)
             if dr and (dr + "/" in low or dr.replace("/", "\\") + "\\" in low):
                 return g, cmd
+            # 上はディレクトリ遮断しか拾わない。ファイル単位の遮断（"acceptance/仕様.md"・"仕様*"）と
+            # 末尾スラッシュ無しのディレクトリ（"ls src"）は、区切りで挟まれた出現として拾う。
+            # dr が名前の途中で切れている（"仕様*"）ときだけ後ろの区切りを要求しない
+            if dr:
+                whole = "*" not in g or norm(g)[len(dr):].startswith("/")
+                tail = r"(?=$|[\s\"'/;|&)<>`])" if whole else ""
+                if re.search(r"(?:^|[\s\"'=(<>|&;`/])" + re.escape(dr) + tail, fwd):
+                    return g, cmd
         return None, cmd
     return None, ""
 
@@ -162,6 +172,13 @@ def selftest() -> int:
         ("Read acceptance", ".pair-agent/acceptance/**", {"tool_name": "Read", "tool_input": {"file_path": ".pair-agent/acceptance/test.md"}}, True),
         ("Read assurance", ".pair-agent/acceptance/**", {"tool_name": "Read", "tool_input": {"file_path": ".pair-agent/assurance/assure.md"}}, False),
         ("Japanese path blocked", "受入検査/**", {"tool_name": "Read", "tool_input": {"file_path": "受入検査/仕様.md"}}, True),
+        # emit_agents.py が生成する形（手書きの "src/**" ではない）。2026-09-17 に Claude 環境で 69/268 件の素通りを実測
+        ("Read src via generated 'src//**'", "src/,src//**", {"tool_name": "Read", "tool_input": {"file_path": os.path.join(root, "src", "main.py")}}, True),
+        ("Bash cat file-level glob", ".pair-agent/acceptance/受入検査仕様.md", {"tool_name": "Bash", "tool_input": {"command": "cat .pair-agent/acceptance/受入検査仕様.md"}}, True),
+        ("Bash stem-prefix glob", ".pair-agent/acceptance/受入検査仕様*", {"tool_name": "Bash", "tool_input": {"command": "type .pair-agent\\acceptance\\受入検査仕様.md"}}, True),
+        ("Bash dir without slash", "実行可能物/**", {"tool_name": "Bash", "tool_input": {"command": "ls 実行可能物"}}, True),
+        ("Bash 'docker' is not 'doc/**'", "doc/**", {"tool_name": "Bash", "tool_input": {"command": "docker ps"}}, False),
+        ("Bash 'upstream/仕様書.md' is not 'upstream/仕様.md'", "upstream/仕様.md", {"tool_name": "Bash", "tool_input": {"command": "cat upstream/仕様書.md"}}, False),
     ]
     bad = 0
     for name, deny, payload, expect in cases:

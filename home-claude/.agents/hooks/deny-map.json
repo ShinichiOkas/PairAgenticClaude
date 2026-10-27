@@ -5,7 +5,7 @@
   "devops-design-acceptance-tests": "*実行可能物*,*実装物*,実行可能物.*,実行可能物/**,実装物.*,実装物/**",
   "devops-build": "*受入検査仕様*,acceptance/受入検査仕様*,acceptance/受入検査仕様.md,受入検査仕様.*,受入検査仕様/**",
   "devops-assure-design": "*受入検査仕様*,acceptance/受入検査仕様*,acceptance/受入検査仕様.md,受入検査仕様.*,受入検査仕様/**",
-  "devops-execute-acceptance-tests": "*仕様*,*実装物*,upstream/仕様*,upstream/仕様.md,仕様.*,仕様/**,実装物.*,実装物/**",
+  "devops-execute-acceptance-tests": "*実装物*,upstream/仕様*,upstream/仕様.md,仕様.*,仕様/**,実装物.*,実装物/**",
   "devops-register-observation": "*実行可能物*,*実装物*,実行可能物.*,実行可能物/**,実装物.*,実装物/**",
   "devops-evaluate-release-condition": "*実行可能物*,*実装物*,実行可能物.*,実行可能物/**,実装物.*,実装物/**",
   "inquiry-small-normalize-request": "*提出版*,*調査結果*,提出版*,提出版.*,提出版.md,提出版/**,調査結果*,調査結果.*,調査結果.md,調査結果/**",

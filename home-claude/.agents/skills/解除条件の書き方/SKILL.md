@@ -36,3 +36,9 @@ description: "「〜になったら何をするか」が無い待ちを作らな
 ## 足した具体（2026-10-27・AIdedArchitecture から抽出・未実走）
 
 - **アーキテクチャ課題の保留にも同じ規則が効く**:「保留には、いつ再開するかの条件を書く。条件の無い保留は、永久に保留のままになる」（AIdedArchitecture part3_実践編.md §16.3、AI ドラフト NT-60。→ 課題の閉じ方）
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/lint_release_conditions.py` — 待ち・保留・観測項目の一覧を検査し、解除条件が述語でない／判定者・期限・解除時の動作が無い項目を挙げる（読むだけ）。 ／ 使い方: `python scripts/lint_release_conditions.py --help`

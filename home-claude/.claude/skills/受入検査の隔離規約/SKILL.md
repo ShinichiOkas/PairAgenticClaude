@@ -80,3 +80,9 @@ description: "受入検査はブラックボックスで行う。そしてそれ
 > **`.tasks` は task → skill しか書けないので、メタ層に装着される skill を表現できない。**
 
 **⚠ 再配置は未実施。** `.tasks` の側に「メタ層の skill」を書く場所が無い。
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/check_isolation.py` — 成果物定義（.mk）を読み、受入検査が「姿勢」ではなく「遮断」でブラックボックスになっているか（deps と blocks）を検める。 ／ 使い方: `python scripts/check_isolation.py --help`

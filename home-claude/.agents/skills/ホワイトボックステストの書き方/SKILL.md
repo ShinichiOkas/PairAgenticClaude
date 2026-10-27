@@ -32,3 +32,10 @@ description: "作った者が自分のテストを書くと、テストは実装
 - **わざと壊して、落ちることを確かめてから残す**
 - **縮退経路・例外経路を必ず含める**（正常系だけでは変異試験に落ちる）
 - ⚠ **実装を読みながら書くと、実装の言い換えになる。** 仕様の語で書く
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/lint_tests.py` — pytest/unittest 形式のテストを静的に検査し、assert 無し・自明な assert・主張の詰め込み・例外経路の欠落を指摘する。 ／ 使い方: `python scripts/lint_tests.py --help`
+- `scripts/mutate_check.py` — Python ソースに 1 箇所ずつ小さな変異（比較・演算・真偽・定数・戻り値）を入れ、テストが落ちるか（殺せるか）を測る。 ／ 使い方: `python scripts/mutate_check.py --help`
