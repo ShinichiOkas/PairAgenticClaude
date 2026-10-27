@@ -38,6 +38,7 @@ class Mutator(ast.NodeTransformer):
 
     def __init__(self, target=None, skip=()):
         self.target, self.count, self.skip, self.desc = target, 0, set(skip), None
+        self.sites: list[tuple[int, int, str]] = []
 
     def _hit(self, node, desc):
         k = self.count
@@ -48,8 +49,6 @@ class Mutator(ast.NodeTransformer):
         if self.target is None:
             self.sites.append((k, getattr(node, "lineno", 0), desc))
         return False
-
-    sites = None
 
     def visit_Compare(self, node):
         self.generic_visit(node)

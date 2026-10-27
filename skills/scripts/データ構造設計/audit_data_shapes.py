@@ -13,6 +13,7 @@ import json
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
+from typing import Any
 
 STATE_NAMES = {"status", "state", "kind", "type", "mode", "phase", "level"}
 
@@ -29,6 +30,12 @@ def _is_record(cls):
     return any(ast.unparse(b) in ("NamedTuple", "TypedDict") or ast.unparse(b).endswith("BaseModel") for b in cls.bases)
 
 
+def _field_name(f):
+    """fields は target が Name の AnnAssign だけに絞ってある。型の上でも Name に絞る。"""
+    assert isinstance(f.target, ast.Name)
+    return f.target.id
+
+
 def audit_source(src, path="<src>"):
     out = []
     tree = ast.parse(src)
@@ -42,7 +49,7 @@ def audit_source(src, path="<src>"):
             continue
         record = _is_record(cls)
         for f in fields:
-            name = f.target.id
+            name = _field_name(f)
             if f.value is not None and isinstance(f.value, (ast.List, ast.Dict, ast.Set)):
                 add("error", "shared-mutable-default", f.lineno, cls.name,
                     f"{name} の既定値がリテラルの可変値（インスタンス間で共有される。default_factory を使う）")
@@ -52,11 +59,11 @@ def audit_source(src, path="<src>"):
             if name in STATE_NAMES and ann == "str":
                 add("warn", "stringly-state", f.lineno, cls.name, f"{name}: str は表現できない値を許す（Enum/Literal にする）")
         if record:
-            opt = [f.target.id for f in fields if _is_optional(f.annotation)]
+            opt = [_field_name(f) for f in fields if _is_optional(f.annotation)]
             if len(opt) >= 2:
                 add("warn", "multi-optional", cls.lineno, cls.name,
                     f"Optional が {len(opt)} 個（{', '.join(opt)}）。None の組合せ 2^{len(opt)} のうち意味のある状態は？ 和型/別クラスに分けられないか")
-            bools = [f.target.id for f in fields if ast.unparse(f.annotation) == "bool"]
+            bools = [_field_name(f) for f in fields if ast.unparse(f.annotation) == "bool"]
             if len(bools) >= 2:
                 add("warn", "multi-bool", cls.lineno, cls.name,
                     f"bool が {len(bools)} 個（{', '.join(bools)}）。組合せの一部は不正な状態ではないか")
@@ -87,7 +94,7 @@ def _walk(v, path, acc):
 
 def infer_shape(records, enum_max=6):
     """records: dict のリスト。欄ごとに型・出現率・列挙らしさを返す（決定的な順序）。"""
-    acc = defaultdict(lambda: {"types": Counter(), "n": 0, "values": Counter()})
+    acc: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {"types": Counter(), "n": 0, "values": Counter()})
     for r in records:
         _walk(r, "", acc)
     total = len(records)

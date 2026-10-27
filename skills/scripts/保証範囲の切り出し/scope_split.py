@@ -13,6 +13,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 RESIDUAL_HEAD = re.compile(r"残留リスク|保証(し|でき)なかった|保証しない|未保証|確かめ(られ)?なかった")
 
@@ -35,7 +36,7 @@ def split(spec_text, assurance_text, external=(), pat=r"[A-Z][A-Za-z]*-\d+"):
     spec, _ = item_ids(spec_text, pat)
     guaranteed, residual = item_ids(assurance_text, pat, residual_split=True)
     spec_s, g_s, r_s, ext = set(spec), set(guaranteed), set(residual), set(external)
-    res = {
+    res: dict[str, Any] = {
         "spec_items": sorted(spec_s),
         "guaranteed": sorted(g_s & spec_s - ext),
         "residual": sorted(r_s & spec_s),
