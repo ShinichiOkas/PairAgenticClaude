@@ -151,7 +151,7 @@ class WorkflowRunner:
                     print(f"  [dry-run] 起動予定: {target_name} (by: {by}, agent: {s.get('agentType')})")
                     self.produced.append({"target": target_name, "path": s.get("path"), "by": by})
                     self.updated[n] = True
-                    if gate and self.stop_at_gate:
+                    if gate and self.stop_at_gate and gate != "H3":
                         self.open_gates.append({"gate": gate, "target": target_name})
                         print(f"  ⏸ [dry-run] 人間ゲート {gate}: {target_name} で停止予定")
                         self.halted_at = gate
@@ -191,8 +191,11 @@ class WorkflowRunner:
                 # 人間ゲートの確認
                 if gate:
                     self.open_gates.append({"gate": gate, "target": target_name, "path": s.get("path")})
-                    print(f"  ⏸ 人間ゲート {gate}: {target_name} —— 師匠の判定・承認が要る")
-                    if self.stop_at_gate:
+                    if gate == "H3":
+                        print(f"  ▶ 検収ゲート {gate}: {target_name} —— 止めない（確かめは受入の役が自分で通し、師匠の検収は閉じた状態で長く使って OK を出す。2026-10-27）")
+                    else:
+                        print(f"  ⏸ 人間ゲート {gate}: {target_name} —— 方針・設計の判断が要る")
+                    if self.stop_at_gate and gate != "H3":
                         self.halted_at = gate
                         print(f"  → ゲート {gate} によりワークフローを一時停止しました。")
                         break
