@@ -97,6 +97,31 @@ def test_sprint_migrate_legacy_and_closed_guard(proj, capsys):
     assert json.loads((p2 / ".pair-agent" / "sprints" / "CLOSED.json").read_text(encoding="utf-8"))["keep"] == 1
 
 
+def test_sprint_status_and_migrate_agree_on_legacy(proj, capsys):
+    """旧 current-sprint.json について、status が「migrate の対象」と言うのは migrate が実際に写すときだけ。"""
+    s = load("sprint-lifecycle", "sprint_ops")
+    pa = proj / ".pair-agent"
+    legacy = pa / "current-sprint.json"
+    legacy.write_text(json.dumps({"sprint_id": "OLD", "status": "executing"}), encoding="utf-8")
+    _put_ptr(proj, "b665f4f8-other.json", sprint_id="A")  # 別 PC のポインタだけが有る
+    assert s.legacy_state(pa) == "covered"
+    capsys.readouterr()
+    s.main(sargs(proj, "status"))
+    out = capsys.readouterr().out
+    assert "`migrate` の対象" not in out and "migrate は写さない" in out
+    assert s.main(sargs(proj, "migrate", "--apply")) == 0
+    assert "migrate は写さない" in capsys.readouterr().out
+    assert json.loads(legacy.read_text(encoding="utf-8"))["status"] == "executing"  # 触らない
+    # current/ が空なら pending: status は対象と言い、migrate は写す
+    for f in (pa / "current").glob("*.json"):
+        f.unlink()
+    assert s.legacy_state(pa) == "pending"
+    s.main(sargs(proj, "status"))
+    assert "`migrate` の対象" in capsys.readouterr().out
+    assert s.main(sargs(proj, "migrate", "--apply")) == 0
+    assert s.legacy_state(pa) == "moved"
+
+
 def test_sprint_key_rule_case_sensitive_no_separator_trimmed(proj, capsys):
     s = load("sprint-lifecycle", "sprint_ops")
     assert s.worktree_key("ANCIENT", "S:/work/x") == hashlib.sha1(b"ANCIENTS:/work/x").hexdigest()[:8]

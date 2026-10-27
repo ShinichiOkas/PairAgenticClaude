@@ -156,12 +156,34 @@ def cmd_status(a) -> int:
     return rc
 
 
+def legacy_state(pa: Path) -> str:
+    """旧 current-sprint.json の状態。status と migrate はこの一つの判定を使う（言うことを食い違わせない）。
+    absent: 無い / moved: 道標になっている / covered: current/ に既にポインタが有るので写さない / pending: 移設の対象"""
+    legacy = pa / "current-sprint.json"
+    if not legacy.is_file():
+        return "absent"
+    old = read_json(legacy)
+    if old.get("status") == "moved" or "_moved" in old:
+        return "moved"
+    if (pa / "current").is_dir() and any((pa / "current").glob("*.json")):
+        return "covered"
+    return "pending"
+
+
+LEGACY_MSG = {
+    "moved": "旧形式 current-sprint.json は道標（移設済み）",
+    "covered": "旧形式 current-sprint.json が道標になっていない。ただし current/ に既にポインタが有るので migrate は写さない"
+               "（中身が古いだけなら道標への置き換えは師匠に確かめてから）",
+    "pending": "旧形式 current-sprint.json が有る -> `migrate` の対象",
+}
+
+
 def status_main(project: Path, pointer: Path) -> int:
     if not pointer.is_file():
         print(f"ポインタ無し: {pointer}")
-        legacy = project / ".pair-agent" / "current-sprint.json"
-        if legacy.is_file():
-            print("旧形式 current-sprint.json が有る -> `migrate` の対象")
+        st = legacy_state(project / ".pair-agent")
+        if st in LEGACY_MSG:
+            print(LEGACY_MSG[st])
         return 1
     ptr = read_json(pointer)
     jpath = project / ptr.get("journal", "")
@@ -278,16 +300,14 @@ def cmd_migrate(a) -> int:
     if rc:
         return rc
     legacy = pa / "current-sprint.json"
-    if not legacy.is_file():
+    st = legacy_state(pa)
+    if st == "absent":
         print("移設対象なし（current-sprint.json が無い）")
         return 0
+    if st != "pending":
+        print(LEGACY_MSG[st])
+        return 0
     old = read_json(legacy)
-    if old.get("status") == "moved" or "_moved" in old:
-        print("移設済み（道標になっている）")
-        return 0
-    if (pa / "current").is_dir() and any((pa / "current").glob("*.json")):
-        print("移設済み（current/ にポインタが有る）")
-        return 0
     sid = old.get("sprint_id")
     if not sid:
         sid = f"{(old.get('created_at') or now_iso(a))[:10].replace('-', '')}-{slug(old.get('goal', '')) or 'legacy'}"
