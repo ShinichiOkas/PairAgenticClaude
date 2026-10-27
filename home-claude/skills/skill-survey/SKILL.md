@@ -208,6 +208,16 @@ python ~/.claude/pair-agent/tools/skill-survey.py ingest
 - 設定ファイルが JSON として読めない・型が違う（`project_roots` が文字列の配列でない等）ときは、何も書かずに理由を出して終わる
 - 取り込み後、`survey-report-<date>.md`（同じ日の 2 回目以降は `survey-report-<date>-2.md`、`-3.md` …）を読んで結果を要約して師匠に伝える。skip（low）になった件は 1 件ずつ理由を添える
 
+### 決定性の道具 `skill_library_ops.py`（師匠の宣言 2026-10-27「可能な限り作業は決定性のスクリプトにしろ」）
+
+スクリプトは `<PAIR_AGENT_REPO>/tools/skill_library_ops.py`。既定は下見、書き込みは `--apply` のときだけ。LLM は呼ばない（`dedupe-candidates --judge-model` のときだけローカル Ollama）。
+
+- 取り込み後・承認後の検査: `python tools/skill_library_ops.py verify [--approved-date YYYY-MM-DD]` — 引用行が元ファイルにあるか・`{NAME}` の残り（コード内は除外）・フロントマターを見る
+- 並列レビューの割り当て: `python tools/skill_library_ops.py waves --size N --work-dir <dir> [--apply]` — 未割り当ての pending を `groupG<番号>.txt` に切る（番号で確定・既存は上書きしない）
+- 承認後の目録更新: `python tools/skill_library_ops.py index [--apply]` — index.md の各行を approved / rejected の実際の置き場所に合わせる
+- グローバルへの昇格: `python tools/skill_library_ops.py promote --list <名前の一覧> --approved-date YYYY-MM-DD [--apply]` — survey 用フィールドを外し provenance を足す（同名は上書きしない）
+- 重複の洗い出し: `python tools/skill_library_ops.py dedupe-candidates [--out f.jsonl] [--judge-model qwen3.5:9b]` — 3-gram で候補を出し、指定時だけローカル Ollama で判定
+
 ## 3. Pending スキルのレビュー
 
 `~/.claude/pair-agent/skill-library/pending/` 内の `.md` ファイルを一覧表示する。
