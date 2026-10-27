@@ -6,6 +6,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 P = Path(__file__).resolve().parents[2] / "skills" / "scripts" / "扱いの型の使い分け" / "handling_ledger.py"
 spec = importlib.util.spec_from_file_location("handling_ledger", P)
+assert spec is not None and spec.loader is not None
 h = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(h)
 

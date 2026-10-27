@@ -6,6 +6,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 P = Path(__file__).resolve().parents[2] / "skills" / "scripts" / "用語定義の書き方" / "lint_glossary.py"
 spec = importlib.util.spec_from_file_location("lint_glossary", P)
+assert spec is not None and spec.loader is not None
 g = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(g)
 

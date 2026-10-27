@@ -40,7 +40,7 @@ def render(num: int, restated: str, correction: str, date: str, original: str) -
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--restated", required=True, help="こちらの復唱")
     ap.add_argument("--correction", required=True, help="返ってきた訂正（原文のまま）")
     ap.add_argument("--original", default="", help="復唱の元になった相手の原文（任意）")

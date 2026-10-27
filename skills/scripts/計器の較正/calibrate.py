@@ -57,7 +57,7 @@ def main(argv=None):
     if "--" in argv:
         i = argv.index("--")
         argv, cmd = argv[:i], argv[i + 1:]
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("cases")
     ap.add_argument("--repeat", type=int, default=3)
     ap.add_argument("--out")

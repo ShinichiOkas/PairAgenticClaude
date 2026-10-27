@@ -82,7 +82,7 @@ def main(argv=None):
     if "--" in argv:
         i = argv.index("--")
         argv, cmd = argv[:i], argv[i + 1:]
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = ap.add_subparsers(dest="mode", required=True)
     for name in ("record", "compare"):
         p = sub.add_parser(name)

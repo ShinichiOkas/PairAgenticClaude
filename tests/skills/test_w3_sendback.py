@@ -7,6 +7,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 P = ROOT / "skills" / "scripts" / "差し戻し先の語彙翻訳" / "check_sendback.py"
 spec = importlib.util.spec_from_file_location("check_sendback", P)
+assert spec is not None and spec.loader is not None
 cs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cs)
 

@@ -71,7 +71,7 @@ def lint(rows, min_trials):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("file")
     ap.add_argument("--min-trials", type=int, default=3)
     ap.add_argument("--json", action="store_true")

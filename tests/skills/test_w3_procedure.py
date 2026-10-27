@@ -6,6 +6,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 P = Path(__file__).resolve().parents[2] / "skills" / "scripts" / "判定可能な仕様の書き方" / "procedure_matrix.py"
 spec = importlib.util.spec_from_file_location("procedure_matrix", P)
+assert spec is not None and spec.loader is not None
 pm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pm)
 

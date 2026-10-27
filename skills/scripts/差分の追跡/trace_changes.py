@@ -116,7 +116,7 @@ def render(res: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--changes", help="変更一覧ファイル（省略時は標準入力）")
     ap.add_argument("--docs", nargs="+", required=True, help="文書のファイルまたはディレクトリ")
     ap.add_argument("--repo-root", help="変更パスの基準ディレクトリ（--with-mtime で使う）")
@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     text = Path(a.changes).read_text(encoding="utf-8") if a.changes else sys.stdin.read()
     changes = read_changes(text)
     docs = collect_docs(a.docs)

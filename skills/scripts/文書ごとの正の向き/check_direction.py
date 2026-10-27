@@ -109,7 +109,7 @@ def cmd_scaffold(a) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="宣言の有無と整合を検査する")
     c.add_argument("paths", nargs="+")
@@ -120,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     s.set_defaults(fn=cmd_scaffold)
     a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     return a.fn(a)
 
 

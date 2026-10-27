@@ -112,7 +112,7 @@ def check_report(report: str, res: dict) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("items", type=Path, help="採番済みの入力項目（R1: ...）")
     ap.add_argument("output", type=Path, help="由来タグ付きの出力")
     ap.add_argument("--report", type=Path, help="突き合わせる完了報告")

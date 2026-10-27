@@ -76,7 +76,7 @@ def analyze(orig_text: str, rest_text: str, n: int = 6, run: int = 20, max_ratio
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("original", type=Path, help="相手の原文（テキスト）")
     ap.add_argument("restatement", type=Path, help="自分の復唱（テキスト）")
     ap.add_argument("--n", type=int, default=6, help="重なりを数える窓の文字数（既定 6）")

@@ -84,14 +84,14 @@ def scan_text(text: str, now: dt.date, max_age_days: int) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("files", nargs="+")
     ap.add_argument("--now", help="基準日 YYYY-MM-DD（省略時は今日）")
     ap.add_argument("--max-age-days", type=int, default=30)
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     now = dt.date.fromisoformat(a.now) if a.now else dt.date.today()
     report = []
     for f in a.files:

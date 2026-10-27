@@ -11,6 +11,7 @@ ROOT = REPO / "skills" / "scripts"
 
 def load(rel, name):
     spec = importlib.util.spec_from_file_location(name, ROOT / rel)
+    assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

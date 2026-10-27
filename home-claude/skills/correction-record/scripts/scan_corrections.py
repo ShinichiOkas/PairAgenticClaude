@@ -20,7 +20,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 for _s in (sys.stdout, sys.stderr):
     try:
-        _s.reconfigure(encoding="utf-8")
+        _s.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -136,7 +136,7 @@ def cmd_unlinked(recs: list[dict]) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--home", default=str(DEFAULT_HOME))
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("stats")

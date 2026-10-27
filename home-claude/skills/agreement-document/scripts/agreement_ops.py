@@ -20,7 +20,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 for _s in (sys.stdout, sys.stderr):
     try:
-        _s.reconfigure(encoding="utf-8")
+        _s.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -194,7 +194,7 @@ def cmd_check(a) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--now", default="", help="タイムスタンプ固定（テスト用）")
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new")

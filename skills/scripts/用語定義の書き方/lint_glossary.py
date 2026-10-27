@@ -92,7 +92,7 @@ def skeleton(names: list[str]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     l = sub.add_parser("lint", help="用語定義ファイルを検査する（読むだけ）")
     l.add_argument("file", type=Path)

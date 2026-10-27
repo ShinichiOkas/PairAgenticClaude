@@ -21,7 +21,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 for _s in (sys.stdout, sys.stderr):
     try:
-        _s.reconfigure(encoding="utf-8")
+        _s.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -38,6 +38,7 @@ def load_emit_agents(tools_dir: Path):
     if str(tools_dir) not in sys.path:
         sys.path.insert(0, str(tools_dir))
     spec = importlib.util.spec_from_file_location("emit_agents_for_cost_ops", path)
+    assert spec is not None and spec.loader is not None
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
@@ -120,7 +121,7 @@ def cmd_usage(a) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--tools-dir", default=str(DEFAULT_TOOLS))
     sub = p.add_subparsers(dest="cmd", required=True)
     au = sub.add_parser("audit")

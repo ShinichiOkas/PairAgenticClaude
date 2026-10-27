@@ -23,7 +23,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 for _s in (sys.stdout, sys.stderr):
     try:
-        _s.reconfigure(encoding="utf-8")
+        _s.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -84,7 +84,7 @@ def plan(a) -> tuple[int, list[str], list[tuple[str, Path, str]]]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--project", default=".")
     p.add_argument("--home", default=str(DEFAULT_HOME), help="テンプレート置き場（<home>/template を使う）")
     p.add_argument("--host", default="", help="ホスト名（テスト用）")

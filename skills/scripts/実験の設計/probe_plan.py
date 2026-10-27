@@ -63,7 +63,7 @@ def sha(p):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = ap.add_subparsers(dest="mode", required=True)
     sub.add_parser("lint").add_argument("plan")
     sub.add_parser("classify").add_argument("result")

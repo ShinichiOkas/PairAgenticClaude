@@ -7,6 +7,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 P = Path(__file__).resolve().parents[2] / "skills" / "scripts" / "QAW" / "question_graph.py"
 spec = importlib.util.spec_from_file_location("question_graph", P)
+assert spec is not None and spec.loader is not None
 q = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(q)
 

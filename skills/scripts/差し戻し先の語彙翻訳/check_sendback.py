@@ -108,7 +108,7 @@ def check(mk_text: str, receiver: str, body: str, vocab: str | None = None) -> t
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("sendback", type=Path, help="差し戻し指示の本文")
     ap.add_argument("--mk", required=True, type=Path, help="成果物定義 .mk")
     ap.add_argument("--receiver", required=True, help="受け手の成果物名または役割名")

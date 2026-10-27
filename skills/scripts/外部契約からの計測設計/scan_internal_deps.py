@@ -55,7 +55,7 @@ def scan_file(path, names, internal_dir):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("instrument")
     ap.add_argument("--internal-dir")
     ap.add_argument("--internal-name", action="append", default=[])

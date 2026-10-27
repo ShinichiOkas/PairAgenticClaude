@@ -19,7 +19,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 for _s in (sys.stdout, sys.stderr):
     try:
-        _s.reconfigure(encoding="utf-8")
+        _s.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -57,7 +57,7 @@ def render(*, recorded_at: str, sprint_id: str, trigger: str, severity: str,
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--home", default=str(DEFAULT_HOME), help="ペア固有の置き場（既定 ~/.claude/pair-agent）")
     p.add_argument("--trigger", required=True, choices=TRIGGERS)
     p.add_argument("--severity", required=True, choices=SEVERITIES)

@@ -123,7 +123,7 @@ def judge_item(item: dict, base: Path, now_arg: dt.datetime | None, tol: float) 
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--items", required=True)
     ap.add_argument("--base", help="source の基準ディレクトリ（省略時は items.json のあるディレクトリ）")
     ap.add_argument("--now", help="基準時刻 ISO（省略時はデータの最大 timestamp）")
@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     ip = Path(a.items)
     items = json.loads(ip.read_text(encoding="utf-8"))
     if not isinstance(items, list):

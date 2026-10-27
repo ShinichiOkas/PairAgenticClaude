@@ -40,7 +40,7 @@ def check(rows):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("file")
     ap.add_argument("--split", action="store_true")
     a = ap.parse_args(argv)

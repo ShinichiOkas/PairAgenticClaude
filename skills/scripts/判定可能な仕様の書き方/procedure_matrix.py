@@ -117,7 +117,7 @@ def read_spec(text: str) -> list[tuple[str, str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new", help="仕様項目から対応表の雛形を作る")
     n.add_argument("spec", type=Path)

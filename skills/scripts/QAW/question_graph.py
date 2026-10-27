@@ -167,7 +167,7 @@ def status(qs: list[dict], answers: dict[str, str]) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("questions", type=Path)
     ap.add_argument("--answers", type=Path, help='回答の JSON（{"Q1": "yes"}）')
     a = ap.parse_args(argv)

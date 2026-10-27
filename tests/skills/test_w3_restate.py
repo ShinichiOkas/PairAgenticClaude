@@ -9,6 +9,7 @@ D = Path(__file__).resolve().parents[2] / "skills" / "scripts" / "復唱・確�
 
 def load(name):
     spec = importlib.util.spec_from_file_location(name, D / f"{name}.py")
+    assert spec is not None and spec.loader is not None
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m

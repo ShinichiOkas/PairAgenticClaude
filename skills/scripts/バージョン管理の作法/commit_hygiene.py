@@ -103,7 +103,7 @@ def analyze(entries: list[dict], max_groups: int = 3, gen_map: dict | None = Non
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--repo", help="リポジトリのパス（git status を実行する）")
     ap.add_argument("--status-file", help="git status --porcelain の出力ファイル（省略時は標準入力）")
     ap.add_argument("--max-groups", type=int, default=3)
@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     if a.repo:
         r = subprocess.run(["git", "-C", a.repo, "-c", "core.quotepath=false", "status", "--porcelain"],
                            capture_output=True, text=True, encoding="utf-8")
