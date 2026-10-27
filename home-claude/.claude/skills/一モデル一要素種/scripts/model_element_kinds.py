@@ -3,7 +3,9 @@
 
     python model_element_kinds.py [--db PATH] [--backend json|sqlite] [--json] [ID …]
 
-読む規則: no_predicate（関連に述語が無い）。
+読む規則: no_predicate（関連に述語が無い）、mixed_kinds（中核の検出。図 MO と shows で明示した図の要素種の混在）。
+DB に図 MO が 1 枚でもあれば混在は中核の mixed_kinds の検出をそのまま出す。MO が 1 枚も無い DB では連結成分から推定し、
+  ID を inferred_mixed_kinds:<要素ID> にして「図が DB に無いので関連のつながりから推定した」と書く。
 出すもの: 関連でつながる要素の連結成分（＝一枚の図）ごとの要素種と要素、種類が 2 つ以上の図（混在）、割り付けの図（allocates。ここだけは混在してよい例外）。
 ID を渡すと、その要素を含む図だけを出す。混在は problems として出し、終了コード 1 にする。
 読むだけ（DB に書かない）。--db --backend --json は中核 design_graph.py と同じ名前。
@@ -101,7 +103,8 @@ def finding_lines(findings: list[dict[str, Any]]) -> list[str]:
 
 
 DESC = '関連でつながる図ごとに要素種の混在を指摘する。'
-RULES: tuple[str, ...] = ('no_predicate',)
+RULES: tuple[str, ...] = ('no_predicate', 'mixed_kinds')
+INFERRED_NOTE = "図が DB に無いので関連のつながりから推定した"
 
 
 def add_args(ap: argparse.ArgumentParser) -> None:
@@ -129,17 +132,22 @@ def collect(core: Any, g: Any, args: argparse.Namespace) -> tuple[dict[str, Any]
         groups.setdefault(find(x), []).append(x)
     models: list[dict[str, Any]] = []
     problems: list[dict[str, Any]] = []
+    # 図（種類 MO）が DB に 1 枚でもあれば、混在は中核の mixed_kinds の検出をそのまま出す。無ければ連結成分で推定する
+    has_mo = any(n["kind"] == "model" and n["state"] in ALIVE for n in g.nodes.values())
     lines = ["## 関連でつながる図（連結成分）"]
+    if has_mo:
+        lines.append("（図 MO が DB にあるので、混在は中核の mixed_kinds の検出で見る。下の連結成分は参考）")
     for members in sorted((sorted(m, key=core.natkey) for m in groups.values()), key=lambda m: core.natkey(m[0])):
         if args.ids and not set(args.ids) & set(members):
             continue
         kinds = sorted({g.nodes[m]["kind"] for m in members})
-        mixed = len(kinds) > 1
+        mixed = len(kinds) > 1 and not has_mo
         models.append({"elements": members, "kinds": kinds, "mixed": mixed})
-        lines.append(f"図 {members[0]}…  要素種: {', '.join(kinds)}  要素: {', '.join(members)}" + ("  ← 混在" if mixed else ""))
+        lines.append(f"図 {members[0]}…  要素種: {', '.join(kinds)}  要素: {', '.join(members)}" + ("  ← 混在（推定）" if mixed else ""))
         if mixed:
-            problems.append({"id": f"mixed_kinds:{members[0]}",
-                             "message": f"一枚の図に要素種が混ざっている（{', '.join(kinds)}）。図を分けるか、割り付けの図にする"})
+            problems.append({"id": f"inferred_mixed_kinds:{members[0]}",
+                             "message": f"一枚の図に要素種が混ざっている（{', '.join(kinds)}）。{INFERRED_NOTE}。"
+                                        "図を分けるか、割り付けの図にする"})
     if not models:
         lines.append("- 関連でつながる図なし")
     alloc = [{"id": l["id"], "src": l["src"], "dst": l["dst"]} for l in sorted(g.links.values(), key=lambda l: core.natkey(l["id"]))
