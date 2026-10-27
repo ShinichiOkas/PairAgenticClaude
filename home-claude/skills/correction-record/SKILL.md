@@ -67,3 +67,10 @@ proposed_skill_id: null
 
 同じ状況が再発した場合:  
  「以前『{boundary}』と教わっています。今回は触ってよいですか？」
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/record_correction.py` — 発話の原文・trigger・severity から CorrectionRecord を定形で書き出す（既定は下見、`--apply` で書く。既存は上書きしない） ／ 使い方: `python scripts/record_correction.py --help`
+- `scripts/scan_corrections.py` — corrections/ の集計・再発照合（`search`）・未昇格の昇格候補抽出（`unlinked`）（読むだけ） ／ 使い方: `python scripts/scan_corrections.py --help`

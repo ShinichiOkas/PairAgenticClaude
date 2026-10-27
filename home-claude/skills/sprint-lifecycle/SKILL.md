@@ -129,3 +129,9 @@ description: スプリントのライフサイクル管理。新しいタスク�
    改めて保存する操作は無い
 2. 次のスプリントが始まるまでポインタは completed の sprint_id を指したまま残ってよい
    （D-3: 次の開始時にポインタの `journal` を新しいジャーナルへ書き換える）
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/sprint_ops.py` — 作業ツリーの鍵の計算（`key`）・ジャーナル+ポインタの作成（`start`）・状態遷移と両者の更新（`transition`。不正な遷移は拒否、合意の status も追従）・食い違い検出（`status`）・旧 current-sprint.json の移設（`migrate`。閉じたスプリントは写さず NEEDS-DECISION で止まる）。既定は下見、`--apply` で書く ／ 使い方: `python scripts/sprint_ops.py --help`

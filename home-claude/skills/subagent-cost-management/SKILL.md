@@ -75,3 +75,9 @@ description: サブエージェントの費用構造（呼び出し回数 × 文
 1. 1 回のツール呼び出しに文脈全体が課金される。不要なファイル読み出し（大きなログや無関係なファイル）を避ける。
 2. grep / glob は検索パスを絞る（プロジェクトルートから全体を網羅検索しない）。
 3. 報告は簡潔に構造化して返す。
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/cost_ops.py` — エージェント定義の maxTurns・モデルを `tools/emit_agents.py` の正典表と突き合わせる（`audit`: 低すぎる maxTurns・機械役のモデル過剰を検出）・役名から tier/maxTurns/モデルを引く（`lookup`）・「呼び出し回数 x 文脈」の費用見積もり（`estimate`）・実測は `tools/measure_agent_usage.py` へ委ねる（`usage`）。リポジトリ外へ配布した場合は `--tools-dir` で tools/ を指す ／ 使い方: `python scripts/cost_ops.py --help`

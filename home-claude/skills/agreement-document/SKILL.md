@@ -86,3 +86,9 @@ change_count_improvement: 0
 * 変更ログに理由とトリガーを追記  
 * 前提崩壊: change_count_premise++  
 * より良い方法: change_count_improvement++
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/agreement_ops.py` — 合意ドキュメントの雛形作成（`new`）・版の更新（`bump`: version/変更ログ/カウンタ）・追記セクション（`append`: AIの懸念/見切り発車/叱られ記録）・構造検査（`check`: 必須節・status・1 画面サイズ・スコープのパス列挙・completed の未完了タスク）。既定は下見、`--apply` で書く ／ 使い方: `python scripts/agreement_ops.py --help`

@@ -48,3 +48,9 @@ updated_at: <timestamp>
 * 一度学んだ用語は再確認しない  
 * 定義が変わったと感じたときだけ確認する  
 * domain_tags の名前自体も vocabulary で定義される
+
+## 武器（スクリプト）
+
+この Skill 専用の決定性スクリプト（Skill のディレクトリ基準）。機械にできる部分はこれに任せ、判断だけを自分でする。
+
+- `scripts/vocab_ops.py` — 用語定義を vocab-<term>.md の定形で登録（`add`: 含む/含まないの両方が必須、既知は上書きせず `--update` で改訂履歴つき）・既知用語の検索（`find`）・テキスト中の既知用語の洗い出し（`scan`: 再確認を避ける）・一覧（`list`） ／ 使い方: `python scripts/vocab_ops.py --help`
