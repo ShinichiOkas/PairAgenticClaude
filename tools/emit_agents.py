@@ -4,7 +4,7 @@
 **Claude Code** および **Google Antigravity (Gemini)** のマルチエージェント書式を一括書き出しする。
 
 Mnemo 実走成果を取り込み:
-  - 費用最適化: maxTurns の厳密設定（15〜150回）とモデル割り当て最適化（sonnet/haiku適正化）
+  - 費用最適化: maxTurns の高い設定（200〜600回。中断は最も効率の悪い行為・2026-10-27）とモデル割り当て最適化（sonnet/haiku適正化）
   - 文脈節約規約: 不要な全ファイル読み取り禁止・機械役の診断禁止
   - 同期担当の BOM 禁止規律
   - 実行時遮断フック: deny-map.json の自動出力（PreToolUse での物理的遮断）
@@ -31,48 +31,50 @@ ROOT = Path(__file__).resolve().parent.parent
 NL = "\n"
 
 # 正典 31 タスクの maxTurns と推奨モデル設定（P-54 / コスト最適化規約）
+# ★ 2026-10-27 改め（師匠の宣言『maxTurnsは信用の数値だ！それが低いのは信用できないという意味だ！恥じろ！高い数値を勝ち取れ！』ほか）:
+#   構築 600・仕様/受入/検査設計/アーキ 400・ほか 300・定型/機械 200。中断させない。大きい作業は起こす前に割って並列に
 # Tier 1: 最上位高度推論 (Claude: opus, Gemini: gemini-3.1-pro)
 # Tier 2: 自律エージェント基軸 (Claude: sonnet, Gemini: gemini-3.8-flash)
 # Tier 3: 定型・機械的実行 (Claude: haiku, Gemini: gemini-3.8-flash)
 ROLE_CONFIGS = {
     # Tier 1 (最上位高度推論)
-    "design-architecture": {"max_turns": 80, "tier": 1, "claude": "opus", "gemini": "gemini-3.1-pro"},
-    "decide-policy": {"max_turns": 60, "tier": 1, "claude": "opus", "gemini": "gemini-3.1-pro"},
+    "design-architecture": {"max_turns": 400, "tier": 1, "claude": "opus", "gemini": "gemini-3.1-pro"},
+    "decide-policy": {"max_turns": 300, "tier": 1, "claude": "opus", "gemini": "gemini-3.1-pro"},
 
     # Tier 2 (構築・実装・仕様・検査設計・検査実施・探針)
-    "build": {"max_turns": 150, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "execute-acceptance-tests": {"max_turns": 120, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "execute-acceptance": {"max_turns": 120, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "write-specification": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "design-acceptance-tests": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "write-detailed-design": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "assure-design": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "run-probe": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "build-instrument": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "investigate": {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "define-test-interface": {"max_turns": 60, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "estimate": {"max_turns": 60, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "reconcile-documents": {"max_turns": 60, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "file-defect": {"max_turns": 50, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "evaluate-release-condition": {"max_turns": 50, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "register-observation": {"max_turns": 50, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
-    "elicit-intent": {"max_turns": 40, "tier": 2, "claude": "inherit", "gemini": "gemini-3.8-flash"},
-    "elicit-definitions": {"max_turns": 40, "tier": 2, "claude": "inherit", "gemini": "gemini-3.8-flash"},
+    "build-instrument": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "build": {"max_turns": 600, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "execute-acceptance-tests": {"max_turns": 400, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "execute-acceptance": {"max_turns": 400, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "write-specification": {"max_turns": 400, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "design-acceptance-tests": {"max_turns": 400, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "write-detailed-design": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "assure-design": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "run-probe": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "investigate": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "define-test-interface": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "estimate": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "reconcile-documents": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "file-defect": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "evaluate-release-condition": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "register-observation": {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"},
+    "elicit-intent": {"max_turns": 300, "tier": 2, "claude": "inherit", "gemini": "gemini-3.8-flash"},
+    "elicit-definitions": {"max_turns": 300, "tier": 2, "claude": "inherit", "gemini": "gemini-3.8-flash"},
 
     # Tier 3 (同期・コミット・機械実行・非回帰・集約)
-    "sync-repository": {"max_turns": 25, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "sync": {"max_turns": 25, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "run-regression": {"max_turns": 15, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "run-mutation-testing": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "package": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "publish": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "measure-baseline": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "aggregate-residual-risk": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "aggregate-track-record": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "capture-request": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "normalize-request": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "check-feasibility-envelope": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
-    "extract-process-model": {"max_turns": 20, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "sync-repository": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "sync": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "run-regression": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "run-mutation-testing": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "package": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "publish": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "measure-baseline": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "aggregate-residual-risk": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "aggregate-track-record": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "capture-request": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "normalize-request": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "check-feasibility-envelope": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
+    "extract-process-model": {"max_turns": 200, "tier": 3, "claude": "haiku", "gemini": "gemini-3.8-flash"},
 }
 
 
@@ -81,7 +83,7 @@ def get_role_config(agent_name: str) -> dict:
     for k, v in ROLE_CONFIGS.items():
         if k in low:
             return v
-    return {"max_turns": 80, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"}
+    return {"max_turns": 300, "tier": 2, "claude": "sonnet", "gemini": "gemini-3.8-flash"}
 
 
 def enhance_agent_markdown(agent_name: str, body: str, r_list: list[Rule], platform: str = "claude") -> str:
@@ -124,7 +126,7 @@ def enhance_agent_markdown(agent_name: str, body: str, r_list: list[Rule], platf
         "## 文脈の節約規約（Mnemo 実測成果）",
         "",
         f"- **モデル階層**: {tier_desc} — モデル `{selected_model}` が割り当てられています。",
-        f"- **呼び出し上限 (maxTurns: {conf['max_turns']})**: 費用は「呼び出し回数 × そのときの文脈」で決まる。上限に達した場合は完了報告とともに引き継ぎ内容を出力して終了すること。",
+        f"- **呼び出し上限 (maxTurns: {conf['max_turns']})**: maxTurns は信用の数値である。中断は最も効率の悪い行為なので、**区切りごとに成果を書き出し、最後まで届ける**。上限に近づいたら成果を書き出して引き継ぎ内容を添えて終えること（費用は「呼び出し回数 × そのときの文脈」で決まるので、文脈を膨らませない）。大きい作業は起こす前に割って並列にする。",
         "- **検索パスの絞り込み**: Grep / Glob はプロジェクトルートから広範囲に打たず、必要なサブディレクトリに絞って実行すること。",
         "- **不要ファイルの読み出し禁止**: 巨大なログや無関係なモジュールを安易に読まないこと。",
     ]

@@ -535,8 +535,8 @@ for (let i = 0; i < LEVELS.length && !halted; i++) {
     })
     if (s.gate) {
       openGates.push({ gate: s.gate, target: s.target, path: rep.path })
-      log('⏸ 人間ゲート ' + s.gate + ': ' + s.target + ' —— A の判定が要る')
-      if (stopAtGate) halted = s.gate
+      log((s.gate === 'H3' ? '▶ 検収ゲート ' : '⏸ 人間ゲート ') + s.gate + ': ' + s.target + (s.gate === 'H3' ? ' —— 止めない（確かめは受入の役が自分で通し、師匠の検収は閉じた状態で長く使って OK を出す。2026-10-27）' : ' —— 方針・設計の判断が要る'))
+      if (stopAtGate && s.gate !== 'H3') halted = s.gate
     }
   }
   if (halted) log('args.stopAtGate により ' + halted + ' で止めた')
