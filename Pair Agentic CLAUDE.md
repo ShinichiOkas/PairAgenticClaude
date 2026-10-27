@@ -14,7 +14,7 @@ PairAgenticClaude/
 │   ├── *.mk                            # waterfall-core, devops, inquiry-small 等
 │   └── *.tasks                         # モデルごとのタスク・スキル対応
 │  
-├── skills/                             # 16領域 51スキルのカタログ定義
+├── skills/                             # 27領域 113スキルのカタログ定義（うちアーキテクト用 62 件は 2026-10-27 追加・draft）
 │   ├── *.md
 │   ├── slugs.map
 │   └── capabilities.cap
