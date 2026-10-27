@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 | モード | 出力先 | 汎化の実行者 | 使いどころ |
 |---|---|---|---|
-| **library**（既定） | `~/.claude/pair-agent/skill-library/pending/` | Python スクリプト（Haiku, 1件ずつ） | 定期的な棚卸し。件数が多い・逐次レビューしたい |
+| **library**（既定） | `~/.claude/pair-agent/skill-library/pending/` | Haiku サブエージェント（1件ずつ判定。スクリプトは走査と取り込みだけで LLM を呼ばない） | 定期的な棚卸し。件数が多い・逐次レビューしたい |
 | **harvest** | Pair Agent リポジトリの `examples/skills/` | **私が直接読んで汎化** | リポジトリ資産として配布したい。重複統合・取捨選択の判断が要る |
 
 ## 使い方
@@ -151,25 +151,58 @@ skillimport.bat --force    # 既存も上書き
 
 ---
 
-# library モード — スクリプトによるサーベイと pending レビュー
+# library モード — サブエージェントによるサーベイと pending レビュー
+
+**スクリプトは LLM を呼ばない**（師匠の宣言 2026-10-27「そもそも、サーベイのスクリプトはAPIコールを使う仕様なの？それ変更して」→ [[tool-scripts-do-not-call-the-api-directly]]）。
+`skill-survey.py` は「走査して対象一覧を出す（discover）」と「結果をライブラリへ取り込む（ingest）」だけを持ち、
+1件ずつの判定・汎化は Haiku のサブエージェントが担う。API キーは要らない。
 
 ## 1. 起動時の判断
 
 引数なし、または `--review` なし → サーベイを実行するか確認する:
 
-> 「skill-survey スクリプトを実行してスキルを収集しますか？（既処理スキルはスキップされます）」
+> 「スキルを走査して汎化しますか？（既処理スキルはスキップされます）」
 
 Yes → Phase 2 へ。No → Phase 3 へ。
 
 ## 2. サーベイ実行
 
+スクリプトは `~/.claude/pair-agent/tools/skill-survey.py`（見つからない場合は `<PAIR_AGENT_REPO>/tools/skill-survey.py`）。
+
+### 2-1. 走査（discover）
+
 ```bash
-python ~/.claude/pair-agent/tools/skill-survey.py
+python ~/.claude/pair-agent/tools/skill-survey.py discover [--since <日時>] [--batch-size 8]
 ```
 
-（スクリプトが見つからない場合は `python <PAIR_AGENT_REPO>/tools/skill-survey.py` を試す）
+- `--since` — この日時（ISO 8601）以前に更新されたファイルは対象にせず、ingest で処理済みとして登録する。前回の取り込み（harvest のコミット時刻など）以降の差分だけを拾うときに使う
+- ポインタのスタブ（description が「ポインタ」で始まる。正典はグローバル側）は既定で対象から外し、処理済みとして登録する。対象に入れるときだけ `--include-stubs`
+- ingest していない作業が残っていると止まる。捨ててよいと師匠が判断したときだけ `--force`
 
-実行後、最新の `survey-report-<date>.md` を読んで結果を要約して師匠に伝える。
+書かれるもの（`<output_dir>/.survey-work/`）: `manifest.json`・`instructions.md`（判定・汎化の規約）・`batch-NN.json`・空の `out/`。
+
+**走らせる前に件数を師匠に見せる。** 標準出力の件数（見つかった数・既処理・起点以前・スタブ・対象・バッチ数）を伝え、サブエージェントを起動してよいかを確かめる。
+同じスキルの複製（別の作業ツリーやクローン）が深さ 2 で拾われていないかもここで見る（`max_depth` で外せる）。
+
+### 2-2. 判定・汎化（サブエージェント）
+
+バッチ 1 つにつき 1 体、Haiku のサブエージェントを**並列で**起動する（`subagent_type: general-purpose`・`model: haiku`）。渡すのは 2 つのパスだけ:
+
+- `.survey-work/instructions.md`（規約と、結果の書き方・出力先）
+- 担当の `.survey-work/batch-NN.json`
+
+各サブエージェントは `out/<idx>.meta.json`（全件）と `out/<idx>.md`（high / medium のみ）を書いて終わる。
+
+### 2-3. 取り込み（ingest）
+
+```bash
+python ~/.claude/pair-agent/tools/skill-survey.py ingest --dry-run   # 件数と問題だけを見る
+python ~/.claude/pair-agent/tools/skill-survey.py ingest
+```
+
+- `--dry-run` の「problems」を先に見る。特に **個人情報らしき文字列**（ユーザー名・ホームのパス）は、`out/<idx>.md` を直してから取り込む
+- 結果ファイルが欠けた件はエラーとして扱われ、処理済みに登録されない（次の discover で再び対象になる）
+- 取り込み後、`survey-report-<date>.md` を読んで結果を要約して師匠に伝える。skip（low）になった件は 1 件ずつ理由を添える
 
 ## 3. Pending スキルのレビュー
 
@@ -219,7 +252,12 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 │   └── <slug>.md
 ├── approved/                 # 承認済み
 │   └── <slug>.md
-└── survey-report-<date>.md   # サーベイレポート
+├── survey-report-<date>.md   # サーベイレポート
+└── .survey-work/             # discover が作り ingest が読む作業ディレクトリ
+    ├── manifest.json         # 対象・起点以前・スタブの一覧（ingest 済みなら ingested_at）
+    ├── instructions.md       # サブエージェントに渡す判定・汎化の規約
+    ├── batch-NN.json         # サブエージェント 1 体ぶんの対象
+    └── out/                  # <idx>.meta.json・<idx>.md（サブエージェントが書く）
 ```
 
 ## 設定ファイル
@@ -231,12 +269,13 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
   "project_roots": ["~/work/develop"],
   "max_depth": 2,
   "output_dir": "~/.claude/pair-agent/skill-library",
-  "model": "claude-haiku-4-5-20251001",
   "also_survey_global": true
 }
 ```
 
 プロジェクトを追加したときはこのファイルに追記する。
+`project_roots` と `output_dir` は先頭の `~` がホームに展開される。
+`also_survey_global: true` はグローバルスキル（数百件ある）も対象にする。差分の棚卸しでは `false` にしておくとよい。
 harvest モードでは `project_roots` だけを使う（他のキーはスクリプト用）。
 
 ## モード選択の目安
