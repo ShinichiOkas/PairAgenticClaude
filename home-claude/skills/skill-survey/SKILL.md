@@ -136,8 +136,12 @@ $ex | Where-Object { $gl -contains $_ }
 ```
 skillimport.bat --list     # 何が入るかの下見（何も書かない）
 skillimport.bat            # 未導入のものだけ取り込む（既存は保護）
-skillimport.bat --force    # 既存も上書き
+skillimport.bat --force    # 既存も上書き（両側）
+skillimport.bat --antigravity-only --force   # Antigravity 側だけ置き換える
+skillimport.bat --claude-only --list         # Claude 側だけ下見
 ```
+
+`--claude-only` / `--antigravity-only` で配布先を片側だけにできる（`--list`・`--force` と組み合わせ可）。**片側だけ置き換えたいときは `--force` に片側の指定を必ず付ける**（付けないと両側を上書きする）。
 
 配布先は `~/.claude/pair-agent/skills/` と `~/.gemini/config/pair-agent/skills/` の両方。
 

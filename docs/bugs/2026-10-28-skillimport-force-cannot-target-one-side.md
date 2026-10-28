@@ -1,7 +1,7 @@
 # バグ票: skillimport.bat --force を Antigravity 側だけに効かせられず、Claude 側の Skill まで上書きされる
 
 - 起票: 2026-10-28（Antigravity 側の置き場の移行中に見た）
-- 状態: open
+- 状態: fixed
 
 ## 見たこと（症状と実測だけ）
 
@@ -27,3 +27,9 @@
 
 - 引数なし（未導入のものだけ・既存は保護）の既定の挙動
 - `home-claude/skills/skill-survey/SKILL.md` §8 の「`--force` は師匠が育てたスキルを上書きするので、師匠が明示したときだけ」
+
+## 直した内容（2026-10-28）
+
+- `skillimport.bat` に `--claude-only` / `--antigravity-only` を追加。`--list`・`--force` と任意の順で組み合わせられる（引数を順に解析するようにした）。指定した側の反対側は mkdir も copy もしない。両方同時指定はエラー。引数なし・`--force` 単独の挙動は従来どおり（`--force` 単独のときは「両側を上書きする」警告を 1 行出す）
+- usage と `home-claude/skills/skill-survey/SKILL.md` §8 に片側指定と「片側だけ置き換えたいときは `--force` に片側の指定を必ず付ける」を追記
+- `tests/test_skillimport_side_flags.py` を追加: usage と SKILL.md への記載、batch の書き込みの分岐を静的に検め、一時ディレクトリを USERPROFILE にして `--antigravity-only --force` / `--force --claude-only` / 既定 / `--list --antigravity-only` を実際に走らせる（本物の home には触れない）

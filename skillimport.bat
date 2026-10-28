@@ -7,6 +7,10 @@ setlocal enabledelayedexpansion
 ::   skillimport.bat --force    Overwrite existing skills as well
 ::   skillimport.bat --list     Show what would be imported, change nothing
 ::
+:: Side selection (combine with --list / --force, in any order):
+::   --claude-only        Touch only the Claude library
+::   --antigravity-only   Touch only the Antigravity library
+::
 :: Claude and Antigravity are checked independently: a skill already present in
 :: one library is still imported into the other.
 
@@ -22,10 +26,24 @@ set "CLAUDE_DST=%USERPROFILE%\.claude\pair-agent\skills"
 set "ANTIGRAVITY_DST=%USERPROFILE%\.gemini\config\pair-agent\skills"
 
 set "MODE=new"
-if "%1"=="--force" set "MODE=force"
-if "%1"=="--list" set "MODE=list"
-if "%1"=="--help" goto usage
-if "%1"=="-h" goto usage
+set "DO_C=1"
+set "DO_A=1"
+set "SIDE_GIVEN="
+:parse
+if "%~1"=="" goto parsed
+if "%~1"=="--force" set "MODE=force"
+if "%~1"=="--list" set "MODE=list"
+if "%~1"=="--claude-only" set "DO_A=0" & set "SIDE_GIVEN=1"
+if "%~1"=="--antigravity-only" set "DO_C=0" & set "SIDE_GIVEN=1"
+if "%~1"=="--help" goto usage
+if "%~1"=="-h" goto usage
+shift
+goto parse
+:parsed
+if "%DO_C%%DO_A%"=="00" (
+    echo !YELLOW![skillimport]!NC! --claude-only and --antigravity-only cannot be combined.
+    goto end
+)
 
 if not exist "%SRC%" (
     echo !YELLOW![skillimport]!NC! Source not found: %SRC%
@@ -33,8 +51,8 @@ if not exist "%SRC%" (
 )
 
 if not "%MODE%"=="list" (
-    if not exist "%CLAUDE_DST%" mkdir "%CLAUDE_DST%"
-    if not exist "%ANTIGRAVITY_DST%" mkdir "%ANTIGRAVITY_DST%"
+    if "%DO_C%"=="1" if not exist "%CLAUDE_DST%" mkdir "%CLAUDE_DST%"
+    if "%DO_A%"=="1" if not exist "%ANTIGRAVITY_DST%" mkdir "%ANTIGRAVITY_DST%"
 )
 
 set /a c_new=0, c_over=0, c_skip=0
@@ -42,6 +60,9 @@ set /a a_new=0, a_over=0, a_skip=0
 
 echo !GREEN![skillimport]!NC! Source: %SRC%
 if "%MODE%"=="list" echo !YELLOW![skillimport]!NC! --list: dry run, nothing will be written
+if "%DO_C%"=="0" echo !YELLOW![skillimport]!NC! --antigravity-only: the Claude library is not touched
+if "%DO_A%"=="0" echo !YELLOW![skillimport]!NC! --claude-only: the Antigravity library is not touched
+if "%MODE%"=="force" if not defined SIDE_GIVEN echo !YELLOW![skillimport]!NC! --force without --claude-only / --antigravity-only overwrites BOTH libraries
 echo.
 echo   C=Claude  A=Antigravity   ^(+ import / ^= keep / ^! overwrite^)
 echo.
@@ -49,8 +70,11 @@ echo.
 for %%f in ("%SRC%\*.md") do (
     set "name=%%~nxf"
 
+    set "tc=C-"
+    set "ta=A-"
+
     :: --- Claude ---
-    if exist "%CLAUDE_DST%\%%~nxf" (
+    if "%DO_C%"=="1" if exist "%CLAUDE_DST%\%%~nxf" (
         if "%MODE%"=="force" (
             if not "%MODE%"=="list" copy /y "%%f" "%CLAUDE_DST%\" >nul
             set /a c_over+=1
@@ -66,7 +90,7 @@ for %%f in ("%SRC%\*.md") do (
     )
 
     :: --- Antigravity ---
-    if exist "%ANTIGRAVITY_DST%\%%~nxf" (
+    if "%DO_A%"=="1" if exist "%ANTIGRAVITY_DST%\%%~nxf" (
         if "%MODE%"=="force" (
             if not "%MODE%"=="list" copy /y "%%f" "%ANTIGRAVITY_DST%\" >nul
             set /a a_over+=1
@@ -105,13 +129,19 @@ echo because your own edits live in the same directory.
 goto end
 
 :usage
-echo Usage: skillimport.bat [--list ^| --force]
+echo Usage: skillimport.bat [--list] [--force] [--claude-only ^| --antigravity-only]
 echo.
 echo   (no args)   Import skills that do not exist yet. Existing files are kept.
 echo   --list      Show what would be imported. Changes nothing.
 echo   --force     Also overwrite skills that already exist.
+echo   --claude-only       Touch only the Claude library.
+echo   --antigravity-only  Touch only the Antigravity library.
 echo.
-echo Imports examples\skills\*.md into BOTH of:
+echo To overwrite just one side, ALWAYS add a side flag to --force, e.g.
+echo   skillimport.bat --antigravity-only --force
+echo ^(--force alone overwrites both libraries^).
+echo.
+echo Imports examples\skills\*.md into BOTH of (unless a side flag is given):
 echo   %%USERPROFILE%%\.claude\pair-agent\skills\
 echo   %%USERPROFILE%%\.gemini\config\pair-agent\skills\
 echo.
