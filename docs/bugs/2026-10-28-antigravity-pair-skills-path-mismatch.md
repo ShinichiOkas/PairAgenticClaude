@@ -38,7 +38,7 @@
 
 ## 移行手順（師匠の判断待ち）
 
-旧置き場 `%USERPROFILE%\.geminintigravity\pair-agent\skills\`（78 件）は何も触っていない。移すなら:
+旧置き場 `%USERPROFILE%\.gemini\antigravity\pair-agent\skills\`（78 件）は何も触っていない。移すなら:
 
 1. `%USERPROFILE%\.gemini\config\pair-agent\skills\` を作る（install 済みなら既にある）。
 2. 旧置き場の `*.md` を新置き場へコピーする（`robocopy <旧> <新> *.md /XC /XN /XO` で新側の既存を上書きしない）。師匠が育てた分は同名衝突を目視してから。
