@@ -19,7 +19,7 @@ set "NC=!ESC![0m"
 set "SCRIPT_DIR=%~dp0"
 set "SRC=%SCRIPT_DIR%examples\skills"
 set "CLAUDE_DST=%USERPROFILE%\.claude\pair-agent\skills"
-set "ANTIGRAVITY_DST=%USERPROFILE%\.gemini\antigravity\pair-agent\skills"
+set "ANTIGRAVITY_DST=%USERPROFILE%\.gemini\config\pair-agent\skills"
 
 set "MODE=new"
 if "%1"=="--force" set "MODE=force"
@@ -113,7 +113,7 @@ echo   --force     Also overwrite skills that already exist.
 echo.
 echo Imports examples\skills\*.md into BOTH of:
 echo   %%USERPROFILE%%\.claude\pair-agent\skills\
-echo   %%USERPROFILE%%\.gemini\antigravity\pair-agent\skills\
+echo   %%USERPROFILE%%\.gemini\config\pair-agent\skills\
 echo.
 echo Each destination is checked independently, so a skill present in one
 echo library is still imported into the other.

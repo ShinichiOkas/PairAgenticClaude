@@ -10,7 +10,7 @@ description: Skillの生成・昇格・精緻化・管理。振り返りフェ�
 - ペア固有Skill:
   使用中のツールに合わせて以下のいずれかを選択する（両方存在する場合は、使用中のツールのパスを優先）。
   - `~/.claude/pair-agent/skills/<skill-name>.md` (Claude Code)
-  - `~/.gemini/antigravity/pair-agent/skills/<skill-name>.md` (Google Antigravity)
+  - `~/.gemini/config/pair-agent/skills/<skill-name>.md` (Google Antigravity)
 - プロジェクト固有Skill:
   - `.pair-agent/skills/<skill-name>.md` (Claude Code)
   - `.agents/skills/<skill-name>/SKILL.md` (Google Antigravity - 必要に応じて `.pair-agent/skills/` からコピーまたはシンボリックリンク)

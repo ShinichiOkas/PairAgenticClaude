@@ -139,7 +139,7 @@ skillimport.bat            # 未導入のものだけ取り込む（既存は保
 skillimport.bat --force    # 既存も上書き
 ```
 
-配布先は `~/.claude/pair-agent/skills/` と `~/.gemini/antigravity/pair-agent/skills/` の両方。
+配布先は `~/.claude/pair-agent/skills/` と `~/.gemini/config/pair-agent/skills/` の両方。
 
 **既定では既存ファイルを上書きしない。** 同じディレクトリに師匠自身が育てたスキルが同居しているため。`--list` で下見してから、そのまま既定（未導入のものだけ）で実行する（既存は保護されるので応答を待たない）。**`--force` は師匠が育てたスキルを上書きするので、師匠が明示したときだけ。**
 
