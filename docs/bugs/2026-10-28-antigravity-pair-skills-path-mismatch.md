@@ -36,7 +36,16 @@
 - 足したテスト: `tests/test_antigravity_pair_skills_path.py`（追跡ファイル内の Antigravity ペア Skill の置き場が 1 種類だけ・skillimport が install と同じ・CLAUDE.md と GEMINI.md が同一）。
 - コミット: 本票と同じコミット。
 
-## 移行手順（師匠の判断待ち）
+## 移行（2026-10-28 実施済み）
+
+師匠の判断（原文）: 「Geminiはそれほど育ってないので丸ごと置き換えでいいです」
+
+- 旧置き場の skills 78 件・corrections 1 件を `~/.gemini/config/pair-agent/` の同名ディレクトリへ移した（移す前の新側は空）
+- `skillimport.bat --force` で配布物の最新版に置き換えた（Antigravity 側 overwrote 77）
+- 旧置き場 `~/.gemini/antigravity/pair-agent/` を削除した（残っていたのは古い template の 4 件だけ。新側の template は install 済みの新しい版）
+- ⚠ `--force` が Claude 側の 77 件も上書きした（32 件は中身が変わった）→ `~/.claude/pair-agent` の git から戻した。片側だけにできない件は `2026-10-28-skillimport-force-cannot-target-one-side.md` に起票
+
+## 移行手順（参考・実施前に書いたもの）
 
 旧置き場 `%USERPROFILE%\.gemini\antigravity\pair-agent\skills\`（78 件）は何も触っていない。移すなら:
 
