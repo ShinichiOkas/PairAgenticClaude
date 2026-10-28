@@ -1,6 +1,6 @@
 ---
 name: skill-survey
-description: スキルライブラリのサーベイと対話レビュー。プロジェクト横断でスキルを収集・汎化し、pending スキルを師匠と一緒にレビューして approve/reject する。リポジトリの examples/skills/ への取り込み（harvest）も担う。
+description: スキルライブラリのサーベイと自走レビュー。プロジェクト横断でスキルを収集・汎化し、pending スキルを並列のサブエージェントで判定・承認まで終えて事後報告する（師匠に 1 件ずつ聞かない）。リポジトリの examples/skills/ への取り込み（harvest）も担う。
 user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -11,8 +11,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 | モード | 出力先 | 汎化の実行者 | 使いどころ |
 |---|---|---|---|
-| **library**（既定） | `~/.claude/pair-agent/skill-library/pending/` | Haiku サブエージェント（1件ずつ判定。スクリプトは走査と取り込みだけで LLM を呼ばない） | 定期的な棚卸し。件数が多い・逐次レビューしたい |
-| **harvest** | Pair Agent リポジトリの `examples/skills/` | **私が直接読んで汎化** | リポジトリ資産として配布したい。重複統合・取捨選択の判断が要る |
+| **library**（既定） | `~/.claude/pair-agent/skill-library/pending/` | Haiku サブエージェント（1件ずつ判定。スクリプトは走査と取り込みだけで LLM を呼ばない） | 定期的な棚卸し。件数が多い・差分だけ拾いたい |
+| **harvest** | Pair Agent リポジトリの `examples/skills/` | **私が全件を見渡して汎化**（件数が多ければ並列のサブエージェントに割って書かせ、重複統合と検査は私がする） | リポジトリ資産として配布したい。重複統合・取捨選択の判断が要る |
 
 ## 使い方
 
@@ -24,7 +24,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 /skill-survey --harvest    # harvest モード: 探索 → 汎化 → examples/skills/ へ取り込み
 ```
 
-引数なしで起動されたら、まず**どちらのモードか**を師匠に確認する。
+引数なしで起動されたら、**聞かずに推奨で着手する**: library（走査 → 並列の汎化 → ingest → 並列の自走レビュー → 事後報告）を既定とする。師匠が「配布したい」「既定にしたい」と言ったとき、または承認された中に配布物（`examples/skills/`）へ入れるべきものがあるときは、続けて harvest も回す。モードの目安は末尾「モード選択の目安」。
+（2026-10-28 改め: 師匠の宣言 2026-10-27「徹底して自走。僕の判断など待たずに最速で、再並列で」→ [[skill-survey-review-runs-autonomously-in-parallel]]・[[speed-and-parallel-by-default]]。旧: まずどちらのモードかを師匠に確認する）
 
 ---
 
@@ -47,7 +48,7 @@ Get-ChildItem -Path <PROJECT_ROOT> -Directory | ForEach-Object {
 
 `<PROJECT_ROOT>` は `~/.claude/pair-agent/skill-survey-config.json` の `project_roots` を使う。
 
-**この段階で師匠に事実を報告する**:
+**この段階の事実は最後の報告に載せる**（ここで止めて待たない）:
 - 何プロジェクトに何件あるか（`.gitkeep` のみのプロジェクトは除外して数える）
 - 同名・同サイズのファイルが複数プロジェクトにあるか（＝既に横断展開されたスキル）
 - 既に `examples/skills/` にある件数
@@ -60,7 +61,8 @@ Get-ChildItem -Path <PROJECT_ROOT> -Directory | ForEach-Object {
 
 ## 3. 全件を自分で読む
 
-`Read` で**全ファイルを読む**。並列に投げてよい。要約や grep で済ませない —— 汎化の判断は本文の細部（実際に踏んだ失敗・数値・コード例）に依存する。
+`Read` で**全ファイルを読む**。並列に投げる。要約や grep で済ませない —— 汎化の判断は本文の細部（実際に踏んだ失敗・数値・コード例）に依存する。
+件数が多いときは、共通の指示書 1 枚（下の 5 の方針・書き先・触ってはいけないもの）を書き、6〜7 件ずつサブエージェント（Sonnet）に割って**同時に**書かせる。担当の slug と絶対パスは起動プロンプトに具体値で書く（[[parallel-instruction-placeholders-get-taken-literally]]）。6 の重複統合と 7 の衝突確認・引用の照合は親がする。
 
 ## 4. 汎化判定
 
@@ -139,7 +141,7 @@ skillimport.bat --force    # 既存も上書き
 
 配布先は `~/.claude/pair-agent/skills/` と `~/.gemini/antigravity/pair-agent/skills/` の両方。
 
-**既定では既存ファイルを上書きしない。** 同じディレクトリに師匠自身が育てたスキルが同居しているため。**実行前に必ず `--list` を見せて師匠の判断を仰ぐ。**
+**既定では既存ファイルを上書きしない。** 同じディレクトリに師匠自身が育てたスキルが同居しているため。`--list` で下見してから、そのまま既定（未導入のものだけ）で実行する（既存は保護されるので応答を待たない）。**`--force` は師匠が育てたスキルを上書きするので、師匠が明示したときだけ。**
 
 ## 9. 報告
 
@@ -147,7 +149,7 @@ skillimport.bat --force    # 既存も上書き
 - 取り込み: X 件（うち統合 Y 件）
 - 除外: Z 件 —— **1件ずつ理由を添える**（「low: 特定製品の内部設計に密着」など）。黙って落とさない
 - 名前衝突の有無
-- 配布は実行したか（していないなら、実行するかを問う）
+- 配布の結果（`--list` の件数と、取り込んだ件数）
 
 ---
 
@@ -159,11 +161,9 @@ skillimport.bat --force    # 既存も上書き
 
 ## 1. 起動時の判断
 
-引数なし、または `--review` なし → サーベイを実行するか確認する:
-
-> 「スキルを走査して汎化しますか？（既処理スキルはスキップされます）」
-
-Yes → Phase 2 へ。No → Phase 3 へ。
+引数なし → **聞かずに** Phase 2（サーベイ）へ進み、続けて Phase 3（自走レビュー）まで回す。既処理はパスと中身のハッシュで外れるので、対象は差分だけになる。
+`--review` → Phase 3 へ直行する。
+（2026-10-28 改め。旧: 「スキルを走査して汎化しますか？」と確認する）
 
 ## 2. サーベイ実行
 
@@ -194,8 +194,9 @@ python ~/.claude/pair-agent/tools/skill-survey.py discover [--since <日時>] [-
 
 書かれるもの（`<output_dir>/.survey-work/`）: `manifest.json`・`instructions.md`（判定・汎化の規約）・`batch-NN.json`・空の `out/`。
 
-**走らせる前に件数を師匠に見せる。** 標準出力の件数（見つかった数・既処理・起点以前・スタブ・対象・バッチ数）を伝え、サブエージェントを起動してよいかを確かめる。
-同じスキルの複製（別の作業ツリーやクローン）が深さ 2 で拾われていないかもここで見る（`max_depth` で外せる）。
+**件数は報告に載せ、確かめを待たずに起動する。** 標準出力の件数（見つかった数・既処理・中身が変わった・起点以前・スタブ・対象・バッチ数）は最後の報告に書く。
+起動の前に、同じスキルの複製（別の作業ツリーやクローン）が深さ 2 で拾われていないかだけ自分で見る（`max_depth` で外せる）。
+（2026-10-28 改め。旧: 件数を師匠に見せて、起動してよいかを確かめる）
 
 ### 2-2. 判定・汎化（サブエージェント）
 
@@ -237,19 +238,30 @@ python ~/.claude/pair-agent/tools/skill-survey.py ingest
 - グローバルへの昇格: `python tools/skill_library_ops.py promote --list <名前の一覧> --approved-date YYYY-MM-DD [--apply]` — survey 用フィールドを外し provenance を足す（同名は上書きしない）
 - 重複の洗い出し: `python tools/skill_library_ops.py dedupe-candidates [--out f.jsonl] [--judge-model qwen3.5:9b]` — 3-gram で候補を出し、指定時だけローカル Ollama で判定
 
-## 3. Pending スキルのレビュー
+## 3. Pending スキルのレビュー — 自走・並列（既定）
 
-`~/.claude/pair-agent/skill-library/pending/` 内の `.md` ファイルを一覧表示する。
+師匠の宣言（原文 2026-10-27）:
 
-各スキルについて:
-1. ファイルを読んで内容を師匠に提示（名前・スコア・汎化の要点・元プロジェクト）
-2. 師匠に選択を求める:
-   - **approve** → `approved/` に移動。`~/.claude/pair-agent/skills/` への昇格を提案（任意）
-   - **reject** → `pending/` から削除。理由があれば記録
-   - **edit** → 師匠の指示に従って内容を修正してから再提示
-   - **skip** → 今回はスキップ（pending に残す）
+> 徹底して自走。僕の判断など待たずに最速で、再並列で
 
-複数ある場合は一件ずつ順番に処理する。
+> 並列度が低いぞ！メモリもCPUもまだまだあるぞ！PCを遊ばせるな！
+
+→ [[skill-survey-review-runs-autonomously-in-parallel]]（confirmed）。**師匠に 1 件ずつ approve / reject を聞かない。** 判定基準は親が決め、サブエージェントが並列に判定から実行まで終え、親が事後に判定一覧を報告する。
+
+1. **割り当て**: pending を 8〜10 件ずつのグループに切り、グループファイル（1 行 1 絶対パス）に書く（`skill_library_ops.py waves` を使ってもよい）。プロジェクト由来の件（`source_path` がグローバル Skill の外）は 1 グループに寄せる（昇格の判断が要るため）
+2. **共通の指示書を 1 枚書く**: 判定基準・実行手順・触ってはいけないもの・返す報告の形。グループファイルの絶対パスは**起動プロンプトに具体値で書く**（[[parallel-instruction-placeholders-get-taken-literally]]）
+3. **グループごとに Sonnet（Tier 2）のサブエージェントを同時に起動する。** 各子は 1 件ごとに:
+   - pending と元ファイル（`source_path`）を全文読み、⒜ 引用行（`> `）が元にそのまま在る ⒝ 個人情報（ユーザー名・ホームの絶対パス・実在の人名・私事）が無い ⒞ 規則・実測値・コード例・失敗の経緯が落ちていない ⒟ フロントマターが揃い `maturity` が元と同じ、を検める
+   - **approve**（直す所なし）／**edit**（⒜〜⒟ を元から直して承認）／**reject**（特定製品の内部設計に密着して汎化で意味が失われる・空・壊れている）。グローバル Skill の写しであること自体は reject の理由にしない（approved はグローバルの汎化コピーを持つ場所）
+   - approve / edit は下の 4 のとおり `approved/` に書いて pending を消す。別名で同じ `source_path` の旧版には `superseded_by: <新しいファイル名>` を足す（消さない）。reject は pending を消す
+   - プロジェクト由来の件は、グローバルに同じ規則の Skill があるかを grep で探し「昇格候補: yes / no」を報告する
+   - `index.md`・`.processed.json`・`.survey-work/`・グローバル Skill には触らない
+4. **親は子を待たない。** 待つ間に別の独立作業（harvest・関連 Skill の手直し）を進め、子が 1 本終わるたびにその分を検める（全員を待って一括にしない）
+5. **閉じるのは道具で**: `verify --approved-date <今日>`（引用・プレースホルダ・フロントマター）→ `index --apply` → 昇格候補 yes を `promote --apply`
+6. 師匠に聞くのは、判定基準そのものが揺らぐときだけ。個々の判定では止まらない
+
+師匠が「自分で 1 件ずつ見たい」と言ったときだけ、1 件ずつ提示する（既定ではしない）。
+（2026-10-28 改め。旧: 1 件ずつ師匠に提示して approve / reject / edit / skip を選んでもらう）
 
 ## 4. Approve 処理
 
@@ -258,10 +270,7 @@ python ~/.claude/pair-agent/tools/skill-survey.py ingest
 - `approved_date: <今日の日付>` を追加
 - `~/.claude/pair-agent/skill-library/index.md` の該当行を更新（status を approved に）
 
-昇格の提案:
-> 「`~/.claude/pair-agent/skills/<slug>.md` としてグローバルスキルに昇格させますか？」
-
-Yes → approved版をコピーし、survey metadata フィールド（source_project, source_path, survey_date, generalization_score, status）を削除した上で保存。
+昇格は判定の一部として、聞かずに行う: プロジェクト由来でグローバルに同じ規則が無いものは `skill_library_ops.py promote --apply` でグローバルへ上げる（survey metadata フィールド〈source_project, source_path, survey_date, generalization_score, status〉を外し provenance を足す。同名は上書きしない）。上げたものは報告に列挙する（師匠は事後に取り消せる）。
 
 ## 5. Reject 処理
 
@@ -271,7 +280,11 @@ Yes → approved版をコピーし、survey metadata フィールド（source_pr
 
 ## 6. 完了報告
 
-> 「レビュー完了: approve X件 / reject Y件 / skip Z件」
+事後に 1 回だけ報告する（応答を待たない）:
+
+> 「レビュー完了: approve X件 / edit Y件 / reject Z件 / 昇格 W件」
+
+edit と reject には理由を 1 件ずつ添える（黙って落とさない）。サーベイの件数（対象・中身が変わった・バッチ数）も同じ報告に載せる。
 
 ---
 
@@ -316,4 +329,5 @@ harvest モードでは `project_roots` だけを使う（他のキーはスク�
 - **すべてのプロジェクトスキルを一度に棚卸ししたい** → harvest（全体を見渡して統合できる）
 - **前回サーベイ以降の差分だけ拾いたい** → library（`.processed.json` で追跡済み）
 - **リポジトリ資産として配布したい** → harvest
-- **師匠が1件ずつ approve/reject したい** → library
+- **速度・並列などの規則を他の環境でも既定にしたい** → library で承認したあと harvest（`examples/skills/` に入れて `skillimport.bat` で配る）
+- **師匠が自分で 1 件ずつ見たいと言った** → library の pending を 1 件ずつ提示（既定ではしない）
