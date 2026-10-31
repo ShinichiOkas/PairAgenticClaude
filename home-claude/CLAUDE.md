@@ -66,6 +66,32 @@
 - これは **Claude Code・Antigravity いずれのエージェントにも適用**。新しく exe をビルド・インストールするスクリプトを書くときも同じ決定順にする。
 - git を通じて他 PC にも伝播する（各プロジェクトのリポジトリにこのルールのスクリプトがコミットされる）。マシン固有の `AGENT_INSTALL_DIR` だけ各 PC で設定する。
 
+## 環境は install.bat で作る（全プロジェクト共通・confirmed）
+
+**師匠の指示（原文 2026-11-01）**:
+
+> まてvenv作ってない環境で何をしているんだ
+> まずは他のプロジェクトの流儀に従ってinstall.batを作ること。それが無いからおかしなことになる。../Mnemo/の流儀を学んでくれ。前プロジェクトにかかわる恒久ルールになるようにCLAUDE.mdなどにも書いておくこと。
+
+（経緯: ray で `.venv` も submodule 取得も無いまま、システムの python 3.13 でテストを回した。`llmproviderlib` は兄弟の別 checkout から読まれ、固定した版ではなかった。結果は信用できず、15 件の失敗も環境のせいか判別できなかった。`install.bat` が無かったことが根本原因。）
+
+**規則（破るな）**:
+- **どのプロジェクトも、リポジトリの根に `install.bat` を置く。** clone と `git pull` の後は `install.bat` だけで環境が整う（手で pip を叩かない）。手本は `../Mnemo/install.bat`。新しいプロジェクトを始めるとき、`install.bat` が無いまま作業しない（最初に作る）。
+- **作業（テスト・実行・ビルド・調査スクリプト）の前に、そのプロジェクトの環境が `install.bat` 由来の venv で整っているか確かめる。** 無い・壊れている・submodule が空なら、先に `install.bat` を流す。**システムの python／pip で代用しない**（兄弟の checkout や別 venv の editable install を拾って別の版を測る・空の submodule を見逃す）。環境を疑うより先に、`install.bat` 後の環境で再現するかを見る。
+- **`install.bat` の作法（Mnemo の流儀。破られて票になった教訓の集積）**:
+  - 先頭で `cd /d "%~dp0"`。呼び出し元のフォルダでなく、自分のフォルダの venv に入れる。
+  - **必須の手順の失敗は必ず `exit /b 1`。** 後の手順が成功に見せない（pip の失敗の見逃しが実際に起きた）。任意の依存（重い・wheel が無いことがある物）だけ WARN で許し、環境は動くと明記する。
+  - 稼働中の本体が同じ venv を握っていれば止まる。**殺さない**（師匠が作業中かもしれない）。検査はシステムの python で行う（初回は venv が無い）。
+  - 残骸を掃除する（`*.deleteme`・`~*` の pip の残骸）。
+  - submodule は毎回 `git submodule update --init --recursive`（`git pull` は取らない。空のフォルダが黙って残る）。空なら、動かせないものは致命、周辺のものは WARN。
+  - submodule は固定の版から editable で入れる（`pip install -e libs\...`）。プロジェクトが実際に使う extras まで入れる（欠けると別のところで `No module named` になる）。
+  - 最後に環境の自己検査（venv の python か・依存がこの checkout のコードを指すか）を走らせ、外れていれば失敗にする。
+  - バッチは ASCII・CRLF（`.gitattributes` で `*.bat text eol=crlf`）。絶対パスで呼べば動く（`cmd /c "S:\path\install.bat"`）。
+  - 手順の番号を `[n/N]` で出し、止まった場所が一目で分かるようにする。
+- **大きな変更（依存・submodule・資産の追加）が既存ユーザーに届くかは `git pull` → `install.bat` で確かめる**（Mnemo の既存規則。追従できない経路が見つかったら install スクリプトに載せて直す）。
+- venv の名前（`.venv`／`venv`）は各プロジェクトの流儀に合わせる。揃えるのは `install.bat` の存在と作法であり、名前ではない。
+- これは **Claude Code・Antigravity いずれのエージェントにも適用**。git を通じて他 PC にも伝播する（各プロジェクトの `install.bat`）。
+
 ## 永続指示ファイルの同期
 プロジェクトルートにある `CLAUDE.md` と `GEMINI.md` は同一の内容を保持する。一方を更新した場合は、必ずもう一方にも変更を反映（コピー）すること。
 

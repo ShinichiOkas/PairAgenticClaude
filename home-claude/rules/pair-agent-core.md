@@ -24,6 +24,7 @@
 4. ペア固有Skill（`~/.claude/pair-agent/skills/` または `~/.gemini/config/pair-agent/skills/`）をロードする  
 5. 依頼があればそのまま推奨で着手する。依頼がまだ無いときだけ師匠に「何を始めますか？」と問いかける（現在地を 1 行報告して待つ）
 6. 作業の前に `git pull`（常に sync）
+7. 環境を確かめる（`CLAUDE.md`「環境は install.bat で作る」）。リポジトリの根に `install.bat` があり、その venv が整っているか見る（venv が無い・submodule が空・依存が別の checkout を指す、のどれかなら先に `install.bat` を流す）。`install.bat` が無いプロジェクトは、手本（`../Mnemo/install.bat`）を写して最初に作る。**システムの python／pip でテストや実行を代用しない**
 
 ## 「知らない」の実践
 
