@@ -230,7 +230,7 @@ def test_agreement_check_finds_problems(tmp_path, capsys):
 def test_slice_roster_suggest_record(tmp_path, capsys):
     s = load("slice-size-management", "slice_ops")
     s.main(["roster", "--size", "S"])
-    assert "構築者 -> 非回帰 -> 受入検査実施者 -> 同期担当" in capsys.readouterr().out
+    assert "構築者 -> コミット前テスト -> 受入検査実施者" in capsys.readouterr().out
     s.main(["suggest", "--current", "S", "--files", "2"])
     assert "据え置き" in capsys.readouterr().out
     s.main(["suggest", "--current", "S", "--files", "4", "--rejections", "1"])
