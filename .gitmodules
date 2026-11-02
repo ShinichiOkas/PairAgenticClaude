@@ -1,0 +1,3 @@
+[submodule "external/pair-agent-skills"]
+	path = external/pair-agent-skills
+	url = https://github.com/ShinichiOkas/pair-agent-skills.git
