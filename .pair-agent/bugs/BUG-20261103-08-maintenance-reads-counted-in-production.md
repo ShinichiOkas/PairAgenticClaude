@@ -59,7 +59,7 @@
   - 変わったのは file-bug-ticket-for-unrelated-discovery の行だけ（read_count 2 → 0）。
 - 本番ログ `usage/skill-refs.jsonl` は空に戻した（0 バイト・MD5 D41D8CD9…）。移した 17 行は `usage/skill-refs.maintenance-20261103-08.jsonl`（MD5 6957D297…）。
 - 直せない限界: サイドカーの 1〜14 行には書き込みの記録が無い。そこにある保守の読み 8 件（harness-exit-code 3・verified-means 3・own-inference 2）は後から除けない。修正は以後のログにだけ効く。
-- テスト（2026-11-03）: test_bug08 38/38・test_skill_ref 23/23・test_bug06_sidecar（サイドカーを読む複製）ALL PASS。
+- テスト（2026-11-03）: test_bug08 38/38・test_skill_ref 23/23・test_bug06_sidecar ALL PASS（いずれも scratchpad 版。原本の test_bug06_sidecar は本体の rollup を --log で実行し、旧名のサイドカーを読んでいた。複製ではない。BUG-20261103-10 の訂正を参照）。
 
 ## 未確認
 

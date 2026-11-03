@@ -1,7 +1,7 @@
 # BUG-20261103-10: BUG-06・08 の検証テストが、どの repo にも commit されていない
 
 - 起票日: 2026-11-03（2026-11-04 に再確認）
-- 状態: open（直す役を 2026-11-04 に並列で起こした。結果は TODO 15）
+- 状態: fixed（2026-11-04・live master の 7aedb6e。検証は「## 対処」）
 - 重要度: 中（BUG-08 の票は、この検証テストの結果を根拠に「直し済み」と記録している〈票の 62 行〉。テストが version 管理に無いため、後の変更で同じ不具合が戻っても検出されない）
 - 分類: 検証の再現性
 - 対象: live `C:\Users\0000950207\.claude\pair-agent\tools\`（テストの対象: `log_skill_ref.py`・`skill_usage_rollup.py`）
@@ -42,9 +42,24 @@
 ## 対処
 
 - 2026-11-04: 直す役を並列で起こす（TODO 15）。方針（推奨で決めた）: 3 本を live の `tools/tests/` へ移し、入力は合成データ（一時ディレクトリ・`synth-0001` 形式の ID）にする。本番ログとサイドカーは読まない・commit しない。`test_bug06.py` は移さない。検査は弱めない。ツールのロジックは変えない。
+- 2026-11-04: 直した（live `tools/tests/`・commit 7aedb6e・push 済み。main は db5622e で取り込んだ）。3 本: `test_skill_ref.py`・`test_bug06_sidecar.py`・`test_bug08.py`。
+- 検証（2026-11-04・対話側が live の `tools/tests/` から 3 本を再実行し、exit code を実測）:
+  - `test_skill_ref.py`: TOTAL 23・FAILED 0・exit 0
+  - `test_bug06_sidecar.py`: RESULT ALL PASS・exit 0
+  - `test_bug08.py`: TOTAL 38・FAILED 0・exit 0
+- 本番ログとサイドカーは前後で変わらず（本番ログ 0 バイト・MD5 d41d8cd98f00b204e9800998ecf8427e。サイドカー 17 行・MD5 6957d297b35895722a2d47664b6345de）。新しいテストがこの 2 つと scratchpad を指していないことは grep で確認した（合成ルートと説明文だけ）。
+- 感度（テストが壊れた実装を落とすか）は修正役の報告による。対話側では再実行していない。
 
 ## 証拠
 
 - `...\scratchpad\final3\` の 4 ファイル（上の結果）
 - 本番ログ 0 バイト（MD5 d41d8cd98f00b204e9800998ecf8427e）
 - サイドカー 17 行（MD5 6957d297b35895722a2d47664b6345de）
+
+## 訂正（2026-11-04）
+
+- 「症状・実測」の 2 行（13 行・25 行）は誤り。
+  - 13 行: 旧 `test_bug06_sidecar.py` は本体の rollup を複製していなかった。原本は `skill_usage_rollup.py` 本体を `--log` 付きで実行していた（原本の本文で確認）。
+  - 25 行: 原本が読んでいたのは `-08` のサイドカー（17 行）ではなく、旧名 `usage/skill-refs.maintenance-20261103.jsonl`（16902 バイト・108 行）だった。
+- 同じ誤り（「サイドカーを読む複製」）が BUG-08 の票 62 行にもあった。そちらも訂正した。
+- 旧名のファイル（108 行）は live にまだ残っている。新しいテストは読まない。
