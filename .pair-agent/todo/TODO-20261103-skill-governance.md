@@ -10,7 +10,8 @@
 - [x] DONE 8. 仕分けの方針と結果を advisor に確認する
 - [x] DONE 9. archive 行きを小さい単位でコミットしながら移す
 - [ ] TODO 10. project 行きを対象リポジトリの .pair-agent/skills/ へ移す（対象ごとにコミット）
-- [ ] TODO 11. 完全性を検査する（active + archive + project = 全件）
+- [ ] TODO 10b. 保留の 15 件（5 対象）をユーザーの判断に従って移す
+- [x] DONE 11. 完全性を検査する（active + archive + project = 全件）
 - [ ] TODO 12. 観測データが貯まったら、参照ベースの自動淘汰を作る
 - [ ] TODO 13. メモリ 2 件（pair-skill-ecosystem-state・skill-governance-policy-a）を現状に合わせて更新する
 - [ ] TODO 14. 最終報告（結論と判断一覧）を出す
