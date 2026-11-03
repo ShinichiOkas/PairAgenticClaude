@@ -1,21 +1,21 @@
 # TODO: スキル統治（方針 A）の未完了分
 
-- [x] DONE 1. 保存先の既定を反転（迷ったら project か archive）
-- [x] DONE 2. 参照計装を追加（PostToolUse フック・使用ログ・集計スクリプト・.gitignore・設定登録）
-- [x] DONE 3. 参照計装が実際に発火するか確かめる（skills/ の .md を 1 件 Read し、使用ログに行が出るか）
-- [x] DONE 4. main リポジトリのサブモジュール参照を pair-agent-skills の 7531c01 に更新して push
-- [x] DONE 5. バグ票 BUG-20261102-01・-02 に事実を追記する（状態は open のまま）
-- [x] DONE 6. バグ票 BUG-20261102-03 に二重管理の実測を追記する（事実のみ）
-- [x] DONE 7. skills/ の全件（件数は数え直す）を active / project / archive に仕分けた表を作る
-- [x] DONE 8. 仕分けの方針と結果を advisor に確認する
-- [x] DONE 9. archive 行きを小さい単位でコミットしながら移す
-- [ ] TODO 10. project 行きを対象リポジトリの .pair-agent/skills/ へ移す（対象ごとにコミット）
-- [ ] TODO 10b. 保留の 15 件（5 対象）をユーザーの判断に従って移す
-- [x] DONE 11. 完全性を検査する（active + archive + project = 全件）
-- [x] DONE 12a. BUG-20261103-06 を直す（一括読みを利用として数えない・108 行はサイドカーへ）
-- [x] DONE 12b. BUG-20261103-07 を直す（check_skills.py が capabilities.cap の不在で落ちる）
-- [ ] TODO 12c. 振り返り（スキル確認）を自動で走らせ、登録を事後に報告する
-- [ ] TODO 12d. main のサブモジュール参照を live の最新（f3bc532）へ上げる（BUG-05・BUG-07 の修正を取り込む）
-- [ ] TODO 12. 観測データが貯まったら、参照ベースの自動淘汰を作る
-- [ ] TODO 13. メモリ 2 件（pair-skill-ecosystem-state・skill-governance-policy-a）を現状に合わせて更新する
-- [ ] TODO 14. 最終報告（結論と判断一覧）を出す
+1. [DONE] 保存先の既定を反転
+2. [DONE] 参照計装を追加
+3. [DONE] 参照計装が実際に発火するか確かめる
+4. [DONE] main のサブモジュール参照を更新して push
+5. [DONE] バグ票 2 件に事実を追記する
+6. [DONE] バグ票に二重管理の実測を追記する
+7. [DONE] skills/ の全件を active / project / archive に仕分けた表を作る
+8. [DONE] 仕分けの方針と結果を advisor に確認する
+9. [DONE] archive 行きを小さい単位でコミットしながら移す
+10. [TODO] project 行きを対象リポジトリの .pair-agent/skills/ へ移す
+10b. [TODO] 保留の 15 件をユーザーの判断に従って移す
+11. [DONE] 完全性を検査する
+12a. [DONE] 一括読みを利用として数えないようにする
+12b. [DONE] 検査ツールの入力が無いときに落ちないようにする
+12c. [DONE] 振り返り（スキル確認）を自動で走らせ、登録を事後に報告する
+12d. [TODO] main のサブモジュール参照を live の最新へ上げる
+12. [TODO] 観測データが貯まったら、参照ベースの自動淘汰を作る
+13. [TODO] メモリ 2 件を現状に合わせて更新する
+14. [TODO] 最終報告（結論と判断一覧）を出す
