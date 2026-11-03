@@ -24,3 +24,4 @@
 15. [DONE] 検証テストを version 管理に入れる（BUG-20261103-10）
 16. [TODO] confirmed の 2 件（own-inference-is-not-measured-fact・verified-means-it-ran-not-that-it-ran-as-intended）に AI の観測による追記が入った。maturity を下げるかをユーザーが決める（報告 §8）
 17. [TODO] settings.json の line 81（"model"）の値を確認する。現在 "opus"、バックアップは "claude-haiku-5-5"（報告 §8）
+18. [TODO] settings.json の line 95（PostToolUse の matcher）を広いまま残すか、"Read|Skill" に戻すかをユーザーが決める（報告 §8。戻すと保守の読みの除外〈BUG-08〉が効かなくなる）

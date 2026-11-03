@@ -8,7 +8,7 @@
 
 - 仕分けは完了した。648 件 = active 244 + project 66 + archive 338。
 - project の 66 件のうち 51 件は 10 対象へ移送済み。残り 15 件は 5 対象で保留（判断待ち）。
-- 止まっているのは 6 件: TODO 10・10b（保留 15 件）、10c（BUG-09 の処置）、12（観測データ待ち）、16（confirmed 2 件の maturity）、17（settings の model）。判断は (a)–(g)（§3）。16 と 17 は §8。
+- 止まっているのは 7 件: TODO 10・10b（保留 15 件）、10c（BUG-09 の処置）、12（観測データ待ち）、16（confirmed 2 件の maturity）、17（settings の model）、18（settings の matcher）。判断は (a)–(g)（§3）。16・17・18 は §8。
 - 並列で走らせた BUG-10（検証テストを version 管理に入れる）は TODO 15 で完了した（§6）。
 
 ## 2. 数
@@ -47,6 +47,7 @@
 | 12 | [TODO] | 観測データが無い。本番ログ `usage/skill-refs.jsonl` は 0 バイトのまま | 観測が貯まってから |
 | 16 | [TODO] | confirmed の 2 件の本体には師匠の承認の記録がある（own-inference-is-not-measured-fact の source 行「師匠承認 2026-08-18」・verified-means-it-ran の本文 67 行の承認の引用。原文は未照合）。AI の観測による追記（40d3481 の 10 件・a4600d8 の 6 件）は、retrospect の規則（観測だけの候補は forming）に照らすと forming が沿う | 推奨: 本体は confirmed のまま。追記は forming と書き分ける。判断はユーザー（§8） |
 | 17 | [TODO] | settings.json line 81 の model が `"opus"`、バックアップは `"claude-haiku-5-5"`。出所は未確認 | 推奨: 現在の `"opus"` のまま。違えばユーザーが指定（§8） |
+| 18 | [TODO] | settings.json line 95 の PostToolUse の matcher は `"Read\|Skill\|Edit\|Write\|MultiEdit"`。元は `"Read\|Skill"`。修正役がブリーフの範囲外で変えた | 推奨: 広いまま残す。戻すと書き込みが残らず、保守の読みの除外（BUG-08）が効かなくなる（§8） |
 
 ## 5. 移送の内訳（51 件・10 対象）
 
