@@ -1,0 +1,25 @@
+skill	class	target	confidence	reason
+ai-wobble-is-not-a-defect-when-humans-wobble-too	active		mid	師匠の判断基準が普遍原則。事例は1件だが宣言そのものが核
+an-agreed-mockup-is-part-of-the-agreement	active		low	師匠の怒りの言葉あり。事例は1件で規範宣言とまでは言えず判断余地
+bug-ticket-serves-as-the-agreement	active		mid	師匠の明示宣言(2026-08-18)あり。例外条項により事例1件でも可
+check-running-subagents-every-ten-minutes	active		high	師匠の明示宣言(10-28,10-29)あり。事例は1文脈でも例外で可
+destructive-feature-defaults-need-scrutiny	active		mid	師匠が原文で宣言した規範。事例1件のため例外適用
+do-not-assume-multiple-llm-families	active		mid	師匠が設計前提を退けた明示宣言。事例1件のため例外適用
+dont-reinvent-in-visual-domains	active		mid	師匠の学びの原文。事例は Phase FIG のみで例外適用
+failure-that-buys-understanding-is-not-waste	active		mid	師匠の訂正原文が規範。事例1件のため例外適用
+inbox-files-always-commit	active		low	師匠の明示宣言に基づく作法(宣言の例外)。事例は1件
+minimal-io-roundtrip-first	active		mid	師匠の明示宣言あり。固有名なしで成立（事例は1件）
+pair-skills-are-claude-codes-an-agent-keeps-its-own	active		mid	師匠の明示宣言。事例1件だが宣言の例外に該当
+persisted-data-carries-a-version	active		mid	師匠の明示宣言で原則は普遍。事例は1件のため中
+poc-confirms-key-design-hypotheses	active		mid	師匠のPoC定義の明示宣言。事例は1件のため中
+poc-is-done-when-reflected-into-the-design	active		mid	師匠のPoC運用の宣言。一部はAI解釈で事例1件のため中
+prefer-edit-file-over-write-file	active		mid	師匠の明示宣言。上書き全壊の保険は普遍。事例1件
+propose-sprint-boundary-wedge	active		mid	師匠の明示宣言。スプリント運用の普遍原則。事例1件
+report-backtrackable-conclusion-structure	active		mid	師匠が決めた報告構造の5基準の宣言。事例1件だが全PJで成立
+seek-external-knowledge-for-unsolved-problems	active		mid	師匠の明示宣言で一般規範として述べられている。事例は1件
+skip-retrospective-for-non-development-work	active		mid	師匠の明示宣言で一般規則化。事例は1件のみ
+stop-the-bleeding-before-deliberating	active		mid	師匠の明示宣言（被害最優先）が核。事例は1件だがactive例外に当たる
+the-tools-primary-user-decides-its-spec	active		mid	師匠の明示宣言で他プロジェクトにも適用と本文に明記。事例は1件
+unreadable-text-is-not-text	active		mid	師匠の宣言「読めない文字は文字じゃない」で汎用規範。事例は1件
+vendor-tool-submodule-minimal-deps	active		mid	師匠の既定として宣言（「師匠の既定は」）。事例は1件
+verification-plan	active		mid	師匠の「次回から検証計画が必要」の宣言。事例は1件
