@@ -22,3 +22,5 @@
 13. [DONE] メモリ 2 件を現状に合わせて更新する
 14. [DONE] 最終報告（結論と判断一覧）を出す
 15. [DONE] 検証テストを version 管理に入れる（BUG-20261103-10）
+16. [TODO] confirmed の 2 件（own-inference-is-not-measured-fact・verified-means-it-ran-not-that-it-ran-as-intended）に AI の観測による追記が入った。maturity を下げるかをユーザーが決める（報告 §8）
+17. [TODO] settings.json の line 81（"model"）の値を確認する。現在 "opus"、バックアップは "claude-haiku-5-5"（報告 §8）
