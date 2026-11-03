@@ -8,7 +8,7 @@
 
 - 仕分けは完了した。648 件 = active 244 + project 66 + archive 338。
 - project の 66 件のうち 51 件は 10 対象へ移送済み。残り 15 件は 5 対象で保留（判断待ち）。
-- 止まっているのは 4 件: TODO 10・10b（保留 15 件）、10c（BUG-09 の処置）、12（観測データ待ち）。判断は (a)–(g)（§3）。
+- 止まっているのは 6 件: TODO 10・10b（保留 15 件）、10c（BUG-09 の処置）、12（観測データ待ち）、16（confirmed 2 件の maturity）、17（settings の model）。判断は (a)–(g)（§3）。16 と 17 は §8。
 - 並列で走らせた BUG-10（検証テストを version 管理に入れる）は TODO 15 で完了した（§6）。
 
 ## 2. 数
@@ -45,6 +45,8 @@
 | 10b | [TODO] | 判断 (a)–(e) | 判断が出たら対象ごとに移す（§7） |
 | 10c | [TODO] | 判断 (f) | 判断が出たら進める |
 | 12 | [TODO] | 観測データが無い。本番ログ `usage/skill-refs.jsonl` は 0 バイトのまま | 観測が貯まってから |
+| 16 | [TODO] | confirmed の 2 件に AI の観測による追記が入っている。retrospect の規則（観測だけの候補は forming）に照らすと下げるのが沿う | 推奨: forming へ下げる。判断はユーザー（§8） |
+| 17 | [TODO] | settings.json line 81 の model が `"opus"`、バックアップは `"claude-haiku-5-5"`。出所は未確認 | 推奨: 現在の `"opus"` のまま。違えばユーザーが指定（§8） |
 
 ## 5. 移送の内訳（51 件・10 対象）
 
@@ -103,7 +105,7 @@
 - a4600d8（live）: confirmed の `verified-means-it-ran-not-that-it-ran-as-intended.md` に、AI の観測による追記 6 件を入れた。maturity は confirmed のまま（上と同じ規則に照らすと forming。扱いはユーザーが決める）。取り消すなら追記を消す。
 
 グローバル設定 `C:\Users\0000950207\.claude\settings.json`:
-- line 95（PostToolUse の matcher）: `"Read|Skill"` → `"Read|Skill|Edit|Write|MultiEdit"`。BUG-08 の計装の修正の過程で、修正役がブリーフの範囲外で変えた。ここで開示する。戻すなら line 95 だけを `"Read|Skill"` にする。
+- line 95（PostToolUse の matcher）: `"Read|Skill"` → `"Read|Skill|Edit|Write|MultiEdit"`。BUG-08 の計装の修正の過程で、修正役がブリーフの範囲外で変えた。ここで開示する。この幅は BUG-08 の保守の読みの除外に要る。`log_skill_ref.py` は Edit・Write・MultiEdit を `kind=write` として残し、`skill_usage_rollup.py` は同じ session が書いた skill の読みを `excluded_maint` として除く（コードで確認）。戻すと（`"Read|Skill"`）書き込みが残らず、保守の読みが再び利用に数えられる。推奨は残す。戻すかどうかはユーザーが決める。
 - line 81（`"model"`）: 現在は `"opus"`。scratchpad のバックアップ（`bug08\settings.json.bak`・21:47 時点）は `"claude-haiku-5-5"`。どちらが意図か、いつ誰が変えたかは未確認。ユーザーに確認してほしい。
 
 live の `stash@{0}`（"WIP: denationalize in-place"・2026-11-02）は残した。触っていない。
