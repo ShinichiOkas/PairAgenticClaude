@@ -13,7 +13,9 @@
 - [ ] TODO 10b. 保留の 15 件（5 対象）をユーザーの判断に従って移す
 - [x] DONE 11. 完全性を検査する（active + archive + project = 全件）
 - [x] DONE 12a. BUG-20261103-06 を直す（一括読みを利用として数えない・108 行はサイドカーへ）
-- [ ] TODO 12b. BUG-20261103-07 を直す（check_skills.py が capabilities.cap の不在で落ちる）
+- [x] DONE 12b. BUG-20261103-07 を直す（check_skills.py が capabilities.cap の不在で落ちる）
+- [ ] TODO 12c. 振り返り（スキル確認）を自動で走らせ、登録を事後に報告する
+- [ ] TODO 12d. main のサブモジュール参照を live の最新（f3bc532）へ上げる（BUG-05・BUG-07 の修正を取り込む）
 - [ ] TODO 12. 観測データが貯まったら、参照ベースの自動淘汰を作る
 - [ ] TODO 13. メモリ 2 件（pair-skill-ecosystem-state・skill-governance-policy-a）を現状に合わせて更新する
 - [ ] TODO 14. 最終報告（結論と判断一覧）を出す
