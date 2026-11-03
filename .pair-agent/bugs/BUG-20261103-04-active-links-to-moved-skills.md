@@ -1,7 +1,7 @@
 # BUG-20261103-04: active 本文が非 active の skill を `[[リンク]]` で指している（移動すると解決先を失う）
 
 - 起票日: 2026-11-03
-- 状態: fixed（対処 7f7fff1。移動後の再検査は TODO 11 で追記する）
+- 状態: fixed（対処 7f7fff1。移動後の再検査で見つかった未解決 77 件は BUG-20261103-05 で対処し、現在 0 件）
 - 重要度: 中（移動後に active 側の参照が解決しなくなる）
 - 分類: skill-governance / 参照整合
 - 対象: `~/.claude/pair-agent/skills/`（active 244 件）
@@ -34,5 +34,5 @@ archive 行き・project 行き 404 件を移すと、上の 308 組の参照先
 - 対処 commit: 7f7fff1（pair-agent・master）。`skills/` の 157 ファイルで、active 本文の非 active 宛 `[[stem]]` 359 箇所を `` `stem` `` に書き換えた。front matter は変えていない（front matter の非 active 宛リンクは 0 件）。
 - 直後の再計測（`refs_tsv_20261103.py after`）: 本文の非 active 宛 wiki リンク 0・front matter のリンク 0・`[[X|...]]` の形 0。
 - 残り: もともと `[[ ]]` でない素の表記 10 箇所は残す。`after` の計測では、書き換えた 359 箇所もコード表記として素の表記に数えるため、bare は 369（= 359 + 10）と出る。
-- 移動後の検証: TODO 11 で、`skills/*.md` の `[[X]]` のうち X が `skills/` に無いものの数を再計測し、結果をこの節に追記する。
+- 移動後の検証（TODO 11・2026-11-03）: `tools/check_skill_links.py` で本文の `[[X]]` を再計測した。X が `skills/` に無いものは計 100 件（live の corrections/・vision/・skill-library/・ハーネスに解決先がある 23 件と、どこにも無い 77 件）。どこにも無い 77 件は BUG-20261103-05 で書き換え、現在 0 件。残りの 23 件は残す。
 - 判断: 再分類ではなく機械的な書き換えで直した（`decisions-20261103.md` の節 3）。
