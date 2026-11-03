@@ -6,7 +6,7 @@
 - [x] DONE 4. main リポジトリのサブモジュール参照を pair-agent-skills の 7531c01 に更新して push
 - [x] DONE 5. バグ票 BUG-20261102-01・-02 に事実を追記する（状態は open のまま）
 - [x] DONE 6. バグ票 BUG-20261102-03 に二重管理の実測を追記する（事実のみ）
-- [ ] TODO 7. skills/ の全件（件数は数え直す）を active / project / archive に仕分けた表を作る
+- [x] DONE 7. skills/ の全件（件数は数え直す）を active / project / archive に仕分けた表を作る
 - [ ] TODO 8. 仕分けの方針と結果を advisor に確認する
 - [ ] TODO 9. archive 行きを小さい単位でコミットしながら移す
 - [ ] TODO 10. project 行きを対象リポジトリの .pair-agent/skills/ へ移す（対象ごとにコミット）
