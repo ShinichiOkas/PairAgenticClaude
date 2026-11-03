@@ -8,7 +8,7 @@
 - [x] DONE 6. バグ票 BUG-20261102-03 に二重管理の実測を追記する（事実のみ）
 - [x] DONE 7. skills/ の全件（件数は数え直す）を active / project / archive に仕分けた表を作る
 - [x] DONE 8. 仕分けの方針と結果を advisor に確認する
-- [ ] TODO 9. archive 行きを小さい単位でコミットしながら移す
+- [x] DONE 9. archive 行きを小さい単位でコミットしながら移す
 - [ ] TODO 10. project 行きを対象リポジトリの .pair-agent/skills/ へ移す（対象ごとにコミット）
 - [ ] TODO 11. 完全性を検査する（active + archive + project = 全件）
 - [ ] TODO 12. 観測データが貯まったら、参照ベースの自動淘汰を作る
