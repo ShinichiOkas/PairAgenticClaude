@@ -1,7 +1,7 @@
 # BUG-20261103-08: 使用ログに、skill を編集した本セッションの読みが残り、集計がそれを利用として数える
 
 - 起票日: 2026-11-03
-- 状態: open（起票時点。直す役を並列で起動。対処は「## 対処」）
+- 状態: fixed（2026-11-03・bdb1db9）
 - 重要度: 中（TODO 12 の自動淘汰の入力が、保守の読みで汚れる。BUG-20261103-06 と同じ型）
 - 分類: skill-governance / 観測
 - 対象: live `usage/skill-refs.jsonl`（`~/.claude/pair-agent/usage/`・版管理しない）。記録 `tools/log_skill_ref.py`、集計 `tools/skill_usage_rollup.py`、フック設定 `~/.claude/settings.json`（PostToolUse）
@@ -48,7 +48,18 @@
 
 ## 対処
 
-- 起票時点では未着手。直す役を並列で起動する（2026-11-03）。直した後の SHA と件数は、この節に追記する。
+- 直した: live `bdb1db9`（fix(usage): 保守の読みを利用として数えない）。
+  - `tools/log_skill_ref.py` が Edit・Write・MultiEdit の書き込みを `kind: write` として記録する。
+  - `tools/skill_usage_rollup.py` は、同じ session に同じ skill の書き込みがあるとき、その session の同じ skill の読みを、時刻の前後を問わず `excluded_maint` に除く。除いた件数を出す。
+- main: cf21694 で `26dd56b` へ上げた（`26dd56b` は `bdb1db9` を含む）。
+- 設定の変更（全セッションに効く）: `~/.claude/settings.json` の PostToolUse の matcher を `"Read|Skill"` から `"Read|Skill|Edit|Write|MultiEdit"` にした（行 95）。戻すなら `"Read|Skill"`。
+- 修正前後（同じサイドカー 17 行を、修正前の版 d5568fb と修正後の版 bdb1db9 で測った）:
+  - 修正前: `skills=259 referenced=7 log_lines=17 excluded_bulk=0 burst=10/10s unmatched=1 malformed=2`
+  - 修正後: `skills=259 referenced=6 log_lines=17 excluded_bulk=0 excluded_maint=2 write_events=2 burst=10/10s unmatched=1 malformed=0`
+  - 変わったのは file-bug-ticket-for-unrelated-discovery の行だけ（read_count 2 → 0）。
+- 本番ログ `usage/skill-refs.jsonl` は空に戻した（0 バイト・MD5 D41D8CD9…）。移した 17 行は `usage/skill-refs.maintenance-20261103-08.jsonl`（MD5 6957D297…）。
+- 直せない限界: サイドカーの 1〜14 行には書き込みの記録が無い。そこにある保守の読み 8 件（harness-exit-code 3・verified-means 3・own-inference 2）は後から除けない。修正は以後のログにだけ効く。
+- テスト（2026-11-03）: test_bug08 38/38・test_skill_ref 23/23・test_bug06_sidecar（サイドカーを読む複製）ALL PASS。
 
 ## 未確認
 
