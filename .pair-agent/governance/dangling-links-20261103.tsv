@@ -1,0 +1,101 @@
+file	line	region	cls	target	where	raw
+skills/agreement-decision-log-pattern.md	52	body	outside	agreement-document	harness	- [[agreement-document]] — 合意ドキュメント本体の運用
+skills/ai-wobble-is-not-a-defect-when-humans-wobble-too.md	59	body	unresolved	sycophancy-records-are-not-training-signal	none	- [[sycophancy-records-are-not-training-signal]] —— 同じく「AI に人間の性質が出たとき、
+skills/an-agreed-mockup-is-part-of-the-agreement.md	32	body	unresolved	aided-gui-left-pane	deleted:4bfe0d0	関連：corrections `20261102-handoff-dropped-agreed-mockup`、[[aided-gui-left-pane]]
+skills/anticipate-knowable-constraints.md	47	body	unresolved	empdir-org-api-quirks	none	- [[empdir-org-api-quirks]] — comCD/fullOrgName も着手前に API 仕様を確認できれば早かった
+skills/api-no-silent-failure.md	72	body	unresolved	db-migration-schema-version-consistency	none	- [[db-migration-schema-version-consistency]] — このバグの根本原因対策
+skills/api-no-silent-failure.md	73	body	unresolved	tests-before-manual-verification	none	- [[tests-before-manual-verification]] — サイレント失敗はテストで顕在化させる
+skills/banked-retry-under-service-degradation.md	47	body	unresolved	inspect-every-output	none	- [[inspect-every-output]] — 全出力の検品が障害の発見経路だった
+skills/check-vendor-submodule-upstream-before-workaround.md	114	body	unresolved	ellm-proxy-vendor-diverges-bidirectionally	none	- [[ellm-proxy-vendor-diverges-bidirectionally]] — Mnemo 固有の乖離の実体（プロジェクト固有 Skill）
+skills/check-vendor-submodule-upstream-before-workaround.md	116	body	unresolved	ellm-misbehavior-fix-layer-placement	deleted:4bfe0d0	- [[ellm-misbehavior-fix-layer-placement]] — ELLM 誤動作対策を共有 lib へ取り込む判断と置き場
+skills/close-the-sprint-and-let-the-master-approve-by-long-use.md	43	body	unresolved	close-a-sprint-by-sweeping-its-debris	none	- [[close-a-sprint-by-sweeping-its-debris]] — 閉じるときに残骸を消す
+skills/construct-read-refine-are-three-operations.md	68	body	outside	2026-08-26-compositional-logic-vision	repo	- [[2026-08-26-compositional-logic-vision]] — 切り出し=LLM / 構造化=決定性ツール /
+skills/consultation-branch-axis-as-choices.md	57	body	unresolved	memory-persistence-is-the-tiebreaker	none	- [[memory-persistence-is-the-tiebreaker]]（Mnemo プロジェクト Skill）— 2 例目で師匠が
+skills/continue-by-task-state-not-by-wording.md	44	body	unresolved	ellm-tool-calls-are-a-text-protocol-under-a-chat-persona	deleted:4bfe0d0	- [[ellm-tool-calls-are-a-text-protocol-under-a-chat-persona]] — 断りが出る仕組み
+skills/count-before-putting-a-number-in-a-choice.md	62	body	unresolved	absence-claims-are-verified-at-deliberation	none	- [[absence-claims-are-verified-at-deliberation]] —— 「無い」も数のうち。
+skills/count-registration-points-not-the-checklist.md	42	body	unresolved	structural-duplication-eliminate-not-document	none	- 関連: `llm-capability-two-outlets` / `stale-init-in-the-old-execution-path` / [[keep-core-docs-in-sync]] / [[structural-duplication-eliminate-not-document]] / [[connectivity-check-needs-known-answer-input]]
+skills/count-registration-points-not-the-checklist.md	42	body	unresolved	connectivity-check-needs-known-answer-input	none	- 関連: `llm-capability-two-outlets` / `stale-init-in-the-old-execution-path` / [[keep-core-docs-in-sync]] / [[structural-duplication-eliminate-not-document]] / [[connectivity-check-needs-known-answer-input]]
+skills/coverage-check-is-a-bug-detector-not-a-principle.md	50	body	unresolved	a-green-test-can-be-guarding-the-defect	archive	- [[a-green-test-can-be-guarding-the-defect]]
+skills/decide-by-information-ownership.md	33	body	outside	2026-10-30-decide-with-information-not-defer-to-user	repo	[[2026-10-30-decide-with-information-not-defer-to-user]]（叱責記録）
+skills/decide-later-means-start-recording-now.md	17	body	unresolved	control-scalars-measured-on-real-distribution	none	先送りするのは正しい（[[control-scalars-measured-on-real-distribution]]）。
+skills/decide-later-means-start-recording-now.md	35	body	unresolved	continuous-scalars-from-code-not-llm	none	  [[continuous-scalars-from-code-not-llm]] 違反（前日に別の場所で直したばかりだった）
+skills/decide-later-means-start-recording-now.md	48	body	unresolved	continuous-scalars-from-code-not-llm	none	3. 記録する量は [[continuous-scalars-from-code-not-llm]] を満たすもの
+skills/decide-later-means-start-recording-now.md	57	body	unresolved	control-scalars-measured-on-real-distribution	none	- [[control-scalars-measured-on-real-distribution]] — 実データ分布で校正する。本 Skill はその**前準備**
+skills/decide-later-means-start-recording-now.md	58	body	unresolved	continuous-scalars-from-code-not-llm	none	- [[continuous-scalars-from-code-not-llm]] — 記録する量の選び方
+skills/decide-later-means-start-recording-now.md	60	body	unresolved	defer-with-release-condition	none	- [[defer-with-release-condition]] — 待ちには解除条件を。条件に**測る量の名前**まで入れる
+skills/destructive-feature-defaults-need-scrutiny.md	50	body	outside	2026-08-18-guard-instead-of-root-cause	repo	  [[2026-08-18-guard-instead-of-root-cause]]
+skills/destructive-feature-defaults-need-scrutiny.md	74	body	unresolved	base-dir-protected-from-destructive-ops	none	  [[workaround-keeps-blast-radius-small]] / [[base-dir-protected-from-destructive-ops]]（Mnemo 固有の適用）
+skills/do-not-touch-the-source-while-the-suite-is-measuring-it.md	42	body	unresolved	check-provenance-before-reporting-instrument-output	none	昨日 confirmed になった [[check-provenance-before-reporting-instrument-output]] の
+skills/do-not-touch-the-source-while-the-suite-is-measuring-it.md	59	body	unresolved	check-provenance-before-reporting-instrument-output	none	- [[check-provenance-before-reporting-instrument-output]] —— 出力側の版（confirmed）
+skills/external-failure-needs-control-group-and-repetition.md	185	body	outside	2026-07-28-declared-fixed-without-verifying	repo	- [[2026-07-28-declared-fixed-without-verifying]] — 状況証拠で犯人を決める癖への境界線
+skills/failure-that-buys-understanding-is-not-waste.md	51	body	unresolved	効果と労力の開示	none	- 自己評価で失敗を過大に数えない。[[効果と労力の開示]] のように事実を出し、
+skills/failure-that-buys-understanding-is-not-waste.md	57	body	unresolved	guess-fixes-without-checking-logs	none	  別問題。[[guess-fixes-without-checking-logs]] 系の指摘対象であり、本 Skill の擁護外。
+skills/harness-exit-code-must-reflect-failure.md	44	body	unresolved	dry-run-the-instrument-before-the-experiment	none	- [[dry-run-the-instrument-before-the-experiment]] — 器の空撃ち（今回は空撃ちが exit 1 の確認も兼ねた）
+skills/hypothesis-from-in-document-vocabulary-first.md	49	body	unresolved	machine-measurable-goes-to-tool	archive	→ [[machine-measurable-goes-to-tool]] の切り分けがそのまま当てはまる
+skills/hypothesis-from-in-document-vocabulary-first.md	55	body	unresolved	machine-measurable-goes-to-tool	archive	- [[machine-measurable-goes-to-tool]]
+skills/identity-match-by-characters-not-similarity.md	46	body	outside	2026-08-18-matcher-patch-instead-of-label-design	repo	  ほぼ全部が役割・所属だった）→ [[2026-08-18-matcher-patch-instead-of-label-design]]
+skills/inbox-files-always-commit.md	22	body	unresolved	commit-only-own-hunks-protect-wip	none	- 関連: [[commit-only-own-hunks-protect-wip]] / [[process-commit-after-work]] / [[solo-dev-merge-to-main-promptly]]
+skills/keep-core-docs-in-sync.md	65	body	unresolved	structural-duplication-eliminate-not-document	none	- 関連: [[count-registration-points-not-the-checklist]]（古いチェックリストは「数えたつもり」を作る） / [[structural-duplication-eliminate-not-document]]
+skills/live-verification-is-self-driven-except-the-gui.md	97	body	unresolved	resident-app-update-requires-explicit-quit	none	  [[resident-app-update-requires-explicit-quit]] / `no-editable-reinstall-while-app-running`
+skills/live-verification-is-self-driven-except-the-gui.md	100	body	unresolved	base-dir-protected-from-destructive-ops	none	  何が残ったかを報告し、消すかは師匠に決めてもらう（[[base-dir-protected-from-destructive-ops]]）
+skills/merge-conflict-two-layer-triage.md	116	body	unresolved	fork-intent-lightweight-fast	none	3. ①のみ師匠と協議。マージ戦略の判断軸は [[fork-intent-lightweight-fast]]（このフォークは軽量・高速優先）。
+skills/merge-conflict-two-layer-triage.md	120	body	unresolved	fork-intent-lightweight-fast	none	関連: `keep-two-machines-synced-through-git`, [[fork-intent-lightweight-fast]],
+skills/migration-inherits-untested-path-bugs.md	50	body	unresolved	empdir-org-api-quirks	none	- [[empdir-org-api-quirks]] — 今回露呈した具体的な API 仕様 (プロジェクト固有)
+skills/migration-needs-spot-check.md	156	body	unresolved	tests-before-manual-verification	none	- [[tests-before-manual-verification]] — 手動確認より自動テスト
+skills/migration-needs-spot-check.md	161	body	unresolved	ellm-behavior-is-decided-by-mnemo	deleted:4bfe0d0	- [[ellm-behavior-is-decided-by-mnemo]] — 何を「正」とするかを先に決める
+skills/ml-native-resource-singleton.md	124	body	unresolved	gui-worker-thread-pattern	none	- ※ 将来 [[gui-worker-thread-pattern]] を作るとき、本Skillの上に積む想定
+skills/no-privacy-data-in-pushed-artifacts.md	54	body	unresolved	control-scalars-measured-on-real-distribution	none	  正しい（[[control-scalars-measured-on-real-distribution]]）が、**見た値をそのまま貼らない**
+skills/no-privacy-data-in-pushed-artifacts.md	139	body	outside	2026-08-18-real-names-pushed-to-shared-repo	repo	- [[2026-08-18-real-names-pushed-to-shared-repo]] — 本 Skill を生んだ違反の記録
+skills/observation-analysis-must-trace-its-observation-time.md	39	body	unresolved	ellm-behavior-is-decided-by-mnemo	deleted:4bfe0d0	- [[ellm-behavior-is-decided-by-mnemo]] — ELLM の挙動の正は Mnemo。観測結果との食い違いは観測回つきで報告する
+skills/observation-analysis-must-trace-its-observation-time.md	40	body	unresolved	observation-scope-by-sufficiency	archive	- [[observation-scope-by-sufficiency]] — 観測範囲は最大情報量で決める
+skills/parameterize-auth-to-reuse.md	36	body	unresolved	independent-mcp-service-5-file-pattern	archive	- [[independent-mcp-service-5-file-pattern]] — auth レイヤーの構成
+skills/parameterize-auth-to-reuse.md	37	body	unresolved	msal-device-code-default	archive	- [[msal-device-code-default]] — パラメータ化した GraphAuth の login 既定
+skills/persisted-data-carries-a-version.md	24	body	unresolved	db-migration-schema-version-consistency	none	- 版を上げるときは移行の手順を同時に書く（Mnemo の `mnemo.db` の `SCHEMA_VERSION` と `MIGRATIONS` が前例。[[db-migration-schema-version-consistency]]）
+skills/plausibility-is-the-llms-judgment-on-a-presented-relation.md	46	body	unresolved	llm-one-by-one-evaluation	archive	- [[llm-one-by-one-evaluation]] / [[judgments-are-distributions]]
+skills/plausibility-is-the-llms-judgment-on-a-presented-relation.md	46	body	unresolved	judgments-are-distributions	archive	- [[llm-one-by-one-evaluation]] / [[judgments-are-distributions]]
+skills/prefer-edit-file-over-write-file.md	48	body	unresolved	a-skill-that-can-write-can-also-read	none	- 書いたあとは読み返す（[[a-skill-that-can-write-can-also-read]] と対で効く）
+skills/prefer-edit-file-over-write-file.md	49	body	unresolved	destructive-ops-need-a-dry-run	none	- 関連: [[destructive-ops-need-a-dry-run]] / [[keep-core-docs-in-sync]]
+skills/prefer-harmonious-prompts-over-coercion.md	44	body	unresolved	ellm-misbehavior-fix-layer-placement	deleted:4bfe0d0	- [[ellm-misbehavior-fix-layer-placement]] — ELLM 誤動作対策をどの層に置くか（本 Skill の「作法」は ray の層）
+skills/pywebview-sso-token-extraction.md	27	body	unresolved	sony-ad-sso-auth-canonical-impl	deleted:1c8373e	  この誤記が ERSearch の方式選択（Edge CDP）を導いた（[[sony-ad-sso-auth-canonical-impl]] の訂正も参照）。
+skills/pywebview-sso-token-extraction.md	90	body	unresolved	sony-ad-sso-auth-canonical-impl	deleted:1c8373e	- [[sony-ad-sso-auth-canonical-impl]] — 正準実装。本 Skill はその「配布 exe 化派生」の具体手段
+skills/pywebview-sso-token-extraction.md	91	body	unresolved	capture-before-ui-automation	archive	- [[capture-before-ui-automation]] — そもそも API で取れないか先に確認（検索は直 API 化済み、残った認証だけ GUI）
+skills/pywebview-sso-token-extraction.md	92	body	unresolved	pyinstaller-excludes-for-size	archive	- [[pyinstaller-excludes-for-size]] — clr/webview 同梱フラグ
+skills/readme-first-concept-consensus.md	46	body	outside	project-start-existing	harness	- [[project-start-existing]] — 既存プロジェクト起動時、README が無ければこの Skill が最優先で発動する
+skills/regression-test-must-fail-on-the-unfixed-code.md	142	body	outside	2026-07-28-declared-fixed-without-verifying	repo	   通ったことを検証と言い換えない（[[2026-07-28-declared-fixed-without-verifying]]）。
+skills/regression-test-must-fail-on-the-unfixed-code.md	157	body	outside	2026-07-28-declared-fixed-without-verifying	repo	- [[2026-07-28-declared-fixed-without-verifying]] — 「直った」と言う前に観測を通す境界線
+skills/request-shaped-report-may-be-a-bug.md	61	body	outside	2026-07-28-declared-fixed-without-verifying	repo	   見た場所・条件が報告と違う（[[2026-07-28-declared-fixed-without-verifying]] と同じ構え）。
+skills/request-shaped-report-may-be-a-bug.md	69	body	unresolved	guess-fixes-without-checking-logs	none	- [[guess-fixes-without-checking-logs]] / [[2026-07-28-declared-fixed-without-verifying]] — 測らずに原因を決める癖への境界線
+skills/request-shaped-report-may-be-a-bug.md	69	body	outside	2026-07-28-declared-fixed-without-verifying	repo	- [[guess-fixes-without-checking-logs]] / [[2026-07-28-declared-fixed-without-verifying]] — 測らずに原因を決める癖への境界線
+skills/responsibility-minimization.md	17	body	unresolved	minimal-is-effective-not-fewest	none	- 関連: [[minimal-is-effective-not-fewest]] / `one-file-per-layer`（1ファイルに収まらない＝責務過多のシグナル、という同型の検知）
+skills/retrospective-outputs-must-be-verified-on-disk.md	38	body	unresolved	record-the-masters-words-verbatim	none	このペアの原則（[[record-the-masters-words-verbatim]]）なのに、
+skills/retrospective-outputs-must-be-verified-on-disk.md	81	body	unresolved	record-the-masters-words-verbatim	none	- [[record-the-masters-words-verbatim]] —— 原文を残す原則。失うと再構成しかできない
+skills/retrospective-outputs-must-be-verified-on-disk.md	83	body	unresolved	silent-degradation-must-be-logged	none	- [[api-no-silent-failure]] / [[silent-degradation-must-be-logged]] —— 同系統。
+skills/retrospective-outputs-must-be-verified-on-disk.md	85	body	outside	skill-learning	harness	- [[skill-learning]]（skill） —— 振り返りでの Skill 登録手順そのもの
+skills/second-frontend-normalize-at-edges.md	51	body	unresolved	fork-intent-lightweight-fast	none	関連: `parameterize-auth-to-reuse`, `backend-contract-before-frontend`, [[fork-intent-lightweight-fast]]
+skills/smoke-must-use-production-flags.md	74	body	unresolved	dry-run-the-instrument-before-the-experiment	none	- [[dry-run-the-instrument-before-the-experiment]] — 器の空撃ち
+skills/solo-dev-merge-to-main-promptly.md	27	body	outside	20261021-proposed-merging-unverified-work-to-main	repo	    「main に取り込んでから確かめる」を推奨して叱られた（[[20261021-proposed-merging-unverified-work-to-main]]）
+skills/splitting-roles-makes-the-splitters-judgment-the-ceiling.md	63	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	  （[[oversized-a-simple-spec-then-spent-more-to-fix-it]]）
+skills/splitting-roles-makes-the-splitters-judgment-the-ceiling.md	73	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	- [[oversized-a-simple-spec-then-spent-more-to-fix-it]] — 親の見積り誤りの叱責記録
+skills/sprint-vs-inline-decision.md	20	body	unresolved	vision-auth-hardening-series	none	**Why:** P3 (commit 2d8f152) は単一の関数群への lock 追加だったので合意ドキュメントなしで進めた。M4 (commit b932dc7) は `_stream_text_chunks` と `_fetch_ellm_text` の構造変更で複数の既存テストの修正を伴ったため、合意ドキュメント `auth-reactive-reauth-m4.md` を先に書いた。どちらも師匠から問題視されなかった ([[vision-auth-hardening-series]])。
+skills/steer-through-tool-results-and-the-catalog-not-the-handbook.md	91	body	outside	bundled-skill-needs-a-version-bump-to-reach-users	repo	  [[bundled-skill-needs-a-version-bump-to-reach-users]]（配られる仕組みなら版を上げる）
+skills/steer-through-tool-results-and-the-catalog-not-the-handbook.md	114	body	outside	bundled-skill-needs-a-version-bump-to-reach-users	repo	- [[bundled-skill-needs-a-version-bump-to-reach-users]] — 手引きを直しても届かない別の原因
+skills/stop-the-bleeding-before-deliberating.md	60	body	outside	2026-09-10-kept-deliberating-while-users-were-already-broken	repo	- [[2026-09-10-kept-deliberating-while-users-were-already-broken]] —— この Skill の出自
+skills/test-cost-reaching-implementation-cost-is-a-warning-zone.md	26	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	  それは超過の続きであって是正ではない（[[oversized-a-simple-spec-then-spent-more-to-fix-it]]）。
+skills/test-cost-reaching-implementation-cost-is-a-warning-zone.md	67	body	unresolved	no-second-instance-while-production-runs	none	（[[no-second-instance-while-production-runs]]・Mnemo プロジェクト固有）。
+skills/test-cost-reaching-implementation-cost-is-a-warning-zone.md	78	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	  （[[oversized-a-simple-spec-then-spent-more-to-fix-it]]）。⚠ 検査を縮めるのではなく
+skills/test-cost-reaching-implementation-cost-is-a-warning-zone.md	85	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	- [[oversized-a-simple-spec-then-spent-more-to-fix-it]] —— サイズの見立てと止め時
+skills/test-the-stateful-path-not-just-empty.md	48	body	unresolved	headless-repro-polluted-real-data	none	  （ただし実データは `MNEMO_BASE_DIR` 隔離 → [[headless-repro-polluted-real-data]] 系の事故防止）。
+skills/test-the-stateful-path-not-just-empty.md	52	body	unresolved	guess-fixes-without-checking-logs	none	- [[guess-fixes-without-checking-logs]] — 同じ評価セッション。落ちたらログで追う
+skills/the-master-says-when-discovery-is-the-point.md	48	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	（[[oversized-a-simple-spec-then-spent-more-to-fix-it]]）。
+skills/the-master-says-when-discovery-is-the-point.md	64	body	outside	vision-record	harness	- [[vision-record]] 系の振り返り —— 像が無い回はビジョン記録の形が変わる
+skills/the-master-says-when-discovery-is-the-point.md	66	body	unresolved	oversized-a-simple-spec-then-spent-more-to-fix-it	none	- [[oversized-a-simple-spec-then-spent-more-to-fix-it]] — 問う回数そのものがコスト
+skills/timeclock-stays-human-not-agent.md	40	body	unresolved	side-effect-boundary	archive	- [[side-effect-boundary]] — 副作用のある操作の境界
+skills/timeclock-stays-human-not-agent.md	41	body	unresolved	tool-reduction-starts-from-off	deleted:afe0f6f	- [[tool-reduction-starts-from-off]] — 危険な書き込み系は既定 OFF / そもそも載せない
+skills/tool-internal-llm-runs-with-dedicated-prompt-and-no-context.md	35	body	unresolved	machine-measurable-goes-to-tool	archive	- [[llm-not-for-format-discipline]] / [[machine-measurable-goes-to-tool]]
+skills/tool-internal-llm-runs-with-dedicated-prompt-and-no-context.md	36	body	outside	2026-09-05-harness-as-llm-tool	repo	- [[2026-09-05-harness-as-llm-tool]]（ビジョン記録）
+skills/user-builds-workflows-ai-fixes.md	21	body	unresolved	prefill-type-defaults-on-add	archive	- 関連: [[ai-codes-human-feedbacks-loop]]（このループの役割分担側）/ [[minimal-io-roundtrip-first]] / [[prefill-type-defaults-on-add]]
+skills/verification-time-is-the-critical-path.md	43	body	outside	20261008-acceptance-plan-took-hours	repo	詳細は [[20261008-acceptance-plan-took-hours]]。前例 [[20261004-sprint-took-far-too-long]]。
+skills/verification-time-is-the-critical-path.md	43	body	outside	20261004-sprint-took-far-too-long	repo	詳細は [[20261008-acceptance-plan-took-hours]]。前例 [[20261004-sprint-took-far-too-long]]。
+skills/verify-agent-feature-reachability.md	96	body	outside	2026-08-06-guidance-at-wrong-path-entrance	repo	- [[2026-08-06-guidance-at-wrong-path-entrance]]（CorrectionRecord）
+skills/verify-existing-users-can-follow-via-pull-and-install.md	30	body	outside	bundled-skill-needs-a-version-bump-to-reach-users	repo	  → [[bundled-skill-needs-a-version-bump-to-reach-users]]（プロジェクト固有・機構と確認方法）
+skills/waiting-items-are-judged-by-data-not-the-date.md	54	body	unresolved	defer-with-release-condition	none	- [[defer-with-release-condition]] — 待ちには必ず解除条件を書く。本 Skill はその**条件を能動的に測りに行く**側
