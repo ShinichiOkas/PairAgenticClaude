@@ -1,7 +1,7 @@
 # BUG-20261103-05: live skills/ の本文に、どこにも解決しない `[[X]]` が 77 件残っている
 
 - 起票日: 2026-11-03
-- 状態: open（対処は直す役が行う。対処の commit は「## 対処」に記す）
+- 状態: fixed（対処 57fbfbd・44f36f0・582a627。再計測で unresolved 0。内訳は「## 対処」）
 - 重要度: 中（リンクの形をしているが辿れない参照が、active と保留の両方にある）
 - 分類: skill-governance / 参照整合
 - 対象: live `skills/`（`~/.claude/pair-agent/skills/`。47 ファイル: active 38・保留 9）
@@ -32,4 +32,7 @@
 
 ## 対処
 
-- 未対処（状態 open）。直し方は `decisions-20261103.md` §3-6 の規則に従う。
+- 直し方: `decisions-20261103.md` §3-6 の規則に従い、unresolved の `[[X]]` を `` `X` `` に書き換えた（77 件）。in-skills（529 件）と outside（23 件）は残した。
+- commit（pair-agent-skills）: 57fbfbd（計測ツール `tools/check_skill_links.py`）・44f36f0（保留 9 ファイル・17 件）・582a627（active 38 ファイル・60 件）。main の submodule 参照は 356a9d0・53d3767 で進めた。
+- 再計測（`python -B tools/check_skill_links.py`）: 本文 629 → 552。unresolved 77 → 0。outside 23・in-skills 529 は変わらず。終了コード 0。
+- 対象外（規則どおり）: front matter の `[[X]]` 1 件は in-skills で解決するため書き換えない。インラインコード・フェンスの中の `[[X]]` は対象外。
