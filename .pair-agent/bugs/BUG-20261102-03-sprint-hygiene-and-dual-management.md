@@ -56,3 +56,19 @@ CLAUDE.md の移設手順（旧形式 → current/）が未完のまま放置さ
 ## 診断・解き方は書かない（直す役の仕事）
 
 本票は症状と実測のみ。
+
+## 追記（2026-11-03）: 二重管理の実測（読み取りのみ・事実のみ）
+
+同名の `pair-agent-core.md` 3 本の比較（計測は 2026-11-03）:
+
+| 場所 | バイト | 改行 | sha256（先頭 16 桁） | 絶対的規範 | 師匠 | ユーザー | 迷ったら project か archive |
+|---|---|---|---|---|---|---|---|
+| `home-claude/rules/` | 11185 | CRLF 85 | 91727c72af20a7f7 | 2 | 22 | 4 | 1 |
+| `~/.claude/rules/` | 9520 | LF 81 | 7543244139b3d4d8 | 0 | 0 | 26 | 1 |
+| `~/.gemini/config/rules/` | 9432 | LF 81 | 8a7fd66a33575771 | 0 | 22 | 4 | 1 |
+
+- 3 本の sha256 はすべて異なる。「迷ったらペア固有」は 3 本とも 0 件。
+- 「絶対的規範」の節はリポジトリ版にだけ現れる。`~/.claude` 版は「師匠」0 件・「ユーザー」26 件。
+- インストール先 2 本は 2026-11-03 に保存先ルールの箇所を手で書き換えた（版管理外。リポジトリ版からの逆同期はしていない）。
+- pair-agent の clone は 2 つある: `~/.claude/pair-agent`（ペア固有 Skill の読み込み元）と `external/pair-agent-skills`（サブモジュール）。2026-11-03 時点で両方とも 7531c01。
+- 作業ツリー（2026-11-03 計測）: `git worktree list` は main（9128281）に加えて 2 件を示す。`.claude/worktrees/agent-a6b41bde7c7deee92`（branch `worktree-agent-a6b41bde7c7deee92`）と `.claude/worktrees/s-survey-r5`（branch `s-survey-r5`）で、どちらも HEAD は 7cad7c4。`.claude/worktrees/` は `.gitignore` の 7 行目で無視され、追跡ファイルは 0 件。
