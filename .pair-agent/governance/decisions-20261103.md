@@ -30,13 +30,14 @@
 - independent-mcp-service-5-file-pattern（archive）: コードの雛形。
 - 分類バッチ 01 の 3 行（行番号 5・49・51）: 一時ファイルでの番号のため、skill 名は TODO 14 の最終報告で挙げる。
 
-## 3. TODO 8 で推奨として決めた事項
+## 3. リンクと移送の判断（項目 1〜5 は TODO 8 で推奨として決めた。項目 6 は TODO 11 で定めた）
 
 1. 表は変えない（active 244・project 66・archive 338）。宣言例外は残す（節 1）。
 2. 注目行は表どおり。再分類は行わない。
 3. 非 active への参照（BUG-20261103-04）は、再分類ではなく機械的な書き換えで直す。`[[stem]]` を `` `stem` `` に変えた（7f7fff1・157 ファイル・359 箇所）。front matter は変えていない。
 4. TODO 10 の push: 対象 repo ごとに、移すファイルだけを pathspec で stage してコミットする。その repo に先行の未 push コミットが無いときだけ push する。あれば local に残して報告する。他の変更はコミットしない。
 5. サブモジュール参照（main の `external/pair-agent-skills`）は、ライブ clone を push するたびに更新する（一括にしない）。手順: `git -C external/pair-agent-skills fetch origin` → `checkout <sha>` → main で `git add external/pair-agent-skills`。1 バッチ = ライブと main の 2 コミット（どちらも push）。
+6. リンクの解決判定（TODO 11・2026-11-03）。本文の `[[X]]` の X を次の順で見る。(a) live の `skills/` に X.md があれば残す（in-skills。active・保留のどちらも可）。(b) live の `corrections/`・`vision/`・`skill-library/` に X.* がある、またはハーネス `~/.claude/skills/X/SKILL.md` があれば残す（outside）。(c) どれも無ければ `` `X` `` に書き換える（unresolved）。`archive/` と `skills-backup-*` は解決に数えない。他リポジトリへ移したものも数えない。ハーネス由来の 4 名（`agreement-document`・`project-start-existing`・`skill-learning`・`vision-record`）は (b) で残す。計測は `tools/check_skill_links.py`（本文のみ。front matter・インラインコード・フェンスは対象外）。書き換え後の期待値は unresolved 0・outside 23・本文 552（629 − 77）。4bfe0d0（2026-11-02・「移送した固有 skill 9 件をペア固有から削除」）は TODO 10 の移送（1c8373e・afe0f6f、2026-11-03）とは別の commit として扱う。
 
 ## 4. TODO 10 の扱い（この記録で定める）
 
