@@ -396,7 +396,7 @@ draftを経由しない。師匠の明示宣言はそれ自体が承認済み。
 
 \- 師匠の好み・用語・境界線・プロセスルール → \`\~/.claude/pair-agent/skills/\`（ペア固有）  
 \- このプロジェクト特有の技術知見 → \`.pair-agent/skills/\`（プロジェクト固有）  
-\- 迷ったらペア固有側に保存する（プロジェクトを跨いで有用な可能性が高い）
+\- 迷ったら project か archive に保存する（ペア固有 active は GOVERNANCE.md §1 の 2 条件〈固有名を全消ししても成立・横断再現〉を満たすときだけ）
 
 ---
 
@@ -719,7 +719,7 @@ user\_model の境界タイプ:
 | ----- | ----- |
 | 師匠の好み・用語・プロセスルール・境界線 | `~/.claude/pair-agent/skills/` |
 | プロジェクト固有の技術知見（APIの仕様、DB構造等） | `.pair-agent/skills/` |
-| 迷ったら | `~/.claude/pair-agent/skills/`（ペア固有を優先） |
+| 迷ったら | project か archive（`~/.claude/pair-agent/skills/` に置くのは GOVERNANCE.md §1 の 2 条件を満たすときだけ） |
 
 ## **maturity昇格**
 

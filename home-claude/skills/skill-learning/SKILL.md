@@ -59,7 +59,9 @@ user_model の境界タイプ:
 | ----- | ----- |
 | 師匠の好み・用語・プロセスルール・境界線 | ペア固有Skillフォルダ（上記参照） |
 | プロジェクト固有の技術知見（APIの仕様、DB構造等） | プロジェクト固有Skillフォルダ（上記参照） |
-| 迷ったら | ペア固有側を優先 |
+| 迷ったら | project か archive を優先（ペア固有 active は `~/.claude/pair-agent/GOVERNANCE.md` §1 の 2 条件を満たすときだけ） |
+
+保存先の既定は `~/.claude/pair-agent/GOVERNANCE.md` §5 に従う（固有名を本文に書いた skill を active〈`skills/`〉に置かない。単発インシデントを CLAUDE.md の骨だけ原則に一般化しない）。
 
 ## **maturity昇格**
 
