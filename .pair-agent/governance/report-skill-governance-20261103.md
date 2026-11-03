@@ -45,7 +45,7 @@
 | 10b | [TODO] | 判断 (a)–(e) | 判断が出たら対象ごとに移す（§7） |
 | 10c | [TODO] | 判断 (f) | 判断が出たら進める |
 | 12 | [TODO] | 観測データが無い。本番ログ `usage/skill-refs.jsonl` は 0 バイトのまま | 観測が貯まってから |
-| 16 | [TODO] | confirmed の 2 件に AI の観測による追記が入っている。retrospect の規則（観測だけの候補は forming）に照らすと下げるのが沿う | 推奨: forming へ下げる。判断はユーザー（§8） |
+| 16 | [TODO] | confirmed の 2 件の本体には師匠の承認の記録がある（own-inference-is-not-measured-fact の source 行「師匠承認 2026-08-18」・verified-means-it-ran の本文 67 行の承認の引用。原文は未照合）。AI の観測による追記（40d3481 の 10 件・a4600d8 の 6 件）は、retrospect の規則（観測だけの候補は forming）に照らすと forming が沿う | 推奨: 本体は confirmed のまま。追記は forming と書き分ける。判断はユーザー（§8） |
 | 17 | [TODO] | settings.json line 81 の model が `"opus"`、バックアップは `"claude-haiku-5-5"`。出所は未確認 | 推奨: 現在の `"opus"` のまま。違えばユーザーが指定（§8） |
 
 ## 5. 移送の内訳（51 件・10 対象）
@@ -99,10 +99,10 @@
 
 振り返り（スキル確認）の自動登録は 5 件:
 - 450b429（main・新規・project・forming）`usage-count-excludes-maintenance-reads.md`。根拠は AI の観測（BUG-08）。
-- 40d3481（live）: confirmed の `own-inference-is-not-measured-fact.md` に、AI の観測による追記 10 件を入れた。maturity は confirmed のまま。retrospect の規則（AI の観測だけの候補は forming）に照らすと forming へ下げるのが沿う。ここでは変えていない。下げるかどうかはユーザーが決める。取り消すなら追記を消す。
+- 40d3481（live）: confirmed の `own-inference-is-not-measured-fact.md` に、AI の観測による追記 10 件を入れた。maturity は confirmed のまま。本体の根拠は source 行の「師匠承認 2026-08-18」（ファイルの記載。原文は未照合）。追記は AI の観測だけなので、retrospect の規則（AI の観測だけの候補は forming）に照らすと、追記の節を forming と分けて書くのが沿う。ここでは変えていない。扱いはユーザーが決める。取り消すなら追記を消す。
 - d5568fb（live・forming）: `harness-exit-code-must-reflect-failure.md` に追記 14 件。
 - 26dd56b（live・confirmed）: `file-bug-ticket-for-unrelated-discovery.md` を改訂。根拠はユーザーの宣言 2026-10-27 の原文。
-- a4600d8（live）: confirmed の `verified-means-it-ran-not-that-it-ran-as-intended.md` に、AI の観測による追記 6 件を入れた。maturity は confirmed のまま（上と同じ規則に照らすと forming。扱いはユーザーが決める）。取り消すなら追記を消す。
+- a4600d8（live）: confirmed の `verified-means-it-ran-not-that-it-ran-as-intended.md` に、AI の観測による追記 6 件を入れた。maturity は confirmed のまま。本体は本文 67 行に 2026-10-11 の師匠の承認の引用がある（その承認が本件を含むかは未照合）。追記（2026-11-03 の push の件）は AI の観測だけなので、上と同じ規則に照らすと forming と分けて書くのが沿う。扱いはユーザーが決める。取り消すなら追記を消す。
 
 グローバル設定 `C:\Users\0000950207\.claude\settings.json`:
 - line 95（PostToolUse の matcher）: `"Read|Skill"` → `"Read|Skill|Edit|Write|MultiEdit"`。BUG-08 の計装の修正の過程で、修正役がブリーフの範囲外で変えた。ここで開示する。この幅は BUG-08 の保守の読みの除外に要る。`log_skill_ref.py` は Edit・Write・MultiEdit を `kind=write` として残し、`skill_usage_rollup.py` は同じ session が書いた skill の読みを `excluded_maint` として除く（コードで確認）。戻すと（`"Read|Skill"`）書き込みが残らず、保守の読みが再び利用に数えられる。推奨は残す。戻すかどうかはユーザーが決める。
@@ -125,6 +125,8 @@ live の `stash@{0}`（"WIP: denationalize in-place"・2026-11-02）は残した
 - ray の未 push commit: 前の記録は 3 件、実測は 4 件（§5）。
 - 前の区間では、スキル本文が再生された tool 結果の中に見えた。新しいスキルの Read は無く、本番ログは 0 バイトのまま。
 - BUG-10 の票（13・25 行）と BUG-08 の票 62 行は、旧 `test_bug06_sidecar.py` を「本体の rollup の複製」「`-08` のサイドカーを読む」と書いていたが、誤り。原本は本体の rollup を `--log` で実行し、旧名のサイドカー（`usage/skill-refs.maintenance-20261103.jsonl`・108 行）を読んでいた。225ad0b で両票を訂正した。
+
+- 16 の推奨（ファイル全体を forming へ下げる）は、本体の承認の記録（上の source 行と 67 行）を確かめずに書いた。確かめた後、推奨を「本体は confirmed のまま・追記だけ forming と書き分ける」に直した（§4・§8）。
 
 ## 10. 確かめていないこと
 
