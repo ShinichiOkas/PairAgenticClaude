@@ -1,0 +1,649 @@
+skill	class	target	core	proper_nouns	reason	confidence
+a-broken-meter-contaminates-the-rules-built-on-it	active		計器を検めないと、その数字から作った規約ごとずれる	Mnemo,measure_agent_usage.py,audit_agent_compliance.py	別スクリプト2例で再現。固有名を消しても原則が成立	mid
+a-capability-hidden-in-a-parameter-is-not-a-capability	active		汎用実行口の奥の能力はLLMに能力として見えない	Mnemo,skill_script_run,pad-analysis,AIdedArchitecture,MCP	Mnemoと別プロジェクトの2例で再現。固有名を消しても成立	mid
+a-check-must-not-depend-on-the-environment	active		検査は環境依存してはならない(落ちるより通る側が重い)	Mnemo,LLMProviderlib,ELLM,Phase LPL,Phase LOOP,Phase SPL	師匠の言い直しが核。LPL・LOOP・SPLの3場面で再現	high
+a-close-or-commit-order-means-the-master-is-already-moving-on	active		クローズ・コミット指示は次へ進む合図。そこで待たせない	Mnemo,image-generation-tool-20260902	師匠の宣言で原則は普遍。後の宣言群とも整合。単発宣言のため中	mid
+a-conditional-in-the-request-is-a-verification-request	archive		依頼の条件節は検証依頼として扱う	Mnemo,MarkItDown,web_fetch,Phase DR	原則は一般だが本文の事例は単発(Phase DR)で再現未確認	mid
+a-count-in-a-record-must-name-its-denominator	active		記録に数を書く前に分母を数え、文に書く	ray,skill-auto-2c-20261017,ray-fixes-tools-cwd	ray内の別スプリント2例で再現。固有名を消しても成立	mid
+a-deferred-fix-names-when-its-trigger-fires	archive		「次のXで直る」ならXがいつ来るかを測る	Mnemo,Cowork,cowork_reindex,D-6c,D-6d	原則は一般だが事例は1件(Cowork索引)のみ	mid
+a-detection-informs-the-architect-who-decides-the-action	project	AIdedArchitecture	検出は人間アーキテクトに知らせる。処置は人が決める	AIdedArchitecture,MS-501,IS-522,LC-01	課題・骨格の印など当該ツールの運用に密着。単発の師匠発言	mid
+a-discard-path-still-needs-a-record	archive		捨てる経路にも終端状態で記録を残す	Mnemo,Phase EH,events,status=filtered	原則は一般だが観測は同スプリント内の1文脈のみ(draft)	mid
+a-failure-claude-code-would-not-have-is-the-harness-defect	project	ray	Claude Codeならできる失敗はハーネスの欠陥と数える	ray,Claude Code,ToolLoop,Orchestrator,W2,claude-opus-4-8	ray(ハーネス)の欠陥帰属規則。ray固有名なしでは成立しない	high
+a-filter-that-hides-matches-must-say-so	archive		絞り込みで落とした分は落としたと返す	Mnemo,tool_catalog,include_active,Phase SSC	原則は一般だが事例は同一道具の同スプリント内。draft	mid
+a-flaky-test-that-starts-failing-every-time-is-a-signal	active		揺れとされた試験が毎回落ちたら原因を見る	slide-figures-gestalt,AIdedArchitecture,test_incremental	別プロジェクト2例で再現。師匠宣言とも整合	high
+a-forcing-rule-needs-an-exit	archive		強制する仕組みには上限・出口・空回り計器を付ける	ray,declare-psnote-20261019,mcp_server.py	原則は一般だが事例はray 1件のみ	low
+a-green-test-can-be-guarding-the-defect	archive		直して落ちたテストは欠陥を仕様化していないか疑う	Mnemo,test_self_core.py,mtime,CallNameResolver	原則は一般だが本文の事例は1件(mtime取りこぼし)のみ	mid
+a-guard-must-read-the-field-that-keeps-the-original	archive		正規化をまたぐ検査は原形が残る欄を読む	Mnemo,Phase SEI,zipfile,ZipInfo.orig_filename	zipfileの実測が核で事例は1件。OS差の技術知見	mid
+a-guard-on-the-judge-creates-its-own-false-positive	archive		判定道具に足したガード自体が偽陽性を作る	Mnemo,Phase LOOP,loop watchdog	原則は一般だが事例は1件(Phase LOOP)のみ。draft	mid
+a-harness-block-is-not-the-masters-rule	archive		ハーネスの停止は師匠の規則ではない。推奨前に環境で照らす	AIdedArchitecture,S2,P564,gemma4:31b-cloud,Ollama,classifier	師匠叱責の単発事例。このPCのGPU無し等の環境事実が混在	low
+a-hypothesis-true-by-definition-is-not-a-poc	archive		定義から自明な仮説はPoCにせず工作に移す	ray,loop4-pieces-20261012,S1	原則は一般だが事例はray 1件のみ	mid
+a-knowledge-check-must-exclude-evidence-it-could-have-created	archive		知識確認ゲートは自らが作った証拠を判定材料から除く	Mnemo,Phase BRM,スレッドKG	原則は一般だが事例は1件(Phase BRM)のみ。draft	mid
+a-lone-correct-implementation-means-the-lesson-did-not-spread	archive		正しい実装が1か所だけなら教訓が伝播していない	Mnemo,CallNameResolver,skill.py,mtime	原則は一般だが事例は1件(mtime 8か所)のみ	mid
+a-lone-working-case-may-be-a-filter-not-a-missing-path	archive		一つだけ動く症状は経路欠如でなく絞り込みの可能性	Mnemo,Phase AF,web_fetch,PDF	原則は一般だが事例は1件(Phase AF)のみ。draft	mid
+a-negative-conclusion-needs-a-wider-net	active		否定の結論は1件の測定から書かない(名前・母数・対照)	Mnemo,Phase IMG,Phase TRS-11,ELLM,stability.sd3-5-large-v1:0	IMG2回とTRS-11の別場面で再現。固有名を消しても成立	mid
+a-negative-control-is-not-one-until-measured	active		対照群・計器は実測するまで対照になっていない	AgenticWorkspace,Mnemo,Phase LOOP,Phase TRS-11,M3	別プロジェクト・複数スプリントで再現。師匠承認済み	high
+a-notice-must-carry-the-means-to-comply	archive		機械の知らせには従うための手段を載せる	ray,repl-regress-20261017,git show,REPL	原則は一般だが事例はray 1件のみ	mid
+a-port-carries-claims-that-were-never-measured	active		移植は未検証の主張も運ぶ。移植先で最初に測る	Mnemo,Whisper,Phase TRS-11,MSTenantMCP,ERSearch,ray,best_k	3プロジェクトの別事例で再現。固有名を消しても成立	mid
+a-port-must-keep-the-original-division-of-labor	archive		移植で機械とLLMの仕事の分担を変えない	Mnemo,Phase KATA,DailyNewsClip,report.py,LLMNode	原則は一般だが事例は1件(report.py)のみ	mid
+a-quoted-word-is-not-evidence-of-the-act	archive		引用を含む文書では語の出現は行為の証拠にならない	AgenticWorkspace,ard-skill-effect-20260901,QA	原則は一般だが事例は1件のみ	mid
+a-reply-cue-must-not-collide-with-existing-triggers	archive		返答の案内語は既存の引き金と衝突しないか照合する	Mnemo,Phase LLIB,think_dismiss,/think	事例は1件(/think)のみ。draft。語彙はMnemo固有	mid
+a-rule-no-machine-enforces-is-only-a-wish	active		機械が止めない規約は願望。判定可能な語で書く	Mnemo,Phase ROLE,Phase SIL,Phase OBS,ray,PreToolUse	Mnemo複数スプリントとrayで再現。固有名を消しても成立	high
+a-success-shaped-gap-needs-counting	active		成功の形をした欠損は数えるまで気づけない	Mnemo,Phase KATA,web_fetch,kata-mnemo-designs-s2-20260913	独立3件の実測で再現。固有名を消しても成立。同一日のため中	mid
+a-vacuous-test-suspects-the-implementation-too	archive		空振りしたテストは実装も同じ空振りを疑う	Mnemo,Phase SEI,zipfile,orig_filename	原則は一般だが事例は1件(Phase SEI)のみ。draft	mid
+a2a-proto-metadata-no-get	active		Agent-to-Agent 横断プロトコル	a2a-sdk,Message.metadata,mu,executor.py	GOVERNANCE §1 の既知の例外	high
+a2a-role-field-is-int	active		Agent-to-Agent 横断プロトコル	a2a-sdk,Message.role,ROLE_USER	GOVERNANCE §1 の既知の例外	high
+a2a-sdk-blocking-needs-long-timeout	active		Agent-to-Agent 横断プロトコル	a2a-python,DefaultRequestHandler,Mnemo,ELLM,a2a_client.py	GOVERNANCE §1 の既知の例外	high
+a2a-sdk-v11-implementation-notes	active		Agent-to-Agent 横断プロトコル	a2a-sdk,a2a-python,Mnemo,wiseman,TaskUpdater	GOVERNANCE §1 の既知の例外	high
+a2a-tool-executor-must-return-artifact	active		Agent-to-Agent 横断プロトコル	a2a-python,Mnemo,_tool_executor,a2a_client.py	GOVERNANCE §1 の既知の例外	high
+a2a-version-header-required	active		Agent-to-Agent 横断プロトコル	a2a-sdk,DefaultRequestHandler,A2ARunner	GOVERNANCE §1 の既知の例外	high
+ab-test-fails-on-format-changes	archive		書式変更の新旧比較ではブラインドA/Bは成立しない	Wiseman,M6	原則は一般だが事例は1件(Wiseman M6)のみ	mid
+absent-session-gates-egress-at-the-door	project	ray	不在の走りではegressの道具を門で拒む	ray,MCP,ToolSpec.egress_ok,D40,plan_view,elicitation	ray MCPクライアントの機構(ToolSpec等)に密着。他では無意味	high
+absorbed-code-keeps-the-docstring-but-loses-the-fix	archive		取り込んだコードは説明文だけ来て修正を落とす	LLMProviderlib,Mnemo,m10,Phase LPL,ELLM,TOKEN_RENEWAL_MARGIN	原則は一般だが事例は同一取り込みの3件で単発の文脈	mid
+abstraction-boundary-follows-the-route-not-the-vendor	archive		抽象の境界は提供元でなく経路が分かれているかで引く	Mnemo,Phase IMG,ELLM,ComfyUI,LLMProvider	原則は一般だが事例は1件(Phase IMG)のみ。draft	mid
+acceptance-round-continuation-threshold	archive		受入検査の周回打ち切り基準(未確定の観測記録)	canvas-lf-unify-20260915,H3	未確定の単発観測記録で原則なし。draft・要師匠判断	high
+after-an-interrupted-response-say-what-is-saved-then-continue	archive		返答が途切れたら残っているものを一言で言い続ける	AIdedArchitecture,S2,MAIA	単発の観測(S2)で再現未確認。細かな対話作法	mid
+agent-self-description-must-not-lie	archive		削除した機能は自己記述ファイルも同じコミットで直す	rex,rex_self.yaml,Phase 7-B,--verbose,--debug	原則は一般だが事例はrex 1件のみ。draft	mid
+agreement-decision-log-pattern	active		合意文書の要決定事項を取り消し線で残す決定ログ	LLMWorkflow,MSTenantMCP,implementation-roadmap	2プロジェクトで運用を確認。固有名を消しても成立。軽い作法のため中	mid
+ai-codes-human-feedbacks-loop	active		AIが実装し人が主観で返すループ。GUIはモックファースト	Mnemo,mnemo-note,M7,CA10	師匠の宣言が2回(M7・mnemo-note)。固有名を消しても成立	high
+ai-dev-basics	archive		AI開発の既定スタック(言語・モデル・埋め込み・GUI・ログ)	LLMProviderlib,Gemini,Ellm,fastembed,pywebview,Mnemo,ChatBotFramework	製品名・モデルID(日付付き)が本体で固有名を消すと成立しない	low
+ai-wobble-is-not-a-defect-when-humans-wobble-too	active		人間でも揺れることはAIの揺れも欠陥ではない	Mnemo,SELF-P2,SELF-D	師匠の判断基準が普遍原則。事例は1件だが宣言そのものが核	mid
+alias-resolution-belongs-to-the-glossary	project	Mnemo	別名解決はGlossaryに集約し名寄せは必ず引く	Mnemo,Glossary,user_graph,技術戦略室,provenance	Mnemo固有のGlossary・user_graph構造に密着	high
+always-commit-push-pull-sync-is-justice	active		常にコミット・プッシュ・プル。差分を許さない	Mnemo,companion-rollout-20261027,agent_mutex.py,オセロ	師匠の2026-10-27宣言。全プロジェクト共通の規範	high
+always-test-in-production	active		実環境での受入は常に本番で行う。影の環境を作らない	Mnemo,~/.mnemo,ELLM,check_production.py,deny_production.py	師匠宣言が複数日で再現。手順はMnemo寄りだが原則は普遍	mid
+ambient-service-masks-fallback-regression	archive		実サービスが居るとフォールバック退行が素通りする	LogicParser,Ollama,LOGICPARSER_PROVIDER,llm-refine-harness-20260825	原則は一般だが事例は1件(LogicParser)のみ。draft	mid
+ambiguity-is-a-branch-not-an-error	project	LogicParser	二つの解釈があるなら分岐として表現する	LogicParser,validity-acceptance-20260827,driver-expansion,gold	LogicParserの論理グラフ・判定器に密着した設計宣言	mid
+an-adopted-target-needs-next-moves-not-understanding	archive		預かった対象は次の一手と次の開始条件まで出す	AgenticWorkspace,adopt,mu,logicparser,M8-b,M10	adopt機能の実行判定に密着。原則は一般だが同一プロジェクト内	mid
+an-aggregator-must-be-able-to-say-not-enough-data	archive		集計器は0件と値0を区別し言えないと言う	AgenticWorkspace,M7	事例がM7の1件のみ。原則は一般的だが2文脈の再現なし	mid
+an-agreed-mockup-is-part-of-the-agreement	active		同意したモックと協議回答は合意に原文で書く	AIdedArchitecture,IS-578,mockup-tidy.html	師匠の怒りの言葉あり。事例は1件で規範宣言とまでは言えず判断余地	low
+anchor-judgments-on-identifiers-not-surface-strings	active		判定は表層文字列でなく識別子と式で行う	LogicParser,propositionalize	同じ壊れ方が3つの別フェーズで再現。固有名を消しても成立	mid
+another-session-may-commit-in-the-same-worktree	active		別セッションの同一ツリーへのコミットを前提にする	LLMProviderlib,AIdedArchitecture,IS-578,git stash	LLMProviderlib m19とIS-578の2文脈で再現。確定済み	high
+answer-before-editing	archive		不具合報告にはまず回答し承諾後に編集する	no-deferred-doubts	2026-10-27運転方針(推奨で即着手)と衝突する旧規範。事例は叱責1件	mid
+answer-the-masters-question-in-the-first-line	active		師匠の問いには返事の最初の行で答える	AIdedArchitecture,S2,MAIA	10-28と10-29の叱責で2回再現。固有名を消しても成立	high
+anticipate-knowable-constraints	active		予見できる既知の制約は実装前に先読みして潰す	MSTenantMCP,MSAL,M3,M5,Outlook	M3の失敗とM5の先制適用成功で2スプリント再現。師匠の言葉あり	mid
+api-no-silent-failure	active		APIでシステム例外を握り潰さずログと5xxで返す	Mnemo,R1.4b,ray,2c,ThreadStore	MnemoとrayのPython/APIで2文脈再現。フォールバックでも言う原則	mid
+approval-lists-need-the-provenance-of-the-state	archive		承認一覧には状態を誰が作ったかの由来を添える	Mnemo,Phase PRS,CUR-6	事例はMnemo Phase PRSの1件のみ	mid
+architecture-drivers-doc	active		ドライバはゴールと手段を区別しARCHITECTURE.mdに集約	ARCHITECTURE.md,LLMWorkflow,Mnemo,Utility Tree	師匠の宣言(今後はARCHITECTURE.mdに書く)あり。LLMWorkflowとMnemoで再現	mid
+ask-only-what-the-user-can-answer-at-that-moment	active		その瞬間に答えられない問いは聞かず材料を見せる	Mnemo,TT4,AIdedArchitecture,S2,MAIA	MnemoのUIとAIdedArchitectureのエージェントの問いで2文脈再現	high
+ask-the-master-by-content-not-by-label	active		問いは記号でなく中身で書く	ray,corrections	師匠の宣言。10-19と10-26で叱責が再発	high
+ask-the-provenance-of-input-data	archive		非形式データは構造分析の前に由来を聞く	TDLThemeDB,S3-embedding,Excel	事例はTDLThemeDBの1件のみ。draft	mid
+ask-warrants-as-fill-in-the-blanks-of-premise-clauses	archive		論拠は自由記述でなく前提の型の穴埋めで求める	LogicParser,Horn	LogicParser固有の着想で未実装。事例1件	high
+assert-the-mock-was-actually-used	archive		mockを差したら呼ばれたことをassertする	rex,Phase 7-B,OllamaProvider,Ollama	事例はrex Phase 7-Bの1件のみ。draft	mid
+asymmetric-gates-by-error-direction	active		合格水準は誤りの向きの被害で非対称に設計する	LogicParser,Mnemo,Phase SSC	LogicParser3例とMnemo Phase SSCで別プロジェクト再現と本文に明記	mid
+attribute-change-by-fixing-one-thing-and-counting-known-noise	archive		変化測定では既知の雑音は直さず数える	LogicParser,E-2	事例はLogicParser E-2 3周目の1件のみ。draft	mid
+audit-by-claimed-invariant-vs-enforcing-mechanism	archive		主張する不変条件と強制する機構の対応表で穴を出す	AgenticWorkspace,concept-consensus	事例はAgenticWorkspaceの1件のみ。draft	mid
+backend-contract-before-frontend	archive		クライアントサーバー契約はバックエンドを先に固定	Mnemo,R1,mode_payload	事例はMnemo R1の1件のみ。forming	mid
+background-run-output-must-not-be-cleaned-by-another-command	active		背景計測の出力先を別コマンドで掃除しない・パイプにつながない	AgenticWorkspace,M4,Mnemo,TRS-11,pytest	AgenticWorkspace M4とMnemo TRS-11の2文脈で再現。本文に追記あり	mid
+banked-retry-under-service-degradation	active		外部劣化下の測定は成功呼び出しを保存して再実行で収束	LogicParser,deepseek,driver-expansion	別スプリント2例(障害回復と生成リプレイ)。固有名を消しても成立	mid
+basic-app-operations-before-domain-features	archive		領域機能より先にツール種別として当たり前の操作を揃える	AIdedArchitecture,NT-531,GUI	事例はAIdedArchitecture GUIの1件のみ。GUIツール限定	low
+bench-a-coding-agent-self-built-and-independently-reverified	archive		自作小型ベンチで測り別環境で独立に再検証する	ray,SWE-bench,eval/z1/check_touched_tests.py	事例はrayの1件のみ。forming	mid
+beta-phase-prefer-clean-break	archive		β期間は互換を残さずclean breakする	CSVProcessor	事例はCSVProcessor撤去の1件のみ。forming	mid
+blinding-costs-the-ability-to-judge	active		盲検で削った情報は判定不能として返る	AgenticWorkspace,M5,Mnemo	AgenticWorkspace M5とMnemoで別プロジェクト再現。確定済み	high
+block-by-construction-not-by-detection	archive		禁止情報は検出でなく読めない構成で塞ぐ	AgenticWorkspace,mu,tray,needs	事例はAgenticWorkspaceの監査1件。draft	mid
+bottomline-before-comparison	archive		比較の前にその領域の最低品質を満たす	Phase FIG,TDLPortfolio,dataviz,Plotly	事例はPhase FIGの1件のみ。宣言ではなく協議中の発言	mid
+broad-except-swallows-unrelated-failures	archive		広い例外型は継承関係で無関係な失敗まで飲む	TDLThemeDB,S6,UnicodeEncodeError,cp932	事例はTDLThemeDBの1件のみ。Python固有の技術的観測	mid
+browser-token-works-in-page-but-not-in-requests	archive		ブラウザで通るトークンがrequestsで通るかは実測する	Accela Room,pywebview,WebView2,SSO	Accela Roomの1件のみ。SSO技術の観測。draft	mid
+bug-ticket-serves-as-the-agreement	active		明確なバグ票があれば合意ドキュメントは不要	Mnemo,.pair-agent/agreements,housekeeping-ate-basedir	師匠の明示宣言(2026-08-18)あり。例外条項により事例1件でも可	mid
+build-one-step-confirm-then-next	archive		新機構は1ステップ完成し確認してから次へ	LogicParser,refinement-harness	LogicParserの同時期2叱責のみ。運転方針(速く3回)とも緊張	mid
+build-the-measuring-tool-first	active		改善の前に測る道具を作り改善前の値を固定する	Wiseman,M6,M7,M10,AgenticWorkspace,Mnemo,evidence-report	Wiseman・AgenticWorkspace・Mnemoの複数スプリントで再現。確定済み	high
+building-a-checker-reveals-missing-data	archive		検査器を作ると必要なデータの欠落が見える	AgenticWorkspace,M6	事例はAgenticWorkspace M6の1件のみ。draft	mid
+bulk-replace-survey-the-surviving-hits	archive		一括置換は残った一致を1件ずつ見てから実行	Mnemo,Phase PRS,git filter-repo	事例はMnemo Phase PRSの1件のみ	mid
+bundled-components-share-host-config	project	Mnemo	同梱物は母体の設定を共有し規範例外は明文化	Mnemo,MNEMO_BASE_DIR,A2A,CTS,コンパニオン	Mnemoエコシステムの同梱物の設計。固有名を消すと成立しない	mid
+calibrate-the-ruler-before-comparing-methods	active		物差しのノイズが手法差並みなら先に較正する	LogicParser,ray,Z1,gold	LogicParserとray Z1の2文脈で再現(2例目として本文記載)	high
+caller-must-refetch-head-after-rejection	archive		動的に問いを差し込む道具では棄却ごとに先頭を取り直す	LogicParser,retract,next_question	事例はLogicParser5周目の1件のみ。ハーネス固有	mid
+capture-before-ui-automation	archive		UI自動化の前に実リクエストを採取し直APIを探す	MSTenantMCP,M6,Playwright,ELLM	事例はMSTenantMCP M6の1件のみ	mid
+cause-layers-minicheck-cures-one-layer	active		ミニ確認の完治はその層だけ。原因は層になっている	LogicParser,symbol-table-fix	記号表・L2・トリプレットと別スプリントで層構造が再現と本文に明記	mid
+chat-acts-on-the-open-diagram-with-every-operation	project	AIdedArchitecture	チャットは開いている図への指示。人の操作は全部AIも可	AIdedArchitecture,IS-555,NT-530,NT-531,MD-094	AIdedArchitecture GUIの機構そのもの。固有名を消すと成立しない	high
+check-command-line-and-parents-before-killing	archive		プロセス停止前にコマンド行と親子を確かめる	Mnemo,P527,Get-CimInstance,check_production.py	事例はAIdedArchitecture DOGFOOD P527の1件。環境固有の記述が多い	mid
+check-feasibility-before-setting-the-line	active		線を置く前に形が動くか確かめ所見は別道具で覆わない	ray,loop2,Q4,AppContainer,R1,T1	ray loop2・R1・4周目・T1・2cと複数スプリントで再現。固有名を消しても成立	mid
+check-recommendations-against-existing-principles	archive		推奨案は既存の原則と照合してから出す	Mnemo,Phase LLIB,modes.py	事例はMnemo Phase LLIBの1件のみ。draft	mid
+check-running-subagents-every-ten-minutes	active		走行中のサブエージェントは10分ごとに1体ずつ見る	agent_mutex.py,CronCreate,GN-3	師匠の明示宣言(10-28,10-29)あり。事例は1文脈でも例外で可	high
+check-the-instruction-acted-not-only-the-line	archive		指示を足したら届いたかと従ったかを分けて確かめる	ray,declare-psnote	事例はray declare-psnoteの1件のみ	mid
+check-the-invariant-not-the-path-you-fixed	archive		検査は直した経路でなく経路非依存の不変条件で書く	TDLThemeDB,S6,S7	事例はTDLThemeDB S6からS7の1件。原則は一般的で判断余地あり	low
+check-the-masters-past-decisions-before-an-ai-judgment	active		AI判断の前に師匠が過去に決めたことを引く	Mnemo,cowork-defects,vendor/llmproviderlib,ellm-proxy	Mnemoの遮断フックとELLMモデル一覧の2例で再現。確定済み	mid
+check-the-output-form-an-algorithm-assumes	archive		アルゴリズムが前提とする出力形を確かめる	Mnemo,Phase GL,Sugiyama,vis.js	事例はMnemo Phase GLの1スプリント内。draftで本文は再構成	mid
+check-upstream-state-before-filing-ticket	active		他プロジェクトへの起票前に上流の現状を確かめる	TDLThemeDB,TDLBGTDataConverter,mcp-binary-content-and-mcp2	8月7日と8月17日の2例で再現。固有名を消しても成立	mid
+check-vendor-submodule-upstream-before-workaround	active		ワークアラウンド前に本家の最新をfetchして双方向に確かめる	InfoGather,Mnemo,ray,LLMProviderlib,ellm-proxy	InfoGather・Mnemo・rayの複数プロジェクトで再現。確定済み	high
+chromium-hands-off-to-the-running-instance-on-same-user-data-dir	archive		同じuser-data-dirの二度目の起動は既存へ引き渡される	Edge,Chromium,CDP,Mnemo	Edge/Chromiumの技術的観測。事例はMnemoの1件のみ	mid
+classification-sprint-surfaces-design-blockers	archive		集合操作の前に分類サブスプリントで設計ブロッカーを出す	rex,Phase 1-B-1,match_skills	事例はrex Phase 1-B-1の1件のみ。forming	mid
+classify-remaining-work-by-kind	archive		残りの仕事を仮説・工作・設計・決め・許可に振り分ける	ray,loop3,loop4,PoC	事例はray loop3から4の1件のみ。PoC語彙に依存	mid
+close-code-and-llm-behavior-on-separate-bars	archive		LLMのツール呼び出し機能はコードと挙動を別基準で閉じる	Mnemo,mnemo-self-correction-mark,Phase OBS	事例はMnemoの1スプリントのみ。draft	mid
+close-the-sprint-and-let-the-master-approve-by-long-use	active		待ちだけ残ったスプリントは閉じ、師匠は閉じた後に長く使ってOKを出す	Mnemo,Phase OBS,Phase GATE,mascot-impl,sprints/	師匠が運用として宣言(2026-10-26)。固有名を消しても原則が成立	mid
+closed-set-values-follow-the-existing-ui-precedent	archive		閉じた集合の値は汎用テキスト欄でなく既存UIの前例に揃える	Mnemo,Phase OID,list_str,textarea	事例がMnemoの設定画面1件(補足も同製品)。宣言の例外にも当たらない	mid
+cloud-draft-branches-are-judged-one-at-a-time	archive		クラウドの先行実装ブランチは1本ずつ評価して取り込む	ray,IMPROVEMENTS §9,ELLM,budget-keep-skill	rayのIMPROVEMENTS §9の1件のみ。判断手順も特定ブランチ群に密着	mid
+coherent-integration-beats-coverage	archive		網羅で負けても一貫した統合が総合評価を取ることがある	wiseman,M4.2,L2	Wiseman M4.2の1観測のみ。逆例もあり確定していない(forming)	high
+cohosted-apps-share-client-single-loop	archive		ループ束縛の共有非同期クライアントは単一イベントループで併走	ellm-proxy,uvicorn,httpx.AsyncClient,asyncio.gather	ellm-proxy bothモードの1件の技術観測。再現は本文に1件のみ	mid
+commit-and-push-per-sprint	archive		スプリント完了時にcommitとpushまで済ませる	AgenticWorkspace,LLMWorkflow	commit-and-push-togetherとcommit-small-per-boundaryに上書きされた重複	mid
+commit-and-push-together	active		コミットしたらその場でpushし、差分を溜めない	rex,ellm-proxy,Mnemo,Phase 7-B	師匠が全プロジェクトへ宣言(2026-10-23)。rex・ellm-proxy・Mnemoで再現	high
+commit-and-sync-per-milestone	archive		マイルストーン到達ごとにコミットし同期する	LLMWorkflow,AgenticWorkspace	粒度はcommit-and-push-togetherに締められ旧版。事例はLLMWorkflow1件	mid
+commit-sample-records-by-purpose	archive		サンプル記録は何のために残すかを決めてからコミットする	AIdedArchitecture,.aided/samples	AIdedArchitecture運用初日の1件。宣言の例外にも当たらない	mid
+commit-small-per-boundary	active		コミットは区切りごとに小さく切り都度pushし、TODOはTODOだけ書く	ray,R8,TODO.md,bugs/INDEX.md	師匠が2026-11-03に明示宣言した規範。ロールバック可能性が根拠	mid
+companion-app-inherits-host-lf	project	Mnemo	コンパニオンは母体MnemoのL&Fと操作系を踏襲する	Mnemo,mnemo-note,pywebview,cowork-tree-panel,marked.min.js	Mnemoの母体と子アプリの関係に密着。Mnemoを消すと成立しない	high
+companion-app-port-default-offset	project	Mnemo	アプリごとにポート既定値をずらし起動順衝突を防ぐ	Mnemo,AInote,mnemo-note,find_free_port,8765	Mnemoエコシステムのポート割当表そのもの	high
+companion-data-location-scratchpad-vs-cowork	project	Mnemo	既定はスクラッチパッド、Cowork起動は成果物置き場で分ける	Mnemo,Cowork,mnemo-graph,mnemo-write,Phase SWB,companions.py	Mnemoのcowork機構と各コンパニオンの実装に密着	high
+companion-gui-needs-cors	project	Mnemo	pywebviewのGUIと別ポートのバックエンドにはCORSが要る	Mnemo,mnemo-note,pywebview,FastAPI,CORSMiddleware	mnemo-note実機の1件で、Mnemoコンパニオン構成の技術知見	mid
+compare-directories-by-content-not-existence	archive		ディレクトリ比較は存在でなくファイル単位の差集合で見る	Mnemo,housekeeping-ate-basedir-20260818,threads/	Mnemoの復旧作業1件。原則は一般的だが再現が本文に1件のみ	mid
+completed-mark-includes-no-deps-no-bootstrap	active		完了マークはコードがあるだけ。依存・配線・起動経路を別に確かめる	rex,run_sprint_mode,_parse_relaxed_tool_block,SkillStore	rexの別スプリント3件で再現。固有名を消しても成立	mid
+compliance-flag-must-be-derived-not-declared	archive		遵守フラグは被検査者に書かせず実行記録から導出する	AgenticWorkspace,negation.agent_used,DEC	AgenticWorkspace1スプリントの事例のみ(draft)	mid
+concept-docs-get-implementation-appendix	archive		コンセプト文書は本文を直さず実装を末尾の節に足す	Mnemo,doc/,.mk	Mnemoのdoc/整合作業での指示1件。全プロジェクト宣言ではない	mid
+config-file-vs-code-default-may-differ	archive		設定ファイル値とコード既定値のずれは不整合として報告しない	InfoGather,config.toml,DEFAULT_DAILY_TIME	InfoGatherの1件の師匠判断。全プロジェクト規範の宣言ではない	mid
+config-input-must-accept-what-the-user-naturally-writes	archive		手書き設定は自然な書式のゆれを受け、黙って無効にしない	Mnemo,Phase EH,YAML,mode: off	Mnemo Phase EH 1件(occurrences:1, draft)	high
+confirm-authorization-for-data-moving-work	archive		持ち出しに見える作業は了承の有無を最初に1問だけ確認する	ellm-proxy,formal-fork-private	ellm-proxyの正式フォーク1件(draft)	high
+confirm-the-sync-root-before-sending-deletes	archive		同期で削除を送る前に根フォルダが前と同じものか確かめる	Mnemo,SharePoint,Graph,cowork/rebuild,paused/root_missing	Mnemo cowork-sharepointの1事故。再現は本文に1件のみ	mid
+confirmation-request-must-identify-the-target	archive		確認依頼は相手の画面だけで対象が特定できるように書く	Mnemo,Phase SPL,PAD3,SPL-7	Mnemo Phase SPL 1件(draft)。同日の別件は別skillの話	mid
+connectivity-check-is-not-live-operation	active		疎通確認は実運用の代わりにならず、完成は実環境で動かした後に言う	TDLThemeDB,Mnemo,Phase OID,MCP,A2A	TDLThemeDBとMnemo OIDの2文脈で再現。師匠の言い直しあり	high
+construct-read-refine-are-three-operations	project	LogicParser	構築・読み取り・洗練を区別するLogicParserのハーネス設計	LogicParser,logicparser,トリプレット,L2	LogicParserの論理構造ハーネスの語彙定義に密着	mid
+consultation-branch-axis-as-choices	active		相談では設計を最も分岐させる少数の軸を選択式で投げる	ont-glossary-design,Mnemo,Phase DR,AskUserQuestion	ont-glossaryとMnemo Phase DRの2文脈で再現し、師匠の言葉つき	mid
+context-inertia-sets-the-wrong-default	archive		直前の作業の形や対象が次の判断の既定値に化ける	Mnemo,Phase EH,sessions://live,camera://live	同日同スプリント(Mnemo EH)の2件。別文脈での再現が本文にない	mid
+continue-by-task-state-not-by-wording	active		ループの継続は応答の文面でなく作業の状態で決める	ray,Mnemo,ELLM,auto_plan,repl-selfdoc	rayとMnemoの2プロジェクトで再現。師匠の言葉つき	high
+contract-includes-fallback-behavior	active		契約仕様は不足時・失敗時の返し方も同時に詰める	fact-check-poc,A2A-5,Mnemo,AskUserQuestion	fact-check-pocとMnemo A2A-5の2文脈で再現	high
+control-without-expressiveness-loses-meaning	archive		表現力不足の形式統制は意味の欠損を安定再現し正しさを保証しない	LogicParser,triplet-extraction-feasibility	LogicParserの1実測(draft)	mid
+convenient-default-may-fight-the-requirement	active		ライブラリや自作の親切な既定が要件と衝突するので止め方を設計する	Mnemo,Phase MO2,MCP SDK,get_work_dir,OAuthClientProvider	MO2と2026-08-18の別事象で再現(外部lib・自作の2例)	mid
+count-before-putting-a-number-in-a-choice	active		選択肢に数や推奨を書く前に実測し終える	Mnemo,Phase DR,LPL-16,git subtree,grep	Phase DRとLPL-16の2場面で再現。師匠承認で昇格済み	high
+count-entry-points-before-cross-cutting-feature	active		横断機能は先にその事象の入口を数えて設計を決める	Mnemo,Phase NV,Phase SPL,selectThread,spawn_tracked	NVとSPLの2フェーズで再現(入口が閉じた例と閉じない例)	mid
+count-re-instructions-not-keywords	active		仕組みの穴は再指示の回数で探し、質はキーワードで判定しない	Mnemo,Phase DS,AgenticWorkspace,M4,th_032	Mnemo DSとAgenticWorkspace M4の2文脈で再現	high
+count-registration-points-not-the-checklist	active		能力を足したら登録点をgrepで数え、チェックリストを信じない	grep	固有名なしで成立。繰り返し観測と本文にあり複数文脈で再現	high
+count-the-known-damage-before-saying-no-harm	archive		事故後の実害なし報告の前に既知の被害を全部数える	Mnemo,Phase SA,pip install -e,mnemo.exe,Supervisor	Mnemo Phase SA 1事故の事例のみ	mid
+counts-and-ids-in-reports-come-from-the-record	archive		報告に書く数とIDは書く直前に記録から取り直す	AIdedArchitecture,S2,MAIA,P35	AIdedArchitecture S2 1件(forming、承認なし)	mid
+coverage-check-is-a-bug-detector-not-a-principle	project	LogicParser	原文網羅の検査は原則にせず道具のバグ検知としてだけ使う	LogicParser,refinement-harness-20260904	LogicParserの論理構造ハーネスの検査方針に密着	mid
+credentials-are-plural-count-them-when-symptom-and-cause-disagree	archive		症状と原因が食い違ったら資格情報が複数ないか数える	Mnemo,ELLM,CloudFront,DXAI-id_token,Set-Cookie	Mnemo/ELLM 1件(draft)。ELLM認証に密着	high
+cross-invocation-state-cannot-be-tested-in-one-run	archive		起動を跨ぐ状態は1回のテストで検査できず実際に回す必要がある	AgenticWorkspace,M10,cron,--dry-run	AgenticWorkspace M10 1スプリントの事例のみ	mid
+cross-pollinate-improvements-both-ways	archive		姉妹アプリの改善は先発と後発で双方向に横展開する	app-container,panel-header,drop-zone,WBS	出典不明の1事例。Mnemoコンパニオン群の語彙に寄る	low
+cross-project-pattern-application	archive		他プロジェクトの仕組みの適用依頼は解釈・差分表・選択肢・合意の順で進める	Mnemo,ellm-proxy,auth-throughput-optimization	Mnemo→ellm-proxy移植の1件の手順	mid
+dash-not-sprint-for-coding-agents	active		仕事の単位はダッシュ。割り込みは常態でその場で受け流す	Mnemo,mstenantmcp,AIdedArchitecture,Phase SWB,agent_mutex	師匠の明示宣言(2026-10-28)。Mnemo・AIdedArchitectureの2例	mid
+data-cleansing-belongs-at-the-first-stage	active		データクレンジングは取り込みの最初の工程に置く	TDLBGTDataConverter,MCP,RAG,math.ceil	同プロジェクトの別時期2回(08-08と08-17)の師匠診断	mid
+dead-stalled-and-hung-are-three-different-states	active		死んだ・終わらなかった・ハングは別状態。見え方から推測しない	AgenticWorkspace,M10,ray,ListAgents,TaskStop,Kernel-Power	AgenticWorkspace・rayの複数場面(M10・bench・a2a)で再現	high
+decide-by-information-ownership	active		誰が決めるかは判断に必要な情報を持つかで決める	AskUserQuestion	師匠が2026-10-30に2回宣言した規範。固有名なしで成立	mid
+decide-by-least-waste-fastest-result	active		判断の軸は最も無駄が少なく最も早く結果が出る方法	mstenant,MSTenant	師匠が2026-10-28に宣言した判断軸。固有名なしで成立	mid
+decide-later-means-start-recording-now	active		分布を見てから決めると先送りするなら見る量を決めて記録を始める	curiosity-repair,CUR-6c,Mnemo,Phase EH,Phase OBS	curiosity-repairとMnemo Phase EHの2文脈で再現	high
+decisions-need-pros-cons-per-option	active		判断を仰ぐときは選択肢ごとにPros/Consと推奨を示す	LogicParser,refinement-harness-20260904	師匠の言葉で一般的な作法。固有名なしで成立。関連skillで反復	mid
+declare-degraded-capability-in-the-deliverable	archive		外部依存が落ちたら成果物と実行の両方で縮退を申告する	wiseman,M9,OpenAlex,on_error	wiseman M9の1件の師匠指示。全プロジェクト規範の宣言ではない	mid
+declare-source-capabilities-not-per-metric-exceptions	archive		新データ源は指標ごとの例外でなくデータ源の能力を宣言する	ChatlogLLMHumanRelation,Mnemo,SourceCapabilities,M07	ChatlogLLMHumanRelation 1件(draft)	high
+declared-capability-gates-the-caller-side-option	archive		呼び出し側オプションは相手が消費すると名乗ったときだけ生やす	Mnemo,A2A-5,notebooklm,wiseman,mu,AgentExtension	Mnemo A2A-5 1件(a2a-接頭辞ではない)。A2A実装に密着	mid
+dedupe-order-decides-attribution	archive		重複排除では経路の順序がそのまま手柄の割当になる	wiseman,M10	wiseman M10 1件(draft)	high
+default-creation-log-means-state-was-lost	archive		無ければ作るログが出たこと自体が状態消失の証拠	Mnemo,housekeeping-ate-basedir-20260818,SCHEDULE.md	Mnemoの1事故(forming)。再現が本文に1件のみ	mid
+default-output-must-not-hit-the-size-cap	archive		既定の出力形式を上限に線形で当てない	Mnemo,skill-inventory,process.py,MAX_OUTPUT_CHARS	原則は一般的だが事例は skill-inventory の1件のみ	mid
+default-path-to-real-artifact-is-external-state	archive		実体を指す既定値は外部状態。永続物作成時に隔離	Wiseman,M10,conftest,library_path	原則は一般的だが事例は Wiseman M10 の1件のみ	mid
+defensive-str-fallback-manufactures-garbage	archive		or str(x) の防御は空を非空ゴミに化かす	Mnemo,mnemo-pad,_extract_vision_text,Windows OCR	事例は mnemo-pad OCR の1件のみ。Python コード上の技術観測	mid
+delegated-fix-stops-at-widening-the-agents-own-authority	archive		任された直しでも自権限を広げる判断は持ち主に取る	AIdedArchitecture,S2,IS-556,IS-557,MCP,NT-539	事例は AIdedArchitecture S2 の1スプリントのみ。forming	mid
+delete-only-leftovers-proven-ours	active		残りを消すのは自分の物と中身で確かめた物だけ	Mnemo,AIdedArchitecture,S2,corrections/20261003,worktree	Mnemo の先例と AIded S2 で再現。師匠の消してよい原文あり。固有名なしで成立	mid
+derive-security-labels-from-untrusted-tool-metadata	archive		外部申告の安全メタデータは信じず危険側へ倒す	ray,rayagent/mcp.py,derive_side_effect,MCP,EXTENSIBILITY	事例は ray の MCP 実装の1件のみ	mid
+destructive-feature-defaults-need-scrutiny	active		破壊的機能の既定値・フォールバックは慎重に決める	Mnemo,MNEMO_WORK_DIR,work-dir-housekeeping,base_dir,config.json,mnemo.db	師匠が原文で宣言した規範。事例1件のため例外適用	mid
+detached-child-launch-must-confirm-survival	archive		fire-and-forget 起動は spawn 成功を起動成功と見ない	Mnemo,mnemo-pad,companions.py,CREATE_NO_WINDOW,watchdog	事例は mnemo-pad 起動不能の1件のみ。Windows 技術観測	mid
+detached-launch-cant-finish-interactive-auth	active		detach 起動は対話認証を完了できない。常駐は最初に切る	ellm-proxy,ray,ELLM,a2a-manager-connect,llmproviderlib,browser_login	ellm-proxy と ray の2文脈で再現。固有名なしで成立	mid
+deterministic-core-first-so-it-can-be-measured	archive		LLM 層より先に決定論の核を作り測れる面を増やす	AgenticWorkspace,DEC,mu	事例1スプリント1観測と本文自身が明記	mid
+deviate-from-pre-registration-only-toward-weaker-claims	archive		事前登録からの逸脱は主張を弱める方向だけ	AgenticWorkspace,M9,ablation-20260830,independent	事例は AgenticWorkspace M9 の1件のみ	mid
+diagnose-both-sides-before-blaming-one	archive		機能が無い指摘は送り手と受け手の両側を突き合わせる	Mnemo,A2A-3d,wiseman,extract_artifact	事例は A2A-3d の1件のみ	mid
+diarization-speaker-count-unknown	archive		話者数は事前に正確に分からない前提で設計する	voiceRecall,S1,num-speakers	話者分離ドメインの1事例。voiceRecall は work 配下に不在	mid
+diff-based-llm-doc-edit	archive		LLM の長文編集は全文でなく差分ブロックで行う	Mnemo,mnemo-note,GhostWriter,doc_editor.py	技術パターンの記録で事例は mnemo-note 移植の1件のみ	mid
+disclose-system-touching-operations-in-the-report	active		システムに触れた操作は作って消した物も報告に書く	ray,P5,Q4,AppContainer,loop1,loop2	ray の loop1・loop2 で再現。師匠承認。固有名なしで成立	mid
+distinguish-cannot-from-not-yet	archive		できないとまだやらないを書き分ける	AgenticWorkspace,ARCHITECTURE,concept-consensus-20260829	事例は AgenticWorkspace コンセプト合意の1件のみ	mid
+do-not-assume-multiple-llm-families	active		作り手と壊し手が別 LLM ファミリーを前提にしない	ray,AgenticWorkspace,AgentRoleDesign,ellm-proxy,Ollama	師匠が設計前提を退けた明示宣言。事例1件のため例外適用	mid
+do-not-narrow-all-by-own-exit-criteria	active		全部と言われた範囲を自分の終了条件で狭めない	DOGFOOD,P528,IS-555,Cowork,Mnemo,SharePoint	図の全実走とCoworkの要求削りの複数文脈で再現。師匠原文あり	high
+do-not-rebase-commits-a-record-points-to	archive		記録が指す commit は rebase せず merge で取り込む	ray,repl-regress,IMPROVEMENTS.md,532e13b	事例は ray の1スプリント内。git 手順の記録	mid
+do-not-take-over-a-role-block	archive		役ごとの遮断で止まった操作を他の役が肩代わりしない	Mnemo,companion-unified-arch,deny_read.py,hooks	事例は Mnemo companion-unified-arch の1件のみ	mid
+do-not-touch-the-source-while-the-suite-is-measuring-it	active		測定中にソースを触らない。触ったら結果を捨て取り直す	Mnemo,A2A-5,ChatlogLLMHumanRelation,ray,Stage 5	3プロジェクト4例で再現。固有名なしで成立	high
+do-not-trust-a-timeout-in-a-lower-layer	active		下層に時限があっても上の層に必ず締切を置く	AgenticWorkspace,M10,ray,a2a-manager-connect,mu,taskkill	AgenticWorkspace M10 と ray で再現。固有名なしで成立	mid
+document-consistency	active		決定したら関連ドキュメントを即座に全部整合させる	LLMWorkflow,README,CLAUDE.md,GEMINI.md,.pair-agent/agreements	師匠の宣言(2026-05-14)。全プロジェクトに効く規範	mid
+dont-edit-the-masters-global-instruction-files	active		師匠のグローバル指示ファイルは書き換えない	Mnemo,Phase CG,CLAUDE.md,~/.claude/rules	師匠の宣言(2026-09-20)の境界線。全プロジェクトに効く	mid
+dont-fix-a-mapping-that-changes-per-run	archive		走ごとに変わる対応表は固定せず外から与える	AgenticWorkspace,AgentRoleDesign,mu,ard_positions.json	観測1件と本文が明記。mu 連携に密着した事例	mid
+dont-make-the-master-press-approval	active		推奨が明らかな判断は問わず進め、終わりに報告	Mnemo,ray,companion-sdk,repl-rich-ui-v2	師匠の宣言原文あり。Mnemo と ray の2文脈で再現	high
+dont-reinvent-in-visual-domains	active		ビジュアル領域は車輪の再発明をせず既製を借りる	Mnemo,Phase FIG,Plotly,dataviz	師匠の学びの原文。事例は Phase FIG のみで例外適用	mid
+dont-run-real-env-checks-while-the-master-uses-the-app	archive		師匠が使用中のアプリの実環境で検査を流さない	Mnemo,mnemo-slide,PowerPoint,POWERPNT.EXE,Cowork	事例は mnemo-slide の1件のみ。取り消し済み記述を含む	mid
+drift-moves-to-the-free-slot	archive		LLM 出力の揺れは統制していないスロットへ移る	LogicParser,triplet-extraction-feasibility-20260826	事例は LogicParser の同一スプリント内3回のみ	mid
+drills-need-their-own-workspace	archive		動作確認の演習は本番の記録に混ぜない	AgenticWorkspace,M10,ticks.jsonl	事例は AgenticWorkspace M10 の1件のみ	mid
+drop-the-mirror-markings-when-you-stop-mirroring	archive		ミラーをやめたらミラー時代の標識を消す	LLMProviderlib,m8-ellm-absorb,ellm-proxy,sync_ellm_proxy.ps1	事例は LLMProviderlib m8 の1件のみ	mid
+duplicate-implementation-only-one-gets-fixed	active		同じ操作の実装が2か所あると修正は片方にしか入らない	rex,TDLThemeDB,Mnemo,Phase EH,testfield	rex・TDLThemeDB・Mnemo の4例で再現。固有名なしで成立	high
+e2e-temp-datadir-with-cache-junction	archive		E2E は一時データ領域とキャッシュのジャンクション共有で	Mnemo,mklink,ジャンクション	Windows 向けの一時的な手順の記録	mid
+ecosystem-log-format-consistency	project	Mnemo	エコシステム内のログ JSONL の鍵名と置き場を統一	Mnemo,AInote,logging_util.JsonlFormatter,companion_sdk,Phase CUA	Mnemo の JsonlFormatter と companions 置き場に密着	high
+editable-install-path-fixation	archive		pip install -e のリンクは移動で固着する	rex,llmproviderlib,Mnemo,mnemo-pad,ShowMarkDown,hatchling	技術的な観測と復旧手順の記録	mid
+effective-config-comes-from-the-resolver-not-the-file	active		設定の実効値は解決する場所で確かめる	Mnemo,config.json,load_config,load_dotenv,.env	Mnemo の 08-28 票と 08-30 で再現。固有名なしで成立	mid
+effort-vs-effect-disclosure	archive		性能改善は数字に出るか健全性目的かを着手前に宣言	P3,_state_lock,bench,vision-auth-hardening-series	事例は P3 の1件のみ	mid
+ellm-dict-response-lands-in-raw-not-content	project	LLMProviderlib	ELLM の dict 応答は content が None で raw に残る	ray,ELLM,llmproviderlib,resp.content,resp.raw,a2a-manager-connect	llmproviderlib の ELLM 応答仕様に密着した知見	mid
+embedding-torch-free-fastembed-default	active		Embedding は torch 非依存の fastembed を既定とする	fastembed,paraphrase-multilingual-MiniLM-L12-v2,Wiseman,Mnemo,sentence-transformers	師匠が多プロジェクト統一ルールとして明示宣言	mid
+empty-search-result-is-not-evidence	archive		検索の0件は無いの証拠でなく検索が壊れた疑いを先に	Mnemo,TDLThemeDB,grep,mcp.tool	事例は MCP ツール定義調査の1件のみ	mid
+environment-grounding-is-caller-concern	archive		環境文脈は行動ループ層でなく呼び出し側が与える	mu,ray,rooted_tools,ray-fixes-tools-cwd	師匠決定だが層構造が mu/ray 固有。判断余地あり	low
+error-handling-instruction-needs-stop-scope	archive		エラー処理の指示は止まる範囲を実装前に確定する	a422872,b55849d,eff8176	事例は1件のみ。師匠の原文は反省であり宣言ではない	mid
+error-text-may-be-a-mask-not-the-cause	archive		ログのエラー文字列は真因を上書きした別例外のことがある	Mnemo,RC7,soundcard,S_FALSE,Capture	事例は Mnemo RC7 の1件のみ。Python と COM の技術観測	mid
+escape-hatches-must-be-asked-not-mentioned	archive		例外操作は文に書くだけでなく道具が問いとして出す	LogicParser,harness-tool,retract,E-2	事例は LogicParser の連続スプリントのみ。LLM 道具設計	mid
+eval-by-tests-only	active		コード評価はテスト通過のみで行う	SubAgents	師匠の判断基準を述べた原文あり。固有名なしで成立	mid
+evaluation-criterion-is-a-requirement-not-an-implementation	active		評価尺度は要件であり目的関数としてそのまま実装しない	Mnemo,Phase GL,TDLThemeDB,Sugiyama,IDF,alpha	Phase GL と TDLThemeDB の3例で再現し実測まで到達	high
+evaluation-lens-not-query	archive		視点の切替はクエリ語彙でなく評価レンズで行う	SubAgents,search,docs/specs/search.md	事例は SubAgents search 拡張の1件のみ	mid
+external-failure-needs-control-group-and-repetition	active		外部要因は対照群と反復を置いてから断定する	Mnemo,TDLThemeDB,ellm-proxy,WSL,Ollama,recall	Mnemo・TDLThemeDB・ellm-proxy の5例で再現	high
+external-process-exit-is-not-completion	active		プロセス終了でなく成果物の出現で完了を判定する	Mnemo,FIG-R,msedge.exe,AgenticWorkspace,M10,taskkill	Mnemo と AgenticWorkspace で3件再現。固有名なしで成立	mid
+external-provider-instructions-scoped-to-tool-visibility	archive		外部供給元の使い方文はその道具が見える間だけ載せる	ray,MCP,rayagent/mcp.py,instructions_for,extension-stages.md	事例は ray の MCP クライアント実装の1件のみ	mid
+external-tool-server-lazy-connect-and-isolate-failures	archive		外部ツールサーバーは遅延接続し失敗を本体から隔離	ray,MCP,AidedArchitecture,asyncio,REPL,tool_catalog	事例は ray の MCP クライアント実装の1件のみ	mid
+failure-that-buys-understanding-is-not-waste	active		理解を買った失敗は無駄と報告しない	MSTenantMCP,S8,Graph,AADSTS65002	師匠の訂正原文が規範。事例1件のため例外適用	mid
+faithful-standalone-preview-for-gui-verification	project	Mnemo	GUI 検証は本番から抽出した standalone で撮る	Mnemo,Phase RND,Phase GX,index.html,mnemo-tokens.css,marked.min.js	Mnemo の index.html・テーマ・vendor 資産の抽出に密着	mid
+fallback-default-silently-undoes-the-fix	archive		表の照合で既定値に落ちると過去の修正を無言で取り消す	Mnemo,ELLM,max_tokens,_resolve_max_tokens,th_173,Phase FSC	事例は ELLM max_tokens の1件のみ	mid
+fastembed-output-needs-l2-normalization	archive		fastembedの生出力はL2正規化とfloat32化が要る	Mnemo,fastembed,sentence-transformers,R4.1	特定ライブラリの挙動の技術観測で本文の事例は1件	high
+fetch-only-remote-guard	archive		消費専用リポジトリはpushを設定で封じる	git remote set-url --push origin no_push	師匠宣言は特定リポジトリ向けで事例1件。全プロジェクト規範の宣言ではない	mid
+file-a-ticket-instantly-and-fix-in-parallel	active		不具合は調べず即票にし並列で直させる	なし	師匠が2026-10-27に全体規範として宣言した原文あり(宣言の例外)	mid
+file-bug-ticket-for-unrelated-discovery	active		見つけた欠陥は票にして責任を切り離さず直す	Mnemo,cowork,mnemo-file-defect	師匠の叱責2件で改訂済み。複数スプリントで再現。固有名を消しても成立	mid
+file-dnd-via-server-upload	archive		DnDファイルはサーバーへ上げpathで渡す	multipart,uploads,Mnemo	GUI実装手順の技術知見で事例1件	mid
+file-modification-rules	archive		ファイル全体の上書きを禁じ部分置換を最小にする	Antigravity,write_to_file,replace_file_content	Antigravity固有ツール名に依存した規約で事例1件。判断材料不足	low
+fill-resources-parallelism-is-the-managers-job	active		並列度とリソース管理は親の仕事。余りは怠慢	CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,JPC20661296,GN-3	師匠が2026-10-28に全体規範として宣言した原文あり(宣言の例外)	mid
+filtering-needs-a-wider-pool	archive		絞り込みは母数の拡大とセットで入れる	Wiseman,M7	観測がWiseman M7の1件のみ	mid
+final-output-human-readable-report	archive		最終成果物は人が読める本文と機械別冊に分ける	Wiseman,M4,report.md	観測がWiseman M4の1件のみ	mid
+fix-cause-class-not-single-instance	active		症状を直したら同原因の別所を機械的に探す	TDLBGTDataConverter,TDLThemeDB,S3,S7	別プロジェクト2例で再現。固有名を消しても成立	high
+fix-one-then-measure-again-before-moving-on	archive		1箇所直したら計器を回し直してから次へ	Mnemo,Phase LOOP,reflection._is_dup,cowork_indexer	事例がMnemo Phase LOOPの1件のみでdraft	mid
+fix-the-deterministic-shape-with-a-script-before-adding-the-llm	archive		新機構は決定性の台本で形を固めてからLLMを入れる	LogicParser,harness-tool-20260905,deepseek	事例が同一プロジェクト(LogicParser)内でforming止まり	mid
+fix-the-metric-before-increasing-the-sample	active		何も言えないときはnを増やす前に指標定義を疑う	AgenticWorkspace,mu,M7,ard-skill-effect	別スプリント2例で再現。固有名を消しても成立	mid
+fix-the-reading-before-running-a-posthoc-analysis	archive		事後分析は結果を見る前に読み方の線引きを置く	LogicParser,l2-assemble-20260828	事例がLogicParserの1件のみでdraft	mid
+fixed-but-nothing-changed-suspect-stale-process	archive		直したのに変わらないときは稼働プロセスの起動時刻を見る	Get-CimInstance,port 8778,pythonw	常駐アプリ固有の技術手順。再現は同一アプリ内	mid
+flaky-first-suspect-the-implementation	active		flakyに見えたらまず実装欠陥を疑い率を測る	Mnemo,TestCallNameResolver,mtime	2例あり、師匠の揺れテスト方針とも整合。固有名を消しても成立	mid
+flip-doubtful-judgments-before-reporting	archive		疑わしい判定は反転して頑健性を計算してから報告	LogicParser,assembly-loop-v2-20260827	事例がLogicParserの1件のみでdraft	mid
+found-problems-are-not-left-alone	active		見つけた既存の問題は報告で止めず直すかを選択肢で返す	Mnemo,Phase DR,document_processor,to_thread	師匠の宣言原文あり(2026-08-27)。four-principlesとも整合	mid
+four-principles-of-focus	active		気づいた問題は無視せず、脱線せず、隠さない	Mnemo,STEP-MCP	師匠が示した4原則の原文あり(宣言の例外)	mid
+freeze-the-input-before-measuring-a-live-system	archive		稼働中の対象を測るなら入力をスナップショットで凍結	Mnemo,ChatlogLLMHumanRelation,VACUUM INTO,mnemo.db	SQLite手順に密着した計測の事例でdraft	mid
+frontend-localstorage-unified-persistence	archive		フロントUI状態をlocalStorageで統一永続化	Mnemo,mnemo_gui,index.html,R2	Mnemo GUI実装パターンで事例1件	mid
+full-suite-on-a-schedule-commits-run-a-curated-set	active		フルテストは定期実行、コミット前は厳選テスト	Mnemo,mnemo-regression,precommit-tests.md	師匠の宣言原文あり(2026-10-22)。four-principlesが全体規範として参照	mid
+gateway-may-signal-failure-in-band	archive		ゲートウェイは失敗をHTTP200の本文で返すことがある	ELLM,DX-AI,SSE,_parse_ellm_line	ELLM固有の技術観測で事例1件でdraft	mid
+generalization-is-not-removing-proper-nouns	archive		汎用化は固有名を消すことではなく規則の中身を問う	LogicParser,羅生門.md	事例がLogicParserの1件のみでdraft	mid
+git-add-fails-whole-on-a-moved-path-check-status-before-commit	active		commit直前にgit statusでステージ内容を確かめる	Mnemo,Phase BUGN,Phase TDG,git mv	別フェーズ2例で再現。固有名を消しても成立	mid
+git-bash-rewrites-slash-arguments-on-windows	archive		Git Bashは先頭スラッシュ引数をWindowsパスに書き換える	ERSearch,MSYS_NO_PATHCONV,probe.py	Windows/MSYS固有の技術観測でdraft	mid
+git-bash-tmpdir-is-unset-on-windows	archive		Git Bashでは$TMPDIRが未設定。明示パスで書く	Mnemo,Phase AF,TMPDIR	Windows/MSYS固有の技術観測で事例1件	mid
+git-history-anonymization-checklist	archive		git履歴を匿名化するときの手順チェックリスト	ellm-proxy,git filter-repo	一時的な手順で事例1件	mid
+give-a-speaker-a-read-path-to-its-own-state	archive		自分の状態を語る口にはその状態を読む道具を渡す	Mnemo,th_413,workflow_status,research_theme_start	事例がMnemoの1件のみでdraft	mid
+goal-invariance-is-not-goal-correctness	project	LogicParser	目的不変は洗練内の条件で目的の正しさではない	LogicParser,T2,Means(M,G)	洗練ハーネスの設計に密着。消すと成立しない	mid
+graph-scope-check-existing-grant-first	archive		Graph新機能はスコープ要求前に既存トークンのscpを見る	Microsoft Graph,AAD,MSAL,Chat.Read	Graph/AADの技術観測で事例1件	mid
+ground-the-task-by-measuring-first	active		着手前に測って現状に接地してから始める	TDLBGTDataConverter,S4	師匠の宣言原文あり(2026-08-21)。固有名を消しても成立	mid
+ground-truth-lives-in-the-users-own-aggregate	archive		正解はデータ利用者の集計物(ピボット等)に現れる	Excel,ピボットテーブル,年度	事例が1件のみでforming	mid
+grow-refusal-patterns-from-every-occurrence	project	ray	ELLMの断りは出るたびに型とプロンプトを記録する	ELLM,ray,fixes-hard-lp-20261018	ELLM断り検出の機構に密着。ray内の運用	mid
+guard-belongs-with-the-helper-not-the-call-site	archive		修復ヘルパーのガードは呼び出し点でなくヘルパーに置く	Mnemo,ellm-proxy,_repair_truncated_json	事例が1件のみでdraft	mid
+gui-file-input-uses-browser-never-path-paste	project	Mnemo	GUIのファイル指定はブラウザ導線。パス貼付は禁止	Mnemo,slide,WebView2,potx	師匠宣言の対象が明示的にMnemo全般	high
+gui-headless-screenshot-verification	archive		GUIの見た目はヘッドレスChromeで自分で撮って確かめる	Chrome,pywebview,virtual-time-budget,toDataURL	ヘッドレス撮影の技術手順でdraft	mid
+guidance-at-the-wrong-path-entrance	archive		案内は間違った道の入り口に置く	Mnemo,copy_file,read_text_file,a2a3e	事例がMnemoの1件のみでdraft	mid
+hand-a-rework-to-a-new-body-not-the-same-one	archive		差し戻しは新しいサブエージェントに継ぐ	Mnemo,Phase SIL,SendMessage,maxTurns,audit_agent_compliance.py	事例が1件のみ。オーケストレーション手順に寄る	mid
+harness-exit-code-must-reflect-failure	active		ハーネスの終了コードは合否を表すか先に確かめる	rex,testfield,Mnemo,Phase TRS-11	複数回観測(4回目)で別プロジェクトにまたがる。固有名を消しても成立	mid
+headless-sse-blocks-screenshot	archive		無限SSEでheadless撮影がハングするので204で返す	Mnemo,Phase CTS,/events/stream,EventSource	ブラウザ挙動の技術観測で事例1件	high
+health-check-long-running-subagents-every-10-minutes	active		走るサブエージェントは10分ごとに点検し長時間はハング疑い	Lucianke,m1-impl-20261029,CronCreate,TaskStop	師匠の宣言原文あり(2026-10-31)。管理強化の追加宣言もある	mid
+heredoc-eats-backslashes-in-test-fixtures	active		バックスラッシュ等を含む書き込みはheredocでなくWriteで	LogicParser,Mnemo,Phase DR,Phase KATA	通算12回超、3プロジェクトで再現。固有名を消しても成立	mid
+hide-tool-mechanics-surface-results-as-response	project	Mnemo	ツールの仕組みは隠し結果を応答として見せる	Mnemo,GUI	師匠宣言はMnemo GUI改善の文脈で事例1件	low
+hold-and-wait-belong-in-different-boxes	active		保留と待ちを別の箱に分けて着手可能を埋もれさせない	Mnemo,Phase OBS,Phase HOLD	師匠宣言が2日付(08-21,08-30)で別機会に再現	mid
+honesty-discount-in-blind-evaluation	archive		正直な限界表示はブラインド比較で割引かれる	Wiseman,M4,M4.2	観測がWisemanに限られforming	mid
+hover-ui-needs-reachability-designed	archive		ホバーUIは見えるかでなく届くかを設計する	Mnemo,Phase GX,GX-6,GX-7	Mnemo GUIの1機能の事例で復元再構成	mid
+human-readable-granularity	active		スコア・分類・命名は人が読める粒度を優先する	SubAgents,search-poc,Literal	師匠の宣言原文あり(2026-05-21)。固有名を消しても成立	mid
+hypothesis-from-in-document-vocabulary-first	project	LogicParser	仮説は文中の語彙で立て、立たなければ暗黙知を疑う	LogicParser,enthymeme,トリプレット	LogicParserの仮説形成機構に密着	mid
+identity-match-by-characters-not-similarity	active		固有名の同一性は類似度でなく機械マッチで決める	Mnemo,Phase PRS,Phase CUR	師匠の宣言原文あり(2026-08-18)。固有名を消しても成立	mid
+implement-fully-then-measure-without-acting	active		機能は全部実装し効かせず影で判断を記録して測る	Mnemo,Phase SIL,silence-active-check	師匠の宣言原文あり(2026-09-22)。固有名を消しても成立	mid
+impossible-overlap-is-the-control	archive		起こりえない重なりを対照に置いて計器を疑う	Mnemo,Phase SA,recall_history,talk-shape-1	事例がMnemoの1件のみ	mid
+inbox-files-always-commit	active		師匠のinboxファイルは文脈と無関係でも常にコミットする	IDEAS.md	師匠の明示宣言に基づく作法(宣言の例外)。事例は1件	low
+independent-mcp-service-5-file-pattern	archive		独立MCPサービスは5ファイル構成で揃える	Mnemo,MSTenantMCP,FastMCP,mnemo_recall	コードのひな形で技術知見。普遍原則ではない	mid
+inject-multiline-code-from-a-file-not-a-nested-heredoc	archive		多行コード注入は別ファイルから読み、埋め込まない	Mnemo,stage5_report.py,compileall	事例が1件（stage5_report.py破損）で宣言の例外にも当たらない	mid
+input-format-is-the-producers-responsibility	archive		入力の形式違反は変換側で埋めず弾く	TDLBGTDataConverter,Excel,T-6	事例1件（T-6）で、全プロジェクト規範としての宣言文言も無い	mid
+inspect-every-output-to-set-quality-criteria	active		生成物の採否基準は実物を1件ずつ見て決める	Wiseman M8,TDLThemeDB S3	Wiseman図とTDLThemeDB変換処理の2文脈で再現、固有名を消しても成立	mid
+inspection-turning-into-implementation-is-the-agreement-point	archive		点検が実装に変わる瞬間が合意ドキュメントの起点	Mnemo,Phase OBS,CUR-6d	事例1件・forming・師匠の言葉も「かもしれない」止まり	high
+integration-sprint-runtime-deps-agenda	active		統合スプリントは実行時依存を協議の論点に立てる	A2A-3a,A2A-3d,wiseman,Mnemo,LLM	A2A-3aと3dの別スプリントで2回再現、固有名を消しても成立	mid
+intervening-must-not-race-the-auto-recovery	archive		介入実験の前に自動回復の仕組みとの競合を見る	Mnemo,recall,supervisor,watchdog,Whisper	事例1件（recall二重起動）・draft	high
+inventory-owned-assets-before-requesting	archive		要求しに行く前に手持ちの資産を棚卸しする	MSTenantMCP S8,Chat.Read,Teams,Graph	事例は実質1件（S8のスコープ要求）で宣言の例外にも当たらない	mid
+inventory-rules-before-designing-a-platform	archive		土台設計の前に決まりの目録と対応表を作る	Mnemo,companion-sdk,COMPANION_DESIGN_GUIDE.md	事例1件（companion-sdk）。全プロジェクト規範としての宣言は無い	mid
+isolate-component-before-integration-debug	archive		統合の失敗は各部品を単独で叩いて層を特定する	ELLM,AInote,test_ellm_routing.py	事例1件（ELLMタイムアウト）	high
+iterate-small-improvements-light-commit-each	archive		小改善を積む局面は1件ずつ軽く回し毎回コミット	Mnemo,Phase PAD3,mnemo-pad	当該局面限定の師匠宣言（Phase PAD3）で全体規範の文言が無い	mid
+journal-times-come-from-the-clock	active		記録の時刻は書く直前に時計から取る	Mnemo Phase SA,ray,date	Mnemo Phase SAとrayの2文脈で再現、固有名を消しても成立	high
+journal-timestamps-come-from-the-clock	archive		記録の日時はdateかgit時刻から写す	mnemo-slide-sources-20261003,CorrectionRecord	事例1件。同原則は journal-times-come-from-the-clock が2例で保持	mid
+json-contract-method-vs-plaintext-intent	archive		JSON契約のメソッドにプレーンテキスト要求を流用しない	Mnemo,mnemo-pad,describe_image,ELLM,Gemini	事例1件の技術観測（OCR不具合）	high
+judge-generated-test-failures-against-independent-implementations	project	ray	生成テストの失敗を独立実装に当てて欠陥と誤読を分ける	ray,R3,loop4,mu,csvsum,AID,CodeT	rayの検査機構（代替実装を機械が当てる）に密着、別文脈の再現は無い	mid
+judge-tool-calls-by-record-not-by-reply	archive		ツール呼出は発話でなく実行記録で判定する	Mnemo,turns.tool_calls,mnemo-self-correction-mark	事例1件・draft	high
+judgments-are-distributions	archive		較正済みLLM判定も主流読みと少数読みの分布	LogicParser,validity-acceptance,COVER	単一プロジェクトの実測・draft	mid
+keep-core-docs-in-sync	active		進捗・構造・READMEの中核文書は実装と同期する	LONGTERM_TODO,PROJECT_STRUCTURE,README	師匠の明示指示（常に更新）で汎用の作法、固有名を消しても成立	mid
+keep-information-dont-prune-clues	active		情報は捨てず、非形式データは手がかりを残す	TDLThemeDB S1,S2	師匠の宣言で、オントロジー・一覧ページの2場面で再現、汎用原則	mid
+keep-only-the-detection-patterns-the-records-need	archive		文面検出の型は記録を拾える最小の組に絞る	ray,D44,rayagent/refusal.py	事例1件（ray D44）	high
+keep-thinking-observe-hypothesize-verify-loop	active		観測・仮説・検証の輪を回し続け判断待ちを作らない	agent_mutex.py	師匠が全プロジェクト向けに宣言した規範（2026-10-27）	mid
+keep-two-machines-synced-through-git	archive		pushは分岐解決まで完遂し2台を同期に保つ	Mnemo Phase RC7,git pull --rebase	適用範囲が「このプロジェクト」限定の宣言。全体の同期方針は CLAUDE.md に既存	mid
+kill-hypotheses-in-the-field-first	archive		外部要因の対策提案前に仮説を実地で潰す	wiseman M7,CrossRef,J-STAGE,403	事例1件（M7の403調査）	high
+label-only-what-a-line-judged	active		成立・崩れた等の札は事前の線が判定したものだけに付ける	ray loop1,loop2	rayのループ1と2で再現、固有名を消しても成立	mid
+layer-by-layer-completion	archive		層状設計は内側から一層ずつ完成させる	one-file-per-layer	当該進め方に限る師匠宣言で、再現事例が本文に無い	mid
+leading-means-fixing-the-substrate-not-writing-it-yourself	archive		リードは代筆でなく母体の穴を塞ぎ見届けること	Mnemo,Phase KATA S2,infogather	事例1件（KATA S2）	mid
+learn-layout-plans-not-surface-from-a-reference-deck	archive		手本から学ぶのは意匠でなく情報から型への対応	Copilot,Mnemo,slide-figures-gestalt-20261019	事例1件（スライド手本の分解）	mid
+learning-promotion-is-fully-automatic-human-supervises-after	active		育てるskillの昇格は全自動で人は事後に監督	Mnemo,ray,SKILL_CULTIVATION_SPEC.md	Mnemoとrayの2文脈で師匠が同方針を宣言、固有名を消しても成立	mid
+lenient-entry-needs-a-structural-firewall	archive		緩い入口は下流へ流れない経路を構造で断つ	AgenticWorkspace,DEC,較正ログ	事例1件・draft	high
+library-test-isolation-does-not-cover-the-consumer	archive		ライブラリのテスト隔離は利用側に効かない	Mnemo,LLMProviderlib,ellm_models.json	事例1件（refresh_models上書き）	high
+lifecycle-features-as-hook-plugins	archive		ライフサイクル新機能はフックプラグインで足す	on_before_*,on_after_*	対象プロジェクトが本文に無い機構の記述。事例も不明・forming	low
+live-service-smoke-validation	archive		mockの後に実機接続のsmoke testを必ず行う	llmproviderlib m6c-1,ELLM,AWS Lambda	事例1件（m6c-1）・forming	mid
+live-verification-is-self-driven-except-the-gui	active		実機確認はGUIも含め全て自走し人待ちを作らない	Mnemo,Phase KATA S1,CDP	師匠の宣言が2026-09-13と10-27の2時点で再現、全体規範	high
+llm-capability-two-outlets	archive		LLMへ能力を渡す経路と見せる経路は別	tools=,システムプロンプト	事例1件（条件付き注入）	mid
+llm-generation-wobbles-judgment-holds	archive		LLMは生成が揺れ、小単位の判定は保つ	LogicParser,L2,equivalence-judgment	単一プロジェクトの実測・draft	mid
+llm-judge-output-distribution-watch	archive		LLM判定は出力分布をrun間で監視する	wiseman M3,ArchitectGOT,dead metric	事例1件（M3）・forming	mid
+llm-judgment-tuned-by-vocabulary	archive		LLM判定はプロンプトの一語で偏る		事例2件だが同一系統の観測で、draftのまま	mid
+llm-no-tool-calls	archive		制御フロー判断にLLMのツールコールを使わない	SubAgents PoC,ReAct	SubAgents PoC設計時の宣言で、他文脈の再現は無く実運用の実態と食い違う	low
+llm-not-for-format-discipline	active		構造保証はPython、LLMは意味解釈に専念	CSVProcessor,M7,Phase FIG	M7と別ドメインPhase FIGで成立を確認、師匠承認	mid
+llm-not-for-repetitive-exact-work	active		単純で正確な反復はLLMに向かず算術はデータ側	TDLThemeDB,th_140,Mnemo	TDLThemeDB実測とMnemo振り返りでの師匠宣言、汎用原則	mid
+llm-one-by-one-evaluation	archive		LLMの評価系タスクは1件ずつ実行する	SubAgents,search.md,build_report.md	SubAgents仕様策定時の宣言のみ、他文脈の再現が無い	mid
+llm-output-stochasticity	archive		LLM出力のブレを最初から織り込んだ測定にする	L0課題	事例1件（L0課題の厳密一致設計）	mid
+llm-sits-in-front-of-your-tool	archive		ツール前段にLLMがいるので説明文が実質の制御点	MCP,haconiwa,TDLThemeDB	事例1件（MCP評価セット）。全体規範の宣言文言は無い	mid
+llm-verbatim-quote-needs-mechanical-verification	archive		LLMの逐語引用は機械照合で弾く	Wiseman M2,ground.score,opus-4.6	事例1件（Wiseman M2の実測）	mid
+log-propagation-ignores-ancestor-logger-levels	archive		ログ伝播は祖先ロガーのレベルを見ない	Python logging,Mnemo,vendor	Python loggingの技術観測	high
+long-run-preflight-checks	active		長時間実行の前に外部依存のpreflightを行う	Wiseman M3,M4,Ollama,/api/tags	Wiseman M3の失敗とM4の実検知2回で再現、固有名を消しても成立	mid
+longitudinal-real-task-probe-per-milestone	archive		同じ実タスクを毎マイルストーン走らせ変化を見る	AgenticWorkspace M2/M3,mu	宣言は単一プロジェクトの振り返りで、別文脈の再現が本文に無い	mid
+look-at-stored-data-before-fixing-the-view	archive		表示の異常は表示層の前に保存実体を見る		事例1件・draft	high
+machine-measurable-goes-to-tool	archive		機械が測れることは道具、意味の判断はスキルへ	Phase FIG,make-figure,tools/figure	事例1件（Phase FIG）。同原理は llm-not-for-format-discipline が保持	mid
+map-your-design-onto-the-substrate-before-building	archive		基盤に載せる設計は機構と1件ずつ照合して確定	AgenticWorkspace,mu,MAP	事例1件・draft	high
+match-across-stream-chunks-not-within-one	archive		ストリームの文字列照合はチャンクを跨いで行う	Mnemo,LLMProviderlib,ELLM,parse_sse_line	事例1件の技術観測（哨兵除去）	mid
+match-fix-lifetime-to-cause-lifetime	archive		対策の寿命を原因の寿命に合わせる	Mnemo,chat-failure-triage-20260729,Ollama	事例1件（chat-failure-triage）	mid
+mcp-file-write-sandbox	archive		MCPのファイル書き込みはサンドボックスと名前除去	MSTenantMCP M5,sharepoint_download_file	事例1件・forming	high
+mcp-server-holds-no-intelligence	archive		MCPサーバにインテリジェンスを置かない	TDLThemeDB S1,tdltheme_aggregate,MCP	事例1件（S1協議）。TDLThemeDBは対象ディレクトリ不在	mid
+mcp-tool-names-must-be-prefixed	project	Mnemo	MCPツール名は接頭辞必須でLLM想起性を優先	Mnemo,conversation.py,find_server_for_tool,MSTenantMCP	Mnemoのフラット名前空間と名前解決の機構に密着	mid
+measure-from-multiple-angles-until-the-logic-is-known	active		機構が予測する数字が合うまで角度を変えて実測する	LogicParser	師匠の方針文言あり。段ごとに別角度の実測で再現し、固有名を消しても成立	mid
+measure-library-coverage-before-estimating	archive		依存ライブラリの担当範囲を読んでから見積もる	Mnemo,OAuth,MCP SDK	事例が MO2 の1件のみ（draft）	mid
+measure-spec-completeness-with-a-fresh-builder	active		仕様の完成度は意図を知らない新規構築者で測る	Mnemo,オセロ,check	仕様とガイドの2文脈で再現し、固有名を消しても成立	mid
+measure-the-difference-in-both-directions	archive		比較は欠格だけでなく固有側の差も数える	ChatlogLLMHumanRelation,Mnemo,ChatGPT	事例が1件のみ（draft）	mid
+measure-within-condition-variance-before-comparing-conditions	active		条件間の差の前に条件内のばらつきを測る	AgenticWorkspace,mu	M6 と M9 の2観測で再現し、固有名を消しても成立	high
+measurement-overrides-the-plan-you-wrote	archive		前段の実測が計画を否定したら計画を直す	AgenticWorkspace	事例が M5 の1件のみ（draft）	mid
+measuring-unit-must-match-the-phenomenon-not-the-record	active		測る単位は記録の単位でなく現象の単位に合わせる	Mnemo	1日に別作業で3回再現し、固有名を消しても成立	high
+mechanical-rule-needs-a-negative-control	active		機械判定の規則は無関係データの対照を先に回す	LogicParser	別実験と較正で再現し、固有名を消しても成立	high
+merge-carries-only-the-losers-unique-insight	archive		統合では負け側の独自の勘所だけ運ぶ	Mnemo,smart-search,pad-daily-summary	事例が同一スプリント内のみで他文脈の再現なし	mid
+merge-conflict-two-layer-triage	active		衝突は包含関係を測り意味的収束と機械処理に仕分ける	ellm-proxy,rex,Mnemo,git cherry	3プロジェクトで独立に再現し、固有名を消しても成立	high
+metered-dependency-breaks-multi-run-measurement	archive		枠付き外部依存は1本目が2本目の条件を壊す	Wiseman,OpenAlex	事例が同一スプリントの連日分のみ	mid
+metric-definition-hardens-through-first-use	active		計測定義は初回実測で磨かれる前提で運用する	Wiseman,TDLThemeDB,LogicParser,Mnemo	複数プロジェクトの6例超で再現	high
+migration-inherits-untested-path-bugs	active		移植は元コードの未テスト経路バグも引き継ぐ	MSTenantMCP,Mnemo,Graph,X-Page	MSTenantMCP と Mnemo の複数事例で再現	high
+migration-needs-spot-check	active		移行には新旧比較のスポットチェックを同時に作る	Mnemo,LLMProviderlib,fastembed,r4_spot_check.py	R4 と LPL の別スプリントで再現。師匠の受入基準文言あり	mid
+minimal-io-roundtrip-first	active		処理系の検証は入力を読んで書く最小往復から		師匠の明示宣言あり。固有名なしで成立（事例は1件）	mid
+ml-native-resource-singleton	active		ネイティブ拡張を含むMLモデルはプロセス内で1つ	AIDocument,AINotebook,SentenceTransformer,fugashi,ONNX Runtime	別プロジェクト2件で再現し、固有名を消しても成立	mid
+mode-mcp-optin-dependency-rules	project	Mnemo	MCP有効とopt-inの2層でツール公開を決める	Mnemo,Cowork,ModeSelection,_BASE_MODE_TOOLS	Mnemo のモード・opt-in 機構に密着	high
+move-runtime-only-errors-into-the-save-time-check	archive		実行時にしか出ない誤りは保存時検査へ前倒しする	Mnemo,KATA,PromptNode,validate	事例が同日の1スプリント内のみ	mid
+msal-device-code-default	archive		MSALの一次提供Client IDはdevice codeを既定にする	MSTenantMCP,MSAL,AADSTS50011	MSTenantMCP M3 の技術的観測1件	mid
+mtime-cache-needs-a-settle-window	active		mtimeを鍵にするなら落ち着く猶予を置く	Mnemo,Windows,NTFS,SharePoint	キャッシュと同期検知の2文脈で再現し、固有名を消しても成立	mid
+mu-applies-acceptance-checks-per-unit	project	mu	muの必須検査は作業単位ごとに当たる	mu,required_checks,AgenticWorkspace,ray,gemma	mu の required_checks 機構に密着	high
+multi-env-migration-completeness	archive		移行の完了は全環境へのデータ適用まで含める	Mnemo,Phase 12 G1,LONGTERM_TODO	事例が Mnemo の1件のみ（forming）	mid
+mutation-restore-needs-bytecode-invalidation	archive		書き換えて戻す道具はバイトコードキャッシュを消す	AgenticWorkspace,Python,pytest,.pyc	Python 固有の技術観測で事例1件	high
+narrow-a-rewriter-to-the-forms-the-records-show	active		機械的な読み替えは記録に出た形だけに絞る	ray,Mnemo,PowerShell,deny_read.py	ray と Mnemo の2文脈で再現。師匠承認あり	mid
+neutralize-code-lines-with-pass-not-comment	archive		インデント行の無効化はコメント化でなくpass置換	Python,IndentationError	ベンダリング時の技術的観測1件	high
+never-ask-the-user-to-hand-edit-the-memory-store	project	Mnemo	記憶実体をユーザーに手で触らせる手順を書かない	Mnemo,base_dir,KATA,workflow_save	Mnemo の base_dir・KATA 機構に密着	mid
+never-pass-document-text-through-shell-quotes	archive		任意テキストをシェル引数の文字列連結で渡さない	ray-manager.exe,PowerShell	draft・事例1件・仮説段階	mid
+new-engine-configurable-with-fallback	archive		新エンジンは置換でなく設定切替＋フォールバックで足す	AINotebook,NDLOCR-Lite,Windows OCR	事例が AINotebook の1件のみ	mid
+new-feature-tests-verified-by-mutation	active		新機能のテストは変異試験で検出力を実測する	Mnemo,LogicParser,ray,Phase GL,Phase NV,Phase MO	複数プロジェクト・複数スプリントで再現	high
+new-python-env-is-dotvenv	active		Pythonの新規仮想環境名は必ず.venv	Mnemo,venv,uv	師匠の明示宣言。Mnemo 例外を除いても成立	mid
+nextjs-screen-api-from-rsc-module-chunks	archive		Next.js画面のAPIはRSCのモジュールチャンクから辿る	MSTenantMCP,Next.js,RSC,ERSearch,STEP	特定サイト向けの技術手順で事例1件	mid
+no-deferred-doubts	active		疑問は先送りせず、その場で生データまで追及する	observation-scope-by-sufficiency	師匠の宣言文（ペア作業の認知特性）が全プロジェクトに効く	mid
+no-editable-reinstall-while-app-running	archive		稼働中のアプリにpip install -eを実行しない	pip,Windows	draft・観測1件・環境依存の技術観測	high
+no-exception-rules-to-justify-existing-code	active		決まりは既存を作り直して合わせ、例外で既存を是としない	Mnemo,legacy,ARCHITECTURE.md	師匠の明示宣言あり。固有名を消しても成立	mid
+no-guesswork-debugging	active		推測デバッグ禁止、修正前に実測ログの証拠	TDLBGTDataConverter	師匠の鉄則宣言。複数事例で再現	high
+no-physical-delete-use-logical-invalidation	archive		変遷に価値のあるデータは論理無効化する	supersession,active_*()	再現事例が本文になく適用文脈が単一	low
+no-privacy-data-in-pushed-artifacts	active		pushする成果物に個人・組織・会話内容を含めない	Mnemo,Phase PRS,ellm-proxy,TT4	師匠の宣言。再発4回と複数プロジェクトで再現	high
+notify-only-after-there-is-something-to-talk-about	project	Mnemo	能動通知は会話の材料ができてから出す	Mnemo,th_413,catch_up	Mnemo の能動通知・研究スレッド機構に密着	high
+observability-at-composition-seams	archive		観測は層に埋めずDI合成点で外から包む	per-layer-touchable-cli	再現事例が本文になく、層設計に依存	low
+observation-analysis-must-trace-its-observation-time	project	ELLM分析	観測に基づく分析は観測回までたどれるようにする	ELLM分析,ellm-proxy,HAR	師匠宣言はこの分析プロジェクト向けで事例1件	mid
+observation-scope-by-sufficiency	archive		観察フェーズは情報を減らさず最大範囲で走る	llm-output-stochasticity	宣言文言も再現事例も本文になく判断材料不足	low
+offer-choices-down-to-the-operation-not-just-the-route	active		選択肢は経路で止めず操作と帰結まで降ろす	Mnemo,Phase AF,Phase SEI	2回の独立観測で再現し、固有名を消しても成立	high
+ollama-compat-proxy-hint-based-structured-output	project	ellm-proxy	Ollama互換プロキシの構造化出力は3点セットで対処	Ollama,localhost:11434,Wiseman,Pydantic	Ollama 互換プロキシ（ellm-proxy）の挙動に密着	mid
+ollama-port-on-this-pc-may-be-ellm-proxy	project	ellm-proxy	11434番はellm-proxyの可能性、名簿でモデルを確認	ellm-proxy,Ollama,AgenticWorkspace,FALLBACK_MODEL	ellm-proxy の仕様と会社PCに密着	high
+one-entrance-for-many-artifacts	archive		検討材料が増えたら入口を1つ作る	Phase FIG	draft・事例が Phase FIG の1件のみ	mid
+one-file-per-layer	project	ray	層状設計では1層1ファイルに収める	l0.py,l1.py,l2.py	師匠宣言は「このプロジェクト」の層構造向け（ray と推定）	low
+one-users-quirk-does-not-go-in-the-shared-module	archive		1利用者だけの事情を共有モジュールに置かない	Mnemo,LLMProviderlib,ELLM,_call_name.py	事例が LPL の1件のみ	mid
+open-referenced-assets-before-freezing	archive		凍結前に参照資産の現物を開いて確認する	LogicParser,G2	draft・事例1件	mid
+open-the-raw-record-before-reporting-zero	active		0件を報告する前に一次レコードを開く	Mnemo,Phase OBS,AgenticWorkspace	複数日・複数プロジェクトで再現	high
+optimistic-check-by-content-version-when-humans-edit-the-file	archive		人も編集するファイルの楽観ロックは中身のハッシュで	Mnemo,Phase TDG,mnemo-todo	事例が Mnemo の1件のみ	mid
+option-presentation-protocol	active		協議の選択肢はトレードオフ付きで提示する	AskUserQuestion,Mnemo,LLMWorkflow,AgenticWorkspace,TDLBGTDataConverter	複数プロジェクト・複数スプリントで再現	high
+outward-send-stays-human	active		外向きの送信・投稿は最終承認を人が行う	MSTenantMCP,Mnemo,Teams,SharePoint,MCP elicitation	師匠の明示判断が複数回。固有ツールを除いても原則成立	mid
+own-inference-is-not-measured-fact	active		自分の推論を測る前に成果物へ事実として書かない	Mnemo,LogicParser,Phase KATA,Phase SSC	複数スプリント・複数プロジェクトで再現	high
+pair-skills-are-claude-codes-an-agent-keeps-its-own	active		ペア固有skillはClaude Code用、作るエージェントは自前を持つ	ray,~/.claude/pair-agent/skills	師匠の明示宣言。事例1件だが宣言の例外に該当	mid
+parallel-builders-share-the-worktree	active		並行の構築者は作業ツリーと index を共有する	Mnemo,Phase SA,cowork-defects,cowork-sharepoint,git stash	3スプリントで偽の赤・同乗コミットが再現。git一般の原則	mid
+parallel-explore-for-impact-survey	archive		影響調査は出力形式を指定し並列に探索する	Mnemo,R0,Explore agent	R0の1件のみで再現確認なし。テンプレ的手順	mid
+parallel-fixers-run-targeted-tests-parent-runs-one-full-suite	archive		並行の直す役は関連試験、全体試験は親が1回	Lucianke,m1-impl-20261029,BUG-0072,BUG-0106,git worktree	単一スプリント内の観測。別文脈での再現が本文にない	mid
+parallel-llm-retry	archive		並列LLM呼び出しは確率的に失敗する。再試行で救う	SubAgents,mixture_of_agents,asyncio.gather,profile_event	プロバイダ挙動の技術観測で単発。表はSubAgents固有	mid
+parameterize-auth-to-reuse	project	MSTenantMCP	同種認証は2つ目で引数化して流用する	MSTenantMCP,GraphAuth,MSAL,make_sharepoint_auth	GraphAuth/MSALの実装に密着。M3,M5の例のみ	mid
+parent-commits-acceptance-files	project	PairAgenticClaude	受入検査ファイルは親がコミットし同期担当に任せない	Mnemo,同期担当,.pair-agent/acceptance,deny-map,mcp-busy-server-20260917	ペアエージェントの役割遮断機構に密着。消すと成立しない	mid
+per-call-mock-responses-for-retry-tests	archive		再試行試験は呼び出し毎に別応答を返すモックで	test-helper-name-conflict-guard	テスト技法の観測で再現例が本文にない	mid
+per-layer-touchable-cli	archive		各層に触れる最小CLIを層の完成と同時に出す	l0_chat.py,l1_chat.py	師匠宣言はあるが特定の層構成の話。横断宣言の文言なし	low
+persisted-data-carries-a-version	active		永続データには形式の版と前提を持たせる	Mnemo,mnemo.db,SCHEMA_VERSION,index.json,Cowork	師匠の明示宣言で原則は普遍。事例は1件のため中	mid
+persistent-shell-driving-needs-sync-formatting	archive		常駐シェル駆動は出力を同期文字列化する	PowerShell,Out-Default,Out-String	PowerShell挙動の技術観測。単発	mid
+phase-names-accept-ai-proposal-without-confirmation	project	Mnemo	フェーズ名はAI提案を採り確認しない	Mnemo,LONGTERM_TODO,LONGTERM_HISTORY,Phase THR,Phase STUP,Phase MCPB	Mnemoの帳簿とPhase名に密着した師匠宣言	mid
+pilot-new-judgments-before-freezing	archive		新設の判定は凍結前に10判定程度で試走する	LogicParser,G5,G6,COVER	LogicParser1スプリントの事例のみ。draft	mid
+place-the-gate-before-the-expensive-step	archive		関門は高い処理を払う前に置く。通らない経路も数える	Mnemo,Phase EH,EventRouter.route,listener,recall,camera	occurrences 1の単発事例	high
+plan-understood-means-go	archive		詳細プラン後のゴーサインは再確認せず即実装	AskUserQuestion,M4,vision-auth-throughput-optimization	M4の1件のみで師匠も誤操作と明言	mid
+plausibility-is-the-llms-judgment-on-a-presented-relation	project	LogicParser	確からしさは提示した関係へのLLM判断	LogicParser,refinement-harness-20260904,JSON	論理構造から関係を切り出す道具の設計に密着	mid
+poc-arms-do-not-share-resources	active		比べる腕どうしで資源を共有しない	ray,loop2-pieces-20261011,P5,W2,AppContainer,venv	ray2スプリントで再現。腕ごとの資源分離は普遍	mid
+poc-confirms-key-design-hypotheses	active		PoCは設計の鍵の仮説を確かめるもの。MVPと別	ray,PoC-1b,MVP	師匠のPoC定義の明示宣言。事例は1件のため中	mid
+poc-is-done-when-reflected-into-the-design	active		PoCは設計に反映されれば閉じてよい	ray,PoC-1,ARCHITECTURE,poc-keep-differentiators	師匠のPoC運用の宣言。一部はAI解釈で事例1件のため中	mid
+poc-keep-differentiators	archive		PoCでも差異化の中核機構は削らない	SubAgents,search,2段階スコアリング	SubAgents1件の訂正のみで横断宣言の文言なし	low
+policy-as-parameter	archive		方針リストはハードコードせず引数で渡す	SubAgents,Fetch,reject list,ResearchGate	SubAgents Fetchの1件の訂正のみ。再現が本文にない	low
+port-with-copy-then-edit	active		移植はコピーして部分編集し手書きしない	Mnemo,R3.1,R3.2,MSTenantMCP,S1,Copy-Item	Mnemoと別プロジェクトの3例で再現。手順は普遍	mid
+powerpoint-slide-export-efail-fallback	archive		スライド単位のE_FAILは一括Exportで回避	PowerPoint COM,TDLBGTDataConverter,export_thumbnails.ps1	COM挙動の技術観測。draftで単発	high
+powershell-native-exe-continue-on-stderr	archive		native exeを呼ぶps1はContinueにし成否を出力で判定	PowerShell 5.1,PyInstaller,MSTenantMCP,S7,build.ps1	PS5.1挙動の技術観測で単発	mid
+powershell-utf8-bom-required	archive		PS5.1スクリプトはBOM付きUTF-8で書く(置換済み)	PowerShell 5.1,windows-script-ascii-only,Mnemo,R3.3	別スキルに置換済み。技術観測	high
+powershell51-strips-double-quotes-in-native-args	archive		PS5.1はnative引数のダブルクォートを落とす	PowerShell 5.1,MSTenantMCP,S11,python.exe	PS5.1挙動の技術観測。draftで単発	high
+pre-draft-final-check	archive		起草直前に追加要求の有無を1回確認する	ainotebook,AR-1,Q1〜Q9,AIDocument,Mnemo recall	ainotebookの1件のみ。現行の運転方針とも緊張	mid
+pre-registration-evaluation	active		評価基準は実装前に凍結し結果で動かさない	Wiseman,M1,M2,M4,ArchitectGOT,pre-registration	Wisemanの複数マイルストーンとArchitectGOTの教訓で再現	mid
+prefer-defaults-and-self-drive	active		既定値を採用し自走する。確認の連続を止める	LLMWorkflow,M3,Mnemo,RC5,NPU,Recommended	LLMWorkflowとMnemoで再現。運転方針とも整合	high
+prefer-edit-file-over-write-file	active		既存ファイルは部分置換、全文上書きは新規のみ	edit_file,write_file,Mnemo,Phase SKN,filesystem MCP	師匠の明示宣言。上書き全壊の保険は普遍。事例1件	mid
+prefer-harmonious-prompts-over-coercion	active		プロンプトは強制でなく理由と望ましい道で書く	ray,ellm-proxy,ELLM,system_prompt,harness.py,SKILL	師匠が全プロンプト・SKILLの指針として宣言	mid
+prefill-type-defaults-on-add	archive		GUI要素の追加時は型別の既定値を埋める	LLMNode,CSVProcessorNode,class_type,βテスト	GUI1件の観測。forming	mid
+preparation-sprint-frames-only	archive		準備スプリントは合意の枠だけ起草する	Mnemo,R0,agreement	R0の1件のみ。forming	high
+primary-sources-require-pdf-ingestion	archive		一次資料優先の実装はPDF取り込みが前提	Wiseman,M4.2,E7,pdfminer.six,RAG	Wiseman1件の技術観測。昇格条件が未達	mid
+print-debug-bisection-for-init-hang	archive		初期化ハングはstderrのprintで二分して特定する	rex,sys.stdin.read,[BOOT]	rex1件の手順。draft	high
+probe-a-model-with-questions-from-many-angles	project	AIdedArchitecture	モデルは多角的な問いで試し欠陥を見つける	AIdedArchitecture,S2,MAIA,aided-probe,MCP,DOGFOOD	AIdedのモデル・MCP・DOGFOOD記録に密着	mid
+probe-external-behavior-before-design	active		外部の実挙動は設計の前にプローブで測る	MSTenantMCP,S8,python -u,inventory-owned-assets-before-requesting	2026-07-29とS8の2文脈で再現。プロジェクト横断の原則	mid
+process-as-skills-with-scripts	active		プロセスはスキルで渡し決定性処理はスクリプト化	AgenticWorkspace,ray,mu,.mk,rung1-correct-and-self-repair-20261009	師匠の宣言。AgenticWorkspaceとrayの2文脈	mid
+process-commit-after-work	active		作業が済んだら確認なしでコミットし同期する	git commit,git push	師匠の明示的プロセス宣言。全プロジェクトに効く	mid
+process-git-autonomous	active		gitの通常操作は確認も事前告知もなしで進める	git,force push,reset --hard	師匠の明示的な委譲宣言。破壊的操作は例外	mid
+process-tdd	active		実装後は必ず動作確認し基本はTDD	TDD	師匠の明示的プロセス宣言。全プロジェクトに効く	mid
+product-framing-as-feature-filter	archive		中心メタファーとNG語を決め機能追加の判定軸にする	NGワード	実例1件のみ。プロジェクト名も本文にない	mid
+production-availability-is-stated-explicitly	project	Mnemo	実運用のMnemo本体はAIが管理し状態を明示する	Mnemo,deny_production.py,~/.mnemo,8765,lpl-m19-follow-20261022	Mnemo本体のポート・保存先・起動に密着	high
+prompt-constraint-suppresses-neighbors	archive		禁止指示は隣接する許可対象まで抑圧する。両方向を測る	LogicParser,llm-refine-signal-quality-20260825	LogicParser1スプリントの事例。forming	mid
+proposal-with-recommendation-and-options	active		協議は推奨案と論点リストで短文返答できる形に	llmproviderlib,m6a〜m7,Mnemo,RC5,RC7,CalVer	複数スプリント・複数プロジェクトで繰り返し再現	high
+propose-change-order-in-continuation-sprint	archive		継続スプリントでは変更順序の提案を能動的に出す	Mnemo,R5,release-fix-sprint-continues-until-stop	Mnemo R5の1件のみ。師匠の改善希望で宣言ではない	mid
+propose-sprint-boundary-wedge	active		スプリント境界を超えると分かった時点で区切りを提案	InfoGather,sprint-002	師匠の明示宣言。スプリント運用の普遍原則。事例1件	mid
+publish-after-registration	archive		別スレッドの仕事は登録してから知らせる	ray,btw-async-20261028,self.jobs,btw.py,threading.Event	ray1件の並行処理の観測。forming	mid
+pull-with-large-uncommitted-changes	archive		大規模な未コミットがあるpullはstash→pull→pop	v0.9.7,git stash,AskUserQuestion,git-fetch-only	2026-05-28の1件のみ。手順で一時的	high
+purpose-built-judgment-over-repurposed-one	active		LLM判定は目的に合わせて作り汎用判定を流用しない	LogicParser,COVER,measurement-layer-fix-20260826,driver-expansion	LogicParserの複数スプリントで4例再現。原則は普遍	mid
+purpose-is-continuous-improvement-not-pass-fail	project	AgenticWorkspace	載せた仕組みの目的は継続的改善で成否ではない	AgenticWorkspace,M6,mu,思考エンジン	師匠宣言だがmuと思考エンジンの指標設計に密着	mid
+put-debris-where-the-close-can-delete-it	archive		残骸はクローズで消せる場所に作る	Mnemo,research-notify-after-first-round-20261014,C:\mnemo-acc,Claude Code	Claude Code安全チェックの観測。draftで単発	mid
+pydantic-alias-rename-silently-nulls-getattr	archive		aliasのリネームはgetattrを黙ってNoneにする	pydantic,MCP SDK,mcp.types,Mnemo,mcp_result_to_dict	MCP SDK移行の技術観測で単発	high
+pyinstaller-excludes-for-size	archive		PyInstallerのexcludesで未使用の大型依存を外す	PyInstaller,Mnemo,R3.3,mnemo_recall.spec,torch	技術的な手順。Mnemoの1件のみ	mid
+pywebview-sso-token-extraction	project	MSTenantMCP	SSOログインはpywebviewでトークンを抽出する	MSTenantMCP,pywebview,WebView2,Accela,STEP,dxai,empdir	MSTenantMCPの認証実装に密着	mid
+r0-impact-survey-affects-sprint-feel	archive		大規模改修は事前の影響範囲調査が本番の体感を決める	Mnemo,R0,R2,doc/refactor-impact	事例がMnemo R2の1件のみで宣言の例外にも当たらない	high
+r0-impact-survey-sprint	archive		大規模リファクタは影響範囲調査だけのR0を先に置く	Mnemo,R0,Explore agent	事例がMnemoのR0の1件のみ。宣言の例外にも当たらない	high
+rarely-used-controls-go-at-the-end-of-the-row	archive		めったに使わないボタンは列の末尾に置く	Mnemo,GX-8,Cowork	事例がGX-8の1件のみ。師匠の言葉は事後所感で規範宣言ではない	mid
+re-search-skills-at-task-type-boundaries	archive		作業の種類が変わる境目でSkillを探し直す	ellm-proxy,process-git-autonomous,commit-and-push-together	事例が2026-09-19のellm-proxy1セッションのみ	mid
+read-git-path-lists-with-z	archive		gitの名前一覧は-z(NUL区切り)で読む	ray,guard-cost,git status --porcelain,core.quotepath	技術知見で事例がray guard-costの1件のみ	mid
+read-only-must-not-route-through-writing-apis	archive		読むだけを謳う処理は書込副作用のある上位APIを呼ばない	Mnemo,skill-inventory,load_config,quarantine_corrupt	事例がMnemo skill-inventoryの1件のみ	mid
+read-the-failed-artifact-before-blaming-the-ruler	archive		物差しを疑う前に外れた成果物そのものを読む	ray,cloud-intake,--max-cycles	事例がray cloud-intakeの1件のみ。宣言は承認のみ	mid
+read-the-instructions-before-blaming-the-model	archive		LLMの線が届かないときモデルより渡した手順を先に読む	ray,commands-b,plan-request,SKILL	事例がray commands-bの1件のみ	mid
+read-the-source-before-restating-a-settled-design	archive		決着済み設計は原典を読んでから述べる	LogicParser,refinement-harness,triplet-extraction-feasibility	事例がLogicParser 2026-09-04の1件のみ	mid
+read-the-source-you-already-opened-before-probing-around-it	archive		移植元ソースに答えがあるなら周辺APIを探る前に読む	Mnemo,DailyNewsClip,downloadcsv.py,Phase KATA	事例がMnemo Phase KATAの1件のみ	mid
+read-what-is-behind-a-worsened-metric	archive		指標が悪化したら悪化の中身(成果物)を読む	AgenticWorkspace,M5,DECISIONS.md,reorder.py	事例がAgenticWorkspace M5の1件のみ	mid
+readme-first-concept-consensus	active		READMEが無いプロジェクトはREADMEでコンセプト合意を先に取る	LLMWorkflow,implementation-roadmap	師匠の明示宣言(source: explicit declaration)で全プロジェクトに効く作法	mid
+real-data-eval-before-quality-design	archive		品質不満は実データ評価セットで裏取りしてから設計する	Mnemo,RC5,Whisper,turbo int8	事例がMnemo RC5の1件のみ	mid
+real-environment-run-is-the-only-completion	active		実環境で動いて初めて完了と言える	MSTenantMCP,S9-accela-room,DisplayCntRadio	師匠の最上位完了基準の宣言(2026-09-24)。「いつもの事」と本文にある	mid
+rebuild-what-the-host-actually-launches	archive		ホストがビルド成果物を起動するなら再ビルドまで効かない	Mnemo,A2A-5,notebooklm-agent,dist/notebooklmmcp.exe	occurrences 1で事例が1件のみ	high
+recommendation-drifts-toward-narrowing-just-in-case	archive		推奨が念のため狭める側に偏っていないか点検する	Mnemo,Phase EM,ellm-model-catalog,maxToken	事例がMnemo Phase EMの1スプリント内のみ(3論点)	mid
+reconnect-survivable-registration-on-ready-hook	archive		再接続で消える登録は固定遅延probeでなく接続readyフックに載せる	listener-delivery-fix,SSE,Supervisor,spawn_startup_probes	技術観測で事例がlistener-delivery-fixの1件のみ	mid
+record-must-carry-the-discriminator	active		失敗の記録には原因を仕分けられる分類情報を入れる	Wiseman,M9,M10,DOI	M9とM10の2スプリントで再現。固有名を消しても原則が成立	mid
+recovery-design-covers-every-stage-of-the-dataflow	active		常駐ワーカーの自己回復は全ステージに同じ問いを当てる	Mnemo,RC5-7,RC7,audio_monitor.py,NPU	RC5(7/31)とRC7(8/4)の2フェーズで同型が再発。原則は一般	mid
+redundant-guard-must-verify-its-backstop	archive		二重化を根拠に手を抜くなら受け止める側の実在を確かめる	Mnemo,ELLM,DX-AI,_sanitize_token_expired_ms	事例がELLM再認証バグの1件のみ	mid
+redundant-guards-mask-each-others-mutations	active		二重のガードは互いの変異を覆い隠す(片方を消す)	AgenticWorkspace,M2,M8-a,M9	M2とM8-aの2件で再現(本文の昇格記録)。原則は一般	mid
+reference-implementation-as-compressed-spec	archive		参照実装は圧縮された仕様書として扱い仕分けてから聞く	Mnemo,Phase NV,Chrome,AskUserQuestion	事例がMnemo Phase NVの1件のみ	mid
+reference-threads-by-id-not-by-title	project	Mnemo	スレッドは表示タイトルでなく番号(th_XXX)で参照する	Mnemo,th_XXX,Auto-title,th_019,th_244	核がMnemoのスレッド機構(th_XXX)に密着。師匠宣言だがスレッド限定	mid
+refute-a-cause-story-with-the-number-it-predicts	archive		原因の説明はその説明が予測する数値で潰す	th_140,ELLM,mcp-binary-content-and-mcp2	事例がth_140集計問題の1件のみ	mid
+regression-fullsuite-rerun-cadence	archive		非回帰フルスイートの中身が段階で違うことを観測	canvas-lf-unify,Mnemo,AT-5-02,LONGTERM_TODO.md	単発の実測記録で原則の核が弱い(draft・未承認)	high
+regression-test-must-fail-on-the-unfixed-code	active		回帰テストは修正前コードで落ちることを実測する	Mnemo,Phase GX,GX-7,index.html	GX本体とGX-7の2フェーズで精緻化され再現。原則は一般	mid
+rejection-test-must-assert-no-side-effect	archive		拒否のテストは例外だけでなく副作用なしもassertする	AgenticWorkspace,dec-core,pytest.raises	事例がAgenticWorkspace dec-coreの1件のみ	mid
+release-fix-sprint-continues-until-stop	archive		リリース前の落穂拾いは師匠の終了宣言まで継続する	Mnemo,R5,executing,retrospecting	師匠宣言はR5限定の運用で全PJ規範ではない。事例1件	mid
+remembered-port-is-not-the-live-port	archive		覚えたポート番号でなく動いているプロセスから探す	llmproviderlib-migration-ellm,Win32_Process,--remote-debugging-port	技術観測で事例が1件のみ	mid
+renderer-contract-decides-normalization	archive		履歴正規化の厳密さは最終レンダラの契約が決める	ellm-proxy,tool_use,tool_result,second-frontend-normalize-at-edges	draft。事例が中継プロキシ1件のみ	mid
+repairing-a-guard-after-a-rename-must-not-narrow-it	archive		番人が改名で落ちたら名前を直す前に守備範囲を確かめる	Mnemo,Phase AF,_renderImagesInBubble,test_gx2_3_attachment_urls_use_origin_thread	事例がMnemo Phase AFの1件のみ	mid
+repeated-questions-resolve-llm-stubbornness	archive		LLMの固執は道具が同じ問いを繰り返し出して解く	LogicParser,harness-retract-question,retract?	事例がLogicParser 6周目の1件のみ	mid
+reply-to-the-master-in-japanese	active		師匠への文はすべて日本語で書く	builder-report-location-20261010	師匠の宣言(2026-10-10)で全プロジェクトに効く言語規範	mid
+report-backtrackable-conclusion-structure	active		人間向けレポートは結論駆動のバックトラック可能構造にする	wiseman,M4,wiseman_report.md,final-output-human-readable-report	師匠が決めた報告構造の5基準の宣言。事例1件だが全PJで成立	mid
+reports-to-the-master-are-always-in-japanese	active		師匠への報告は必ず日本語で書く	Mnemo,web-access-followups,safesearch	師匠の明示宣言(2026-09-18)。全プロジェクトに効く言語規範	high
+reproduce-a-finding-before-sending-it-to-rework	archive		受入の所見は親が再現してから差し戻す(2周まで)	mnemo-slide-sources-20261003,B7	事例がmnemo-slide-sourcesの1件のみ。承認のみで規範宣言でない	mid
+reproduce-llm-failures-deterministically-before-fixing	archive		LLM周の失敗は決定性の台本で再現してから直す	LogicParser,deduction-first-order-20260906,UNPARSABLE	3例だが同一スプリント内のみ	mid
+reproduce-with-test-before-fixing	active		問題が起きたら直す前に再現テストを書く	ellm-proxy	師匠の宣言「次回から必ず」(2026-10-30)で全プロジェクト規範	high
+request-shaped-report-may-be-a-bug	active		要望の形の報告は仕様どおりか確かめる(バグのことがある)	Mnemo,Phase GX,GX2,LONGTERM_TODO.md	GXとGX2の2フェーズで実例。固有名を消しても成立	mid
+request-specified-means-is-a-premise	active		依頼が指定した手段は前提。外す案を決め手にしない	mstenantmcp,OneDrive,Cowork,Mnemo,cowork-defects-20261022	複数スプリントで再現(本文の承認記録)。固有名を消しても成立	mid
+required-deps-not-behind-optional-extra	archive		出荷機能の必須依存はoptional extraや対話の後ろに隠さない	pip install,install.bat,detached-child-launch-must-confirm-survival	技術観測で事例の記載が薄く再現が確認できない	mid
+reread-before-reporting-live-state	active		稼働中の状態は報告の直前に読み直す	Mnemo,Phase MO1,Phase OID,mnemo.log,Tinyfish	MO1とOIDの2フェーズで再現し昇格済み。原則は一般	mid
+reserve-quota-at-every-selection-stage	archive		多段選抜で少数派の枠は全段に通す	wiseman,M9	事例がwiseman M9の1件のみ	mid
+resident-process-hides-state-destruction	archive		常駐プロセスは永続状態の破壊を隠す(破壊と発症は別時刻)	Mnemo,housekeeping-ate-basedir-20260818,config.json	事例がMnemoの1件のみ(forming)	mid
+resolve-open-points-before-execution	archive		未確定論点はAskUserQuestionで先に潰してから実行する	auth-bg-renewer-quiet-m5,AskUserQuestion	事例が1スプリントのみ。現行の推奨即着手の運転方針と緊張	mid
+responsibility-minimization	active		各ロールの責務は最小化し他で担えるものは委ねる	one-file-per-layer,minimal-is-effective-not-fewest	師匠の明示宣言「責務最小化をキホンとしたい」。固有名なしで成立	mid
+retract-only-what-was-measured-and-failed	archive		自動で外すのは測って外れたときだけ(未測定は触らない)	AgenticWorkspace,ablation-20260830,M9	事例がAgenticWorkspace M9の1件のみ	mid
+retrospective-is-mainly-skill-extraction	active		振り返りはスキル確認だけ(恒久)	ray,Mnemo,lpl-m19-follow-20261022	師匠の宣言が2PJ(ray・Mnemo)と自動化宣言で確認できる	high
+retrospective-outputs-must-be-verified-on-disk	active		振り返りで作ったと記録する前にディスク上の実在を確かめる	Mnemo,Phase DR,fullpath-document-read-20260827	3回再発(7/30に2件・8/27に1件)。固有名を消しても成立	mid
+reuse-proposal-needs-inspection	archive		流用提案は中身を確認し整合点と衝突点を示してから返す	AINotebook,AIDocument,ainotebook-framing	事例がAINotebookの1件のみ	mid
+reversed-metric-case-tests-generality	archive		汎用性は指標の良い向きが逆転する事例で検証する	LogicParser,logicparser-cross-model-review-20260824,dangling	draft。事例がLogicParserの1件のみ	mid
+revert-only-your-debug-lines-not-the-whole-file	archive		デバッグ変更は足した行だけ戻す(丸ごとcheckoutしない)	slide-figures-gestalt,git checkout,git restore	事例が2026-10-19の自己インシデント1件のみ	mid
+rewrite-the-instruction-instead-of-appending-an-exception	archive		LLM指示の例外は後ろに足さず元の文を場合分けで書き換える	ray,declare-psnote-20261019,check-the-instruction-acted-not-only-the-line	事例がray declare-psnoteの1件のみ	mid
+run-everything-through-then-fix-in-operation	active		まず全部を通し切り直すことは実運用で決める	AIdedArchitecture,NT-524,NT-526,NT-538,DOGFOOD	師匠の原文宣言あり。NT-524/526とS2(10/28)の複数文脈で再現	mid
+run-tests-in-project-venv	archive		テストはプロジェクトの.venvのインタプリタを明示して回す	MSTenantMCP,html2text,pytest,.venv	事例が本文にMSTenantMCPの1件のみで、宣言の例外にも当たらない	mid
+run-tool-using-evals-inside-the-target-tree	archive		道具を使う評価は対象の木の中で回し、回ごとに閉じ込めを数える	ray,commands-b,run_lines.py,chdir	事例が ray commands-b の1件のみ。評価手順としての技術的観測	mid
+runtime-input-files-carry-no-maintenance-notes	archive		実行時入力になるファイルには指示だけを書き、保守メモを混ぜない	LogicParser,--guidance	事例がLogicParserの1件のみ(draft)で、宣言の例外にも当たらない	mid
+runtime-updated-data-does-not-live-in-the-source-tree	archive		実行時に書き換わるデータはソースツリーに置かない	Mnemo,.mnemo,ellm-proxy,Phase EM,config.py	事例はMnemo Phase EMの1件のみ。師匠宣言は当該設計への判断で全体規範の文言なし	low
+safety-measures-sized-to-what-you-can-manage	active		安全策は管理しきれる数だけ置く	Mnemo,worktree,STEP-MCP,mnemo-stepmcp	2026-10-22と10-26の複数場面で再現。師匠の言葉が普遍原則で固有名なしでも成立	mid
+same-named-upstream-function-is-not-the-same-behavior	archive		同名の上流関数は同じ入力を同じに扱う証拠ではない	LLMProviderlib,m8-ellm-absorb,ellm-proxy,tool_call	1スプリント内の3回で他文脈での再現が本文に無い	mid
+same-pipeline-does-not-mean-same-payload-semantics	active		経路や名前が同じでも値の意味は同じと限らない。書き手を読む	Mnemo,Phase CB,Phase SPL,carryover.py,turn_id	Phase CBとPhase SPLの2フェーズで再現。固有名を消しても成立	mid
+schema-allows-what-the-contract-forbids	archive		スキーマが許す契約上あり得ない組合せは検証器で潰す	AgenticWorkspace,M3,deepseek-v4-flash,unfalsifiable	事例がAgenticWorkspace M3の1件のみ(draft)	mid
+schema-version-matches-migration-table	archive		SCHEMA_VERSIONとマイグレーション表の整合をテストで固定する	SCHEMA_VERSION,MIGRATIONS,V10	事例が1件のみで技術的観測。出所プロジェクトの記載もない	mid
+scope-confirm-vs-autonomous-boundary	archive		確認すべき判断と自律で進める判断の境界(観測)	InfoGather,RIETI,CSIS,sprint-002	InfoGather1件の観測パターン。2026-10-27運転方針で置換済みの確認基準	mid
+scratch-dir-python-venv	archive		作業フォルダでPythonを使うときはvenvで隔離する	venv,.venv,pip	事例の記載がなく再現が本文から確認できない。判断材料不足	low
+search-existing-harness-before-writing-one	active		検証の足場を書く前に既存テストに同種のハーネスを探す	Mnemo,Phase PAD3,Phase SPL,test_gui_gx2.py,_run_in_chrome	PAD3 S1とSPLの2フェーズで再現。固有名を消しても成立	mid
+search-skills-before-sub-decisions	active		手を動かす直前の小さな判断でもSkillを検索する	Mnemo,mu,TDLThemeDB,deadline	Mnemo・mu・TDLThemeDBの3例で再現(3例目観測済)。固有名なしで成立	high
+search-skills-by-every-domain-the-decision-touches	archive		選択肢を並べる前に判断が触れる全ドメインのSkillを引く	a2a-structured-invoke,Mnemo,ELLM,A2A-5	occurrences:1。事例が1件のみで宣言の例外にも当たらない	mid
+second-frontend-normalize-at-edges	active		コアに新経路を通さず両端で内部表現へ正規化して足す	ellm-proxy,Ollama,OpenAI,build_ellm_request,stream_ellm_text_deltas	Phase1(チャット)とPhase2(ツール)の2段で再現。固有名を消しても成立	low
+seek-external-knowledge-for-unsolved-problems	active		自力で解けない問題はarXiv等の外部知見を探す	ray,arXiv,piece-assembly-loop	師匠の明示宣言で一般規範として述べられている。事例は1件	mid
+self-reported-confidence-is-uncalibrated-until-measured	archive		自己申告の確信度に閾値を置く前に分布を測る	AgenticWorkspace,M4,RECOG,discomfort	事例がAgenticWorkspace M4の1件のみ(draft)	mid
+separate-and-disclose-check-exemptions	archive		機械検査の正当な例外は緩めずに分離して開示する	Wiseman,M8,wm-tick,include_scaffold	事例がWiseman M8の1件のみで、宣言の例外にも当たらない	mid
+separate-new-vs-improve	archive		新規生成と改善は質的に違うので別機構として分離する	SubAgents,build_report,improve_report	事例がSubAgents PoCの1件のみ。師匠の言葉は設計への質問で全体規範の宣言ではない	mid
+separate-two-mechanisms-with-a-single-mechanism-arm	archive		2機構を同時に入れるなら片方だけの腕を並べて効き目を分ける	ray,skill-auto-2c,RAY_SKILL_AUTO,D46	事例がray 2cの1件のみ	mid
+shared-doc-replace-niche-terms	archive		共有文書ではニッチな固有名詞を一般語に置き換える	ジュイス,東のエデン	1例のみ(draft)の観測	high
+shared-files-may-use-lock-model	project	Mnemo	プログラムが管理する共有ファイルはロックモデルで守ってよい	Mnemo,Cowork,SharePoint,cowork-shared-index-20261021	Mnemo Coworkの共有索引に密着。師匠宣言の範囲も共有索引に限定	mid
+shared-frontend-asset-single-source	archive		共有フロント資産はcanonical1つ+同期+byte一致テストで守る	Mnemo,Phase CTS,mnemo-tokens.css,sync_shared_assets.ps1	事例がMnemo Phase CTSの1件のみ	mid
+shared-pair-skill-single-source-global	archive		共有スキルはグローバル一本化しプロジェクトはポインタにする	ai-dev-basics,process-integrity,GhostWriter,pair-agent	2026-11-02方針Aで前提(全部グローバル)が変わった可能性。事例も1件	low
+ship-only-measured-behavior	active		本体化するのは実測で成立した形だけ	LogicParser,assembly-loop-v2,assembly-implementation	2スプリント連続で再現。固有名を消しても成立(forming)	mid
+ship-through-the-standard-path-not-the-readme	active		手順をREADMEに書くのは届いたではない。標準経路に載せる	AUD-1,AUD-6,LPL-16,install.bat,submodule	師匠の明示宣言で3回再現(AUD-1,AUD-6,LPL-16)	high
+shipped-defaults-are-a-starting-point-not-an-optimum	active		配布された既定値は出発点。実績が溜まったら較正する	Mnemo,Phase ROLE,ROLE-2,ROLE-4,ROLE-5	師匠の指示が一般命題。ROLE-2/4/5と複数場面で再現	mid
+short-key-matches-general-vocabulary	archive		短い照合キーは一般語に大量誤ヒットする	TDLBGTDataConverter,S3,LBE,SAT	事例が同一スプリントS3の1件のみ(draft)	mid
+side-effect-boundary	archive		副作用の内外判断は設定パラメータで吸収しきれるか	SubAgents,WebFetch,PoC	事例がSubAgents PoCの1件のみで、宣言の例外にも当たらない	mid
+side-paths-stay-out-of-the-masters-view	active		師匠に見せるのは本筋だけ。横道は見えない所で片付ける	Mnemo,STEP-MCP,mnemo-file-defect,production-availability-is-stated-explicitly	師匠が認知構造を理由に述べた一般規範。2026-10-27運転方針(脱線禁止)とも整合	mid
+silent-except-prevents-diagnosis	active		握り潰しexceptは上流から件数と原因を見えなくする	rex,SkillStore.list_skills,PyYAML,Mnemo RC7	rexとMnemo RC7ほか3例を観測済(forming)。固有名なしで成立	mid
+single-commit-sprint-conditions	archive		1コミットで完走できるスプリントの3条件	Mnemo,R1,R2,mnemo_gui/assets/index.html	Mnemo R1/R2の2件で判定表も同プロジェクト。2026-10-27の常時commit方針と緊張	mid
+skill-api-names-rot-separate-them-from-the-skeleton	archive		Skillに書いたAPI名は腐る。骨格と分けて確認日を添える	TDLThemeDB,S4-mcp-server,FastMCP,MCPServer	事例がTDLThemeDB S4の1件のみ(draft)	mid
+skill-as-implementation-checklist	active		設計提案を出す前に該当Skillと能動的に照合する	Mnemo,R1,tool-reduction-starts-from-off,own-inference-is-not-measured-fact	Mnemo R1とhousekeeping-ate-basedir-20260818の2場面で再現(confirmed)	mid
+skip-retrospective-for-non-development-work	active		開発でない仕事(解析・観測・調査)では振り返りを省略する	ELLM分析,s1-ellm-surface-observation	師匠の明示宣言で一般規則化。事例は1件のみ	mid
+slice-size-xs-s-m-l-omakase	active		仕事はサイズ(XS/S/M/L)とおまかせで指示し動的に動かす	Mnemo,Phase ROLE,ROLE-1,XS,S,M,L	師匠の明示宣言。CLAUDE.mdに採用済みで全プロジェクトに効く	high
+slide-figures-need-composition-and-decoration	project	Mnemo	スライドの図は構図と装飾の次の一歩まで作り込む	mnemo-slide,SLD-50,ACC-FIG-B-3,ゲシュタルト	mnemo-slideの出力へのフィードバック密着。探針IDや出力例が本文の根拠	low
+slide-title-and-bottom-message-are-a-pair	project	Mnemo	タイトルと下部メッセージはつないで読むペアにする	mnemo-slide,SLD-50,ACC-FIG-B-2	mnemo-slideの探針SLD-50へのフィードバックに密着	low
+smoke-gate-bootstrap-before-evaluation	archive		評価スプリント冒頭で対象が起動しLLM応答まで届くsmokeを通す	rex,L7,rex.exe,ellm	事例がrex L7の1件のみ(forming)。smoke-must-use-production-flagsと近縁	mid
+smoke-must-use-production-flags	active		空撃ちsmokeは本番と同じフラグ構成で撃つ	rex,testfield,Mnemo,Phase OID,Phase LLIB,--clean	rex・Mnemo OID・Mnemo LLIBの3件で再現(confirmed)	high
+solo-dev-merge-to-main-promptly	active		師匠一人の開発リポジトリでは枝をmainへ即合流してよい	Mnemo,MCP confidential client,fast-forward	師匠の承認ルール。2026-10-21の境界追記で別場面でも適用確認	mid
+sony-ad-sso-auth-canonical-impl	project	LLMProviderlib	社内SSO認証はLLMProviderlibの_AuthManagerを正とする	LLMProviderlib,ellm_client.py,_AuthManager,MSTenantMCP,Playwright	特定リポジトリのファイル・クラスを指す参照。固有名を消すと成立しない	high
+speak-when-valuable-the-bell-does-not-interrupt	project	Mnemo	能動通知(ベル)は価値があれば話す。タイミングを理由に黙らない	Mnemo,ベル,Phase RSP,PDCA	MnemoのベルとPDCA機構に密着した規範。師匠宣言の範囲もそれに限る	mid
+spec-template	archive		新機能の仕様書は統一テンプレートで書く	f3-coworking-impl,LONGTERM_TODO.md,doc/	テンプレート候補が未確定(forming)で事例も1件	mid
+speedups-are-pinned-against-the-original	active		高速化の書き換えは元のやり方と突き合わせて縛る	AIdedArchitecture,D506-A,IS-552	D506-AとIS-552の複数場面で適用。固有名を消しても成立	mid
+split-trials-by-deterministic-vs-llm-parts	active		試行集計は決定性の部分とLLMの部分を分ける	LogicParser,Mnemo,mnemo-self-correction-mark	LogicParserとMnemo受入の2文脈で再現(forming)	mid
+split-upfront-parallelize-lock-only-the-shared-part	active		中断させず最初から割って並列に。排他は共有の一部だけ	Mnemo,AIdedArchitecture,maxTurns,agent_mutex.py	師匠の明示宣言(2026-10-27)でCLAUDE.mdに採用済み。MnemoとAIdedArchitectureで実例	high
+splitting-roles-makes-the-splitters-judgment-the-ceiling	active		役を分けると分けた親の判断の質が系の上限になる	Mnemo,Phase ROLE,ROLE-2,think-as-a-practice-20260919	複数スプリントで親の失敗を実測(7件ほか)。固有名なしで成立	mid
+sprint-overhead-scales-with-scope	archive		スプリントのプロセス重量はスコープに合わせる	M7,M8,agreement,beta-phase-prefer-clean-break	M7とM8は対比例で再発の根拠でない。2026-10-27運転方針で既定が軽量化済み	mid
+sprint-scope-definition	archive		スプリント開始時にどこからどこまでかを合意する	f3-coworking-impl,CW1,CW11,agreements	事例がF3 Coworkingの1件のみで、宣言の例外にも当たらない	mid
+sprint-vs-inline-decision	active		新スプリントかin-lineかは着手前に論点を出し切れているかで決める	Mnemo,P3,M4,RC7,current-sprint.json	P3・M4・RC7ほか4例で判断軸を修正しながら再現(confirmed)	mid
+sqlite-aggregate-loses-declared-type	archive		SQLiteの集約関数は宣言型を持たず型変換の穴になる	TDLThemeDB,S4-mcp-server,PARSE_DECLTYPES	事例がTDLThemeDB S4の1件のみ(draft)の技術的観測	mid
+sqlite-wal-immutable-hides-live-writes	archive		WALのSQLiteをimmutable=1で読むと最新を見落とす	Mnemo,listener.db,listener-delivery-fix-2026-07-22,immutable=1	事例がlistener-delivery-fixの1件のみの技術的観測	mid
+stability-is-relative-to-identity-criterion	archive		安定性は同一性の基準に相対的。表記で測って不安定と結論しない	LogicParser,equivalence-judgment-feasibility-20260826,Jaccard	事例がLogicParserの1件のみ(draft)	mid
+stale-init-in-the-old-execution-path	archive		実行経路を移したら旧経路の初期化と残骸を洗う	main(),in-process transport,_allowed_dirs	同一移設で出た2件の穴で、単一事案の記録。原則はあるが再現文脈が1つ	mid
+state-what-a-principle-forbids-before-adopting-it	archive		原則を掲げる前に何を禁じるかを先に言う	LogicParser,refinement-harness	事例1件（取り消された原則）のみで宣言の例外にも当たらない。draft	mid
+stated-premise-is-not-measured-data	active		データについての前提は意図であり実測ではない。数える	TDLBGTDataConverter,TDLThemeDB,math.ceil,fiscal_year_of	固有名を消しても成立。上流と下流の2プロジェクトで同じ丸めが再現	mid
+stdout-reserved-channel-purity	archive		stdout予約のプロトコルは全レイヤーの純度を守る	Wiseman,A2A,uvicorn,MCP,Mnemo	Wiseman M5の1件のみの技術観測。昇格条件も未達	mid
+steer-through-tool-results-and-the-catalog-not-the-handbook	active		行動を変えたければ手引きより道具の返りとカタログに書く	Mnemo,Phase KATA,AIdedArchitecture,aided_propose,SKILL.md	Mnemoと別プロジェクトの2例で再現。固有名を消しても原則が成立	mid
+stochastic-judge-gates-need-retry-policy	active		確率的判定器の全一致ゲートは再試行規約を事前登録	LogicParser,instrument-holes-fix,validity-acceptance	別スプリント2例で再現。固有名を消しても測定設計の原則として成立	mid
+stop-the-bleeding-before-deliberating	active		ユーザーに被害が出ているなら協議より先に止血する	LPL-16,ellm-lib,vendor/mu,subtree	師匠の明示宣言（被害最優先）が核。事例は1件だがactive例外に当たる	mid
+stop-when-deduction-closes-deeper-why-is-human	project	LogicParser	演繹が閉じたら洗練は止まり、深掘りは上位者の仕事	LogicParser,sympy,洗練ループ,問答ハーネス	洗練ループ・sympy VALIDなどLogicParser機構に密着し、固有名を消すと不成立	high
+subagent-cost-is-calls-times-context	active		費用は呼び出し回数×文脈で決まる。上限で切って継ぐ	Mnemo,measure_agent_usage.py,maxTurns,canvas-lf-unify,Phase ROLE	複数スプリントで実測・追記。マルチエージェント運用に横断で効く原則	mid
+subagent-deliverable-vs-scratch-file-survives-turn-limit	archive		上限停止で生き残るのは最終成果物を直接編集した役	Mnemo,maxTurns,obs,LONGTERM_TODO.md	同一スプリント内の2例の対照のみ。別文脈での再現は本文に無い	mid
+subagent-no-filesystem	active		汎用部品はファイルシステムに触れず構造化データで受け渡す	SubAgents,orchestrator,side-effect-boundary	師匠の設計原則の明示宣言。固有名を消しても汎用部品の原則として成立	mid
+subagent-parallelism-vs-consultation-heavy-sprints	archive		協議往復の多いGUI案件でMの並列度が最適かは未確定	canvas-lf-unify-20260915,M スライス	draft・要師匠判断の論点。1スプリントの観測のみで結論なし	high
+subprocess-stdin-must-close-or-skip	archive		子プロセス起動ではstdinを閉じるかCLI側で読まない	rex,subprocess.run,sys.stdin,dist/rex.exe	rexの1件のみの技術観測（draft）。別文脈での再現は無い	mid
+success-criteria-within-levers-reach	active		成否基準は測定対象のレバーが届く範囲に置く	LogicParser,validity-acceptance,driver-expansion,c1,c2	2スプリント連続で再現し適用実績もある。固有名を消しても成立	mid
+success-is-shown-by-the-last-stage	active		成功の表示は最後の段の結果で出す。途中は受付と言う	Mnemo,OAuth,STEP-MCP,CALLBACK_RECEIVED_MESSAGE,auth_error	別日2件で再発。多段処理のUX原則として固有名を消しても成立	mid
+suppression-is-by-the-same-evidence-not-forever	archive		抑止は同じ根拠では、であって永久ではない	AgenticWorkspace,M8-a,M9,run_count,retracted_premises	M8-a/M9の同一系統の1事例のみ。他文脈での再現は本文に無い	mid
+sweep-leftover-processes-at-close	active		終了時に自分が起こしたプロセスと一時物を数えて止める	Mnemo,AIdedArchitecture,mnemo-pad,taskkill,tempfile.mkdtemp	MnemoとAIdedArchitectureで再現。師匠の原文あり。原則は固有名なしで成立	mid
+symptomatic-fix-must-revert-when-no-improvement	active		対症療法は効果が出なければその場でrevertする	rex,L7,todo_write	師匠の明示宣言（改善なき対症療法はやめる）が核。全プロジェクトで成立	mid
+take-the-time-from-date-right-before-writing-it	active		記録の時刻は書く直前にdateで取る。推測しない	ray,date,git log	ray内で複数日にわたり6回以上再発。固有名なしで成立する記録作法	high
+tdd-required-for-rex-refactoring	project	rex	rexの改修・機能追加・修復はTDDで進める	rex,Phase 1-A,refactoring-roadmap.md,llmproviderlib,SkillStore	rexのロードマップ・tests配置・抜けの実例に密着。題名もrex限定	high
+test-a-clock-promise-on-the-entity-that-was-down	archive		時刻で約束する仕組みは止まっていた実体で試験する	Mnemo,catch_up,daily 07:30,research-autostart	draft。Mnemoの隣接2スプリントの観測で、別プロジェクトでの再現が無い	mid
+test-cost-reaching-implementation-cost-is-a-warning-zone	active		検証費用が実装費用と同規模になったら警告ゾーン	Mnemo,Phase BKM,subagent-cost-is-calls-times-context	師匠の明示宣言（テスト費用が実装費用を超えたら警告）が核	mid
+test-count-decrease-signals-degradation	active		テスト総数・skip・collect errorの増減を必ず読む	TDLThemeDB,rex,pytest,submodule	別プロジェクトの複数例（減少・skip・増加）で再現。原則は汎用	high
+test-entry-layer-must-match-the-caller	active		利用者と同じ入口から1本通すテストを必ず置く	wiseman,M9,ray,repl.py,tools_at	wisemanとrayの2プロジェクトで再現。固有名を消しても成立	high
+test-expectation-mismatch-measure-before-editing	archive		期待値と実装が食い違ったら直す前に実データで測る	TDLThemeDB,S7-row-grain,aggregate_amounts	事例はTDLThemeDB S7の1件のみ。他文脈での再現は本文に無い	mid
+test-helper-name-conflict-guard	archive		テストヘルパ追加前に同名定義をGrepする	_make_jwt,Python	単発の技術的注意（1件）。普遍原則というよりPython固有の観測	high
+test-inject-time-not-wall-clock	archive		時刻の前後関係を検証するテストは時刻を注入する	Windows,datetime.now,consolidated_at,15.6ms	Windowsタイマ解像度に依存する技術的観測。実例はMnemo系の1系統	low
+test-mock-strategy-refactor-flow	archive		mock戦略を変えるrefactorは実装先行でテスト失敗を見る	auth-throughput-optimization,_get_token,_token_expired,pytest	draft・1例のみ。TDDとは逆向きで適用範囲も限定的	high
+test-the-stateful-path-not-just-empty	active		テストは空・新規だけでなく有状態・実形状の経路を通す	Mnemo,mnemo-note,FakeLLM,ProviderProxy,AIdedArchitecture,v36	4件の事例がMnemoとAIdedArchitectureにまたがり再現。原則は汎用	high
+tests-cover-abnormal-semi-normal-and-corner-cases	active		テストに異常系・準正常系・コーナーケースを含める	Mnemo,Phase GX,ray,btw-async-20261028	師匠の明示宣言が核。GXとrayの別文脈で再現	high
+the-evidence-you-found-may-be-an-output-not-an-input	archive		見つけた証拠が原因か結果かを消す前に確かめる	Mnemo,supervisor_registry.json,Phase BKM,adopt	occurrences:1。単一事案の記録で別文脈の再現が本文に無い	mid
+the-floor-you-impose-becomes-the-ceiling	archive		課した下限はそのまま上限になる	AgenticWorkspace,M9,deepseek-v4-flash,gemma4:31b	M9の単一実験の観測。他文脈での再現は本文に無い	mid
+the-long-run-watch-is-mine-run-it-in-its-own-window	active		長い走りの終わりの見張りは自分の仕事。別窓で起こす	ray,ray change,Claude Code,Monitor,PowerShell	師匠の指示と叱責（責任を持ってやり切る）が核。見張りを師匠に返さない	mid
+the-maker-s-checks-share-the-maker-s-blind-spots	active		作り手の検査は盲点を共有する。XSでも受入は別文脈	ray,guard-cost,repl-regress,sonnet,XS	前スプリントからの素通りも含め複数回再現。師匠の規範に沿う運用原則	mid
+the-master-says-when-discovery-is-the-point	active		発見が目的のときは師匠がそう言う。推測しない	Mnemo,multiagent-effectiveness-20260921,vision-record	師匠の明示宣言が核。固有名を消しても運用規範として成立	mid
+the-tools-primary-user-decides-its-spec	active		道具の主な利用者がAIなら仕様はAIが決める	Lucianke,LSP,MCP,BUG-0067,m1-impl-20261029	師匠の明示宣言で他プロジェクトにも適用と本文に明記。事例は1件	mid
+the-verdict-is-also-an-artifact	archive		判定書も成果物。検査者の判定を検査にかける	AgenticWorkspace,M7,mu,QA	draft・M7の1件のみ。別文脈での再現は無い	mid
+themecss-applies-by-matching-class-names	project	Mnemo	母体テーマのthemeCssはクラス名を母体語彙に揃えれば当たる	Mnemo,themeCss,Phase CTS2,notebook,aurum,mnemo-tokens.css	Mnemoのテーマ機構とクラス語彙に密着し、固有名を消すと不成立	high
+three-fast-turns-beat-one-slow-turn	active		遅い1ターンより速い3ターン	Mnemo,companion-rollout-20261027	師匠の明示宣言（2026-10-27）が核。全プロジェクトの運転方針	high
+timeclock-stays-human-not-agent	project	MSTenantMCP	出退勤の打刻はエージェントに委ねず人がやる	MSTenantMCP,lysithea_timeclock.py,Lysithea TC,IPA Workstyle	宣言はMSTenantMCPの打刻ツール取込範囲の判断。一般化は本文の推奨	mid
+todo-and-plan-as-baseline-not-experimental	active		TODO・計画作成は基本機能として常設し効果を問わない	rex,L7,todo_write,orchestrator	師匠の明示宣言（TODOと計画は前提）が核。LLMエージェント設計一般で成立	mid
+token-refresh-authenticated-by-itself-cannot-wait-for-expiry	project	Mnemo	自己認証の更新要求は失効前に先回りで実行する	Mnemo,ELLM,CloudFront,refresh_auth_proactively,Set-Cookie	ELLMの更新API実測とMnemo実装に密着。固有名を消すと中身が残らない	mid
+tool-dispatch-bind-args-to-signature	archive		ツールdispatchは引数をシグネチャに束縛し未知kwargを落とす	func(**args),inspect.signature,write_file,TypeError	弱いモデルの1件のログ由来の技術観測。別文脈での再現は無い	mid
+tool-internal-llm-runs-with-dedicated-prompt-and-no-context	project	LogicParser	道具内のLLM呼び出しは専用プロンプトで文脈なしで行う	LogicParser,refinement-harness-20260904,命題化	宣言はLogicParserの設計の問い(a)への回答。変換ツール構造に密着	mid
+tool-internalize-complexity	active		道具は内側で複雑さを引き受け外側を単純にする	SubAgents,search,PoC	師匠の明示宣言（道具とはそういうもの）が核。固有名を消しても成立	high
+tool-module-three-layer-design	archive		外部APIツールは整形・I/O・登録の3層で書く	MCP,_format_*,_list_messages,register()	事例の記載が無く再現を確認できない。判断材料不足	mid
+tool-reduction-starts-from-off	project	Mnemo	ツール削減はOFFにするものから考える	Mnemo,R1,Default,Cowork,Research	Mnemoのモード設計(R1)と実測に密着。固有名を消すと不成立	mid
+tool-scripts-do-not-call-the-api-directly	project	PairAgenticClaude	スキルサーベイのスクリプトはLLM APIを直接呼ばない	skill-survey.py,ELLM,Ollama,llmproviderlib,anthropic SDK	師匠が適用範囲をskill-survey.pyだけと明言。スクリプトはPairAgenticClaude	mid
+transform-rules-grow-one-module-at-a-time	archive		取り込み変換ルールは1モジュールずつ走らせて育てる	BOM,PowerShell,allowlist,mkdir	forming・ベンダリング取り込みの1系統の経験知で、別文脈の再現が無い	mid
+transparent-canvas-themes-via-container-css	project	Mnemo	透過キャンバスはコンテナCSSの背景トークン化で追随	Mnemo,Phase CTS2,mnemo-graph,vis.js,#graph-container	Mnemo graphのテーマ機構とvis.js実測に密着し、固有名を消すと不成立	mid
+transparent-shell-parity-verify-real-path	archive		殻の作り直しは実経路で検証しホスト能力をパリティに数える	mnemo-slide,gui_external,open_app_window,Cowork	mnemo-slideの1回の作り直しで出た5件の退行。別文脈での再現は無い	mid
+tray-companion-launch-must-restore-window	project	Mnemo	トレイ格納型は起動済みボタン再押下でウィンドウを復帰	Mnemo,mnemo-pad,companions.launch,/window/show,8778	Mnemoのコンパニオン起動機構とポート規則に密着。固有名を消すと不成立	high
+treat-layer-attribution-in-reports-as-hypothesis	active		報告の症状は事実、層の指名は仮説として扱う	Mnemo,GUI,チャットバブル	師匠の明示宣言（GUI観測は層を切り分けられない）が核。全プロジェクトで成立	high
+try-the-meter-on-a-known-failure-first	active		計測器は答えの分かる失敗例に先に当ててから使う	AgenticWorkspace,ray,commands-b,cwd_check.py,t1_check.py	AgenticWorkspaceとrayの複数スプリント(4回)で再現。原則は汎用	high
+two-kinds-of-implicit-knowledge	project	LogicParser	暗黙知は項の省略と論拠の欠落の2種で扱いが違う	LogicParser,ADU,assembly,sympy,missing_assumption	LogicParser の検出器・assembly 機構に密着。単発の設計協議	mid
+two-memory-entities-are-the-generality-test	project	Mnemo	二実体で結果がぶれたら仕組みを疑う。絶対数でなく率で比べる	Mnemo,JPC20661296,Phase OBS,research_enabled,CUR-5b	Mnemo の二PC運用と実測に密着。事例は Phase OBS の1件	mid
+two-rotating-file-handlers-wedge-the-log-on-windows	archive		Windowsで同一ログに複数ローテーション用ハンドラを張ると固着	RotatingFileHandler,ellm_proxy.log,PermissionError	Python/Windows の技術的観測。実測1件の記録	mid
+undeterminable-is-not-negative	active		判定できないを不成立と出さず三値で持つ	Mnemo,skill-inventory,required-mcp,ray,P5d	Mnemo 棚卸しと ray P5d の2文脈で再現。固有名を消しても成立	high
+unreadable-text-is-not-text	active		図表の文字は読める統一サイズ。入らなければ外へ出す	Plotly,uniformtext,Phase FIG	師匠の宣言「読めない文字は文字じゃない」で汎用規範。事例は1件	mid
+unrecognized-intent-must-fail-not-become-a-plausible-action	active		解釈不能な依頼は失敗させ、それらしい既定動作に落とさない	Mnemo,notebooklm-agent,parse_instruction,rag_query,STEP	NotebookLM 連携と STEP 検索の2文脈で再現。原則は固有名なしで成立	high
+upsert-cannot-handle-set-shrinkage	archive		upsertはキー集合の縮小を扱えないので prune が要る	TDLThemeDB,sqlite,chunk_no,prune	draft。TDLThemeDB 1件の事例で再現確認なし	mid
+upstream-feedback-must-come-from-using-it	archive		上流への提案は使って得た観測だけを根拠にする	AgenticWorkspace,M8-b,vendor/logicparser,analyze_graph	M8-b 1スプリントの事例のみ。宣言の例外にも当たらない	mid
+upstream-quirks-emerge-during-implementation	active		上流コードの実態は事前の静的調査では捉えきれない	llmproviderlib,m6a,m6b,m6c,m6d,m6e,IndentationError	m6b〜m6e の複数スプリントで再現。固有名を消しても成立	mid
+upstream-spec-by-reference-not-copy	active		上流の仕様書はコピーせず参照で正典を1つに保つ	TDLThemeDB,TDLBGTDataConverter,DATA_SPECIFICATION.md,AgenticWorkspace,ard-skill-adapter	TDLThemeDB と AgenticWorkspace の2文脈。師匠の判断あり	high
+upstream-stage-isolation-test	archive		多段パイプラインの欠陥は最上流ステージを単体で安く試す	Wiseman,M4,Reframe	Wiseman M4 の1件のみ。forming で再現未確認	mid
+user-builds-workflows-ai-fixes	project	LLMWorkflow	GUIβテスト期間は成果物をユーザーが組み、AIは修正に回る	GUI,examples,ai-codes-human-feedbacks-loop	GUIワークフローツールのβ期の宣言。対象名が本文になく推定	low
+user-tunable-rules-in-editable-policy-doc	project	Mnemo	ユーザーが調整する挙動ルールは編集可能なポリシー文書に置く	policies/*.md,GET/PUT /policies,ensure_*,yaml	policies API・ensure_* 機構に密着。Mnemo と推定。単発の決定	low
+vendor-tool-submodule-minimal-deps	active		外部ツールは submodule で取り込み、依存は必要最小限	git submodule,vendor/,NDLOCR-Lite,AINotebook,llmproviderlib,markitdown	師匠の既定として宣言（「師匠の既定は」）。事例は1件	mid
+vendored-copy-diverges-both-ways	archive		直コピーのvendorは双方向に乖離する	vendor,本家,WBS	forming。事例1件。同種の vendored-copy-stays-identical と方針が異なる	mid
+vendored-copy-stays-identical-to-upstream	active		取り込んだ写しは直接直さず上流と差分0に保つ	Mnemo,vendor/llmproviderlib,LLMProviderlib,git subtree,git archive	lpl-m19 で3回再現し、別日の修正事故も有る。師匠承認済み	mid
+vendoring-keeps-proven-code-coexisting	archive		上流取り込み後も実証済みの既存コードは消さず共存させる	_upstream,LLMProviderlib,WBS	師匠の宣言だが当該取り込み1件の判断。再現の記述なし	low
+venv-pip-list-vs-pyproject-declaration	archive		依存宣言と venv の実状態は別物。pip list で突き合わせる	Mnemo,R4.1,sentence-transformers,pyproject.toml,pip list	Mnemo R4 の1件。技術的な観測	mid
+verification-models-by-role	archive		検証モデルは役割別に選ぶ（回転・穴探査・交差検証）	probe,chat,ハーネス	LLMアプリ検証の1件の師匠決定。対象プロジェクト名が本文にない	mid
+verification-plan	active		スプリント開始時に区切りごとの動作確認を検証計画に定める	F3 Coworking,pytest,curl	師匠の「次回から検証計画が必要」の宣言。事例は1件	mid
+verification-scripts-belong-in-the-repo	active		主張の根拠になる検査台本はリポジトリに置いてコミットする	ray,guard-cost,eval/mutation/mutate_guard.py,scratchpad	ray 2a〜2c の複数スプリントで再現。師匠が承認	mid
+verification-time-is-the-critical-path	active		受入・非回帰の所要は開発TATの要。サイズ比例の枠を守る	Mnemo,startup-speed-20261008,Phase OBS,XS,S,M,L	師匠の宣言（サイズ別の枠を決定）。全プロジェクトの進行に効く	mid
+verification-verdict-holds-requires-evidence	archive		LLMの検証で成立には根拠を要求し、無ければ不明とする	E-2,evidence,answer_form	draft。E-2 周回の1件。ハーネス機構に寄る	mid
+verified-means-it-ran-not-that-it-ran-as-intended	active		検証済みは走ったであって意図どおり走ったではない	AgenticWorkspace,M8-b,shlex.split,ray,P5d,verified: true	AgenticWorkspace M8-b と ray P5d の2文脈で再現	high
+verify-a-threshold-against-the-example-that-justifies-it	archive		閾値は根拠にした具体例を式へ代入して届くか確かめる	Mnemo,Phase BRM,0.67	draft。Mnemo Phase BRM の1件のみ	mid
+verify-agent-feature-reachability	active		エージェント向け機能は提示から選択まで確かめて完了とする	Mnemo,A2A-3d,A2A-3e,wiseman,mcp-binary-content,get_card	A2A-3d/3e と mcp-binary-content の複数スプリントで再現	mid
+verify-auth-token-shape-before-choosing-a-backend	archive		SSO保護サイトは認証の載り方を実物で確かめてから型を選ぶ	Accela Room,EmpdirBackend,mstenantmcp,.AspNet.Cookies	draft。Accela Room 1件の技術的観測	mid
+verify-existing-users-can-follow-via-pull-and-install	active		大きな変更は pull と install で全員が追従できると確認	git pull,install.bat,Mnemo,LPL-16,Phase KATA	師匠が「ルールにしましょう」と宣言。LPL-16 と Phase KATA で再現	mid
+verify-llm-feature-via-real-wiring	project	Mnemo	LLM依存機能は本番の実行経路オブジェクトを実配線で駆動して確かめる	Mnemo,ToolDispatcher,ContextAssembler,MNEMO_BASE_DIR,GlossaryStore	Mnemo の ToolDispatcher 等の機構に密着。ont-glossary 1件	mid
+verify-the-call-path-before-preserving-behavior	archive		保存すべき挙動を決める前に本番経路から到達可能か実測する	rex,Phase 7-B,_parse_relaxed_tool_block	draft。rex Phase 7-B の1件のみ	mid
+verify-wins-before-celebrating	active		望んだ方向の成功シグナルほど機構を再生して検品する	LogicParser,validity-acceptance,c3	LogicParser の2スプリントで再現。固有名を消しても成立	mid
+verify-you-are-in-the-real-environment	archive		環境起因と診断する前に実運用の環境かを確かめる	venv,.venv,uv run,launch_*.bat	事例1件のみ。宣言の例外にも当たらない	mid
+visual-consultation-needs-samples-first	active		見た目の協議は実物を並べてから選択を求める	Phase FIG,canvas-lf-unify	師匠の叱責原文あり。Phase FIG と canvas-lf-unify の2文脈で違反再現	high
+visual-sample-granularity-tradeoff	archive		見本を描く粒度の基準は未確定（要師匠判断）	canvas-lf-unify-20260915,h2/index.html	draft。基準が未確定で判断材料が足りない	high
+vocab-companion-app	project	Mnemo	コンパニオンアプリはAPI経由を主とするMnemoの拡張単位	Mnemo,コンパニオンアプリ,MCP	Mnemo 固有の用語定義（2026-10-26 改定）	high
+vocab-kata	project	Mnemo	型(kata)はスレッドに紐づくDAG・道具・知識を束ねる単位	Mnemo,kata,LLMWorkflow,Gem,SKILL.md	Mnemo 固有の用語定義	high
+vocab-kotowari	project	ellm-proxy	断りはELLMのsystem promptと利用側指示の食い違い応答	ELLM,ellm-proxy,ray,persona_conflict,llmproviderlib	ellm-proxy の persona_conflict に対応する用語。固有名に密着	mid
+vocab-ls	project	TDLPortfolio	LSはライフサイエンスでTDL組織上はLTR部門	LS,LTR,TDL,FY26BGT,CMNtable	TDLポートフォリオ領域の用語。固有名を消すと成立しない	mid
+vocab-parallel-sprints	active		並列とは2つ以上のスプリントの同時実行を指す	スプリント,構築者	師匠の用語定義の宣言。プロセス全般に効く	mid
+vocab-skill-vs-kata	project	Mnemo	スキルは非決定の手順、型は決定性の手順と専用知識を持つ	Mnemo,kata,SKILL.md,LLMWorkflow,workflow.json	Mnemo の型とスキルの用語差。固有名に密着	high
+waiting-items-are-judged-by-data-not-the-date	active		経過観察の実施日は目安。材料が揃ったかはデータで判断する	Mnemo,Phase OBS,CUR-6-OBS,CUR-3-OBS	師匠の指示で全項目に適用できる規範。事例は Phase OBS の1件	mid
+web-lookup-before-using-libraries-apis	active		ライブラリ・APIを使う前に必ずネットで最新を確認する	WebSearch,WebFetch,Anthropic SDK,OpenAI API	師匠のフィードバック。複数プロジェクトで古い仕様の事故が反復	high
+web-scraping-verification-checklist	project	InfoGather	セレクタが取れても正しい要素とは限らない。複数URLで検証	InfoGather,Impress Watch,Forbes JAPAN,CSIS	InfoGather の17ソース追加での罠集。スクレイピング固有	mid
+widening-the-input-scope-widens-the-trust-boundary	archive		入力範囲を広げる決定は信頼境界も広げる	Mnemo,Phase AF,renderMd,renderMdUntrusted,web_fetch	draft。Mnemo Phase AF の1件のみ	mid
+windows-batch-file-encoding	archive		.batはASCIIのみで書く（別スキルに包含）	.bat,CP932,chcp 65001	windows-script-ascii-only が .ps1 へ拡張し包含する重複	mid
+windows-batch-integrity	active		.batはASCII・rem・全上書き禁止・引用・exit /bの鉄則で書く	cmd.exe,%~dp0,pushd,setlocal,PYTHONUTF8	師匠が絶対ルールとして宣言（50回以上の失敗の蓄積）	mid
+windows-console-check-via-attached-console	archive		別コンソールに打鍵を書き込み画面を読んでCLIを自己検証する	ray,btw_async,AttachConsole,WriteConsoleInputW,CREATE_NEW_CONSOLE	forming。ray 1件の技術的手順	mid
+windows-debug-output-cp932-safe	archive		デバッグ出力は罫線・絵文字を避けASCII枠にする	cp932,UTF-8,jsonl	draft。1件の技術的観測	mid
+windows-distribution-no-installer	archive		限定配布はインストーラーなしの独立exe+ps1で済ませる	Mnemo,recall,PyInstaller,MSI,Inno Setup	Mnemo R3 の1件の発言。forming で再現なし	low
+windows-non-tty-cp932-crash	archive		非コンソール出力ではPythonがcp932でクラッシュする	InfoGather,run_all.py,cp932,UnicodeEncodeError	Python/Windows の技術的観測。InfoGather 1件	mid
+windows-script-ascii-only	active		.ps1と.batはコメント・メッセージ含めASCIIのみで書く	PowerShell 5.1,BOM,llmproviderlib,Mnemo,notebooklm-agent	師匠の明示宣言。llmproviderlib・Mnemo・notebooklm-agent で再現	high
+workaround-keeps-blast-radius-small	active		ワークアラウンドは影響範囲を小さく保ち将来取り除ける形にする	llmproviderlib,m6c-1,m6d,m6e,parse_sse_line	師匠の明示宣言。m6c-1〜m6e で継続適用	high
+working-code-over-clean-code	active		動くコードを最優先し、きれいさで実装判断を縛らない	eval-by-tests-only	師匠の上位思想の宣言。全プロジェクトの設計判断に効く	mid
+write-to-the-master-in-japanese	active		師匠に向けた文はすべて日本語で書く	corrections,Mnemo,lpl-m19-follow	師匠の明示指示と叱責の記録あり。全プロジェクトで有効	mid
