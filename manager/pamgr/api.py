@@ -14,7 +14,7 @@ from typing import Any, Callable
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
-from . import __version__, changes, checks, conflicts, decide, distribute, generalize, inbox, jobs, llm, settings, situations, status, survey, sweep, targets
+from . import __version__, changes, checks, conflicts, decide, distribute, generalize, inbox, jobs, llm, managed, settings, situations, status, survey, sweep, targets
 from .paths import data_home, master_root
 
 router = APIRouter()
@@ -301,6 +301,7 @@ def activity_diff(event_id: str) -> dict[str, Any]:
 @safe
 def activity_undo(event_id: str) -> dict[str, Any]:
     res = changes.undo(event_id)
+    managed.after_undo(res.get("refs") or {})
     decide.after_undo(res.get("refs") or {})
     return res
 
@@ -317,8 +318,24 @@ def effective_get(target_id: str) -> dict[str, Any]:
 
 
 @router.get("/managed")
+@safe
 def managed_get() -> dict[str, Any]:
-    return not_implemented("managed.get")
+    return managed.overview()
+
+
+@router.post("/managed/{target_id}/exclude")
+@safe
+def managed_exclude(target_id: str) -> dict[str, Any]:
+    if targets.get_target(target_id) is None:
+        raise KeyError(f"配布先が無い: {target_id}")
+    return {"event": managed.exclude(target_id, "師匠が管理から外した。二度と自動で入れない")}
+
+
+@router.post("/managed/unexclude")
+@safe
+def managed_unexclude(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    inbox.unexclude(str(body["path"]))
+    return {"excluded": inbox.excluded()}
 
 
 # ---------------------------------------------------------------- GitHub（PC・ユーザー横断・UC4）

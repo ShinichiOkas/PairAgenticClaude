@@ -49,9 +49,9 @@ def substantive(u: dict[str, Any]) -> bool:
     return any(ln.strip() and not ln.lstrip().startswith("#") for ln in u["text"].splitlines())
 
 
-def global_units() -> list[dict[str, Any]]:
+def global_units(tlist: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     out = []
-    for t in targets.list_targets():
+    for t in (targets.list_targets() if tlist is None else tlist):
         if t["kind"] == "claude_home":
             out += [u for u in survey.survey_home(t) if u["kind"] == "rule-section" and u["scope"] == "global" and substantive(u)]
     return out
@@ -96,8 +96,9 @@ def section_scores(units: list[dict[str, Any]]) -> np.ndarray:
     return out
 
 
-def candidates() -> tuple[list[Cand], dict[str, Any]]:
-    g = global_units()
+def candidates(tlist: list[dict[str, Any]] | None = None) -> tuple[list[Cand], dict[str, Any]]:
+    tlist = targets.list_targets() if tlist is None else tlist
+    g = global_units(tlist)
     ghash = {u["hash"] for u in g}
     cands: dict[str, Cand] = {}
 
@@ -115,7 +116,7 @@ def candidates() -> tuple[list[Cand], dict[str, Any]]:
     for i in range(len(g)):
         for j in range(i + 1, len(g)):
             add(g[i], g[j], gs[i, j], "*", 0)
-    projects = [t for t in targets.list_targets() if t["kind"] == "project"]
+    projects = [t for t in tlist if t["kind"] == "project"]
     per_project: dict[str, int] = {}
     for t in projects:
         pu = project_units(t, ghash)

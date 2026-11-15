@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from . import changes, conflicts, generalize, history, inbox, mapping, sections, settings, store, targets
+from . import changes, conflicts, generalize, history, inbox, managed, mapping, sections, settings, store, targets
 from .changes import Event, LedgerSet, Write, sha
 from .paths import master_root
 
@@ -302,10 +302,10 @@ def _apply_overlay(p: Planned, ov: Overlay, led: dict[str, Any]) -> None:
         led.setdefault(l.tid, {})[l.rel] = {"hash": l.hash}
 
 
-def plan_homes(plan: Plan) -> None:
+def plan_homes(plan: Plan, tlist: list[dict[str, Any]]) -> None:
     master = master_root()
     ov, led, sup = Overlay(), changes.ledger(), changes.suppressed()
-    homes = [t for t in targets.list_targets() if t["kind"] in HOMES]
+    homes = [t for t in tlist if t["kind"] in HOMES]
     if not homes:
         plan.notes.append("ホーム（~/.claude・~/.gemini/config）が管理下にありません")
     user_ok = (master / "external" / "pair-agent-skills" / ".git").exists()
@@ -342,16 +342,15 @@ def plan_homes(plan: Plan) -> None:
 
 
 # ---------------------------------------------------------------- 点検の全体
-def plan_all(dry_run: bool) -> Plan:
+def plan_all(dry_run: bool, tlist: list[dict[str, Any]] | None = None) -> Plan:
     global _NAMES
     plan = Plan()
     _NAMES = generalize.project_names()
     try:
-        plan_homes(plan)
+        plan_homes(plan, targets.list_targets() if tlist is None else tlist)
     finally:
         _NAMES = None
     plan.steps["homes"] = "済"
-    plan.steps["managed"] = "未実装"
     plan.steps["projects"] = "未実装（プロジェクトへの書き込みは後の段）"
     plan.steps["git"] = "未実装"
     return plan
@@ -365,9 +364,10 @@ def _public(p: Plan, applied: list[dict[str, Any]] | None = None, skipped: list[
             "applied": applied if applied is not None else None, "skipped": skipped or []}
 
 
-def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None,
+                   tlist: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """効いている集合の中の矛盾（J1）。budget 秒まで未判定の組を LLM で判定する（0 なら判定済みの結果だけ使う）。"""
-    cands, info = conflicts.candidates()
+    cands, info = conflicts.candidates(tlist)
     wk: dict[str, Any] = {}
     if budget > 0 and cands:
         wk = conflicts.work(cands, budget, progress=progress)
@@ -385,14 +385,30 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
         raise ValueError("点検はいま走っています")
     try:
         if progress:
-            progress(0, 3, "照合中")
-        p = plan_all(dry_run)
+            progress(0, 3, "探索・照合中")
+        sc = managed.scan()
+        j3 = managed.j3_items(sc["ask"])
         if dry_run:
-            j1, cinfo = _conflict_step(p, 0, None)
+            tlist = targets.list_targets() + [{"id": targets.target_id(c["kind"], c["path"]), **c} for c in sc["register"]]
+            p = plan_all(True, tlist)
+            p.steps["managed"] = f"自動で入れる {len(sc['register'])}・確かめる（J3） {len(j3)}"
+            p.inbox = j3 + p.inbox
+            j1, cinfo = _conflict_step(p, 0, None, tlist)
             p.inbox += j1
-            res = {"dry_run": True, "at": store.now_iso(), **_public(p), "conflicts": cinfo}
+            res = {"dry_run": True, "at": store.now_iso(), **_public(p), "conflicts": cinfo,
+                   "managed": {"register": [{"name": c["name"], "path": c["path"], "kind": c["kind"]} for c in sc["register"]]}}
             store.save("preview.json", res)
             return res
+        regs = []
+        with changes.LOCK:
+            for c in sc["register"]:
+                why = "ホーム（全体の規則の配布先）" if c["kind"] != "project" else ".pair-agent/ を持つ（Pair Agent を導入済み）"
+                regs.append(managed.include(c, why))
+            new_j3 = inbox.upsert(j3)
+            inbox.sync(("J3",), {i["key"] for i in j3})
+        p = plan_all(False)
+        p.steps["managed"] = f"自動で入れた {len(regs)}・確かめる（J3） {len(j3)}"
+        p.inbox = j3 + p.inbox
         if progress:
             progress(1, 3, "反映中")
         applied, skipped = [], []
@@ -407,14 +423,15 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
                     applied.append(changes.commit(a.event))
                 except changes.Stale as exc:
                     skipped.append({"detail": a.event.detail, "why": str(exc)})
-            new = inbox.upsert(p.inbox)
-            inbox.sync(("J2",), {i["key"] for i in p.inbox})
+            new = new_j3 + inbox.upsert([i for i in p.inbox if i["kind"] == "J2"])
+            inbox.sync(("J2",), {i["key"] for i in p.inbox if i["kind"] == "J2"})
         budget = float(settings.get().get("llm_budget_sec", 300)) if llm_budget is None else llm_budget
         j1, cinfo = _conflict_step(p, budget, progress)
         with changes.LOCK:
             new += inbox.upsert(j1)
             inbox.sync(("J1",), {i["key"] for i in j1})
         p.inbox += j1
+        applied = regs + applied
         res = {"dry_run": False, "at": store.now_iso(), **_public(p, [{"id": e["id"], "what": e["what"], "detail": e["detail"]} for e in applied], skipped),
                "new_inbox": len(new), "conflicts": cinfo}
         store.save(FILE, res)

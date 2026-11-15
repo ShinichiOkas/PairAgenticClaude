@@ -199,4 +199,17 @@ def _j1(it: dict[str, Any], option: str, edits: list[dict[str, Any]]) -> tuple[d
     return changes.commit(ev), "decided"
 
 
-HANDLERS = {"J1": _j1, "J2": _j2}
+# ---------------------------------------------------------------- J3: 管理に入れるか
+def _j3(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[dict[str, Any], str]:
+    from . import managed
+    r = it["refs"]
+    refs = {"item_id": it["id"]}
+    if option == "include":
+        c = {"kind": "project", "path": r["path"], "name": r["name"]}
+        return managed.include(c, "師匠の判断（J3）", kind="decide", what="判断: 管理に入れた", refs=refs), "decided"
+    if option == "exclude":
+        return managed.exclude(r["path"], "師匠の判断（J3）。二度と聞かない", kind="decide", what="判断: 外した", refs=refs), "dismissed"
+    raise ValueError(f"選択肢が不明: {option}")
+
+
+HANDLERS = {"J1": _j1, "J2": _j2, "J3": _j3}

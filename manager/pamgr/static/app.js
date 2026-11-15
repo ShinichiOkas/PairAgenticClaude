@@ -110,12 +110,7 @@ function decisionCard(item, sample) {
     ${item.ai ? `<div class="ai"><b>AI の見立て（仮説）:</b> ${esc(item.ai)}</div>` : ""}
     <div class="bar">${opts}${diffBtn}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
 }
-const SAMPLE_INBOX = [
-  { id: "sample-j3", kind: "J3", title: "openclaw を管理に入れるか",
-    what: "CLAUDE.md を持つリポジトリが見つかりました。.pair-agent/ が無いので、他人のリポジトリかもしれません。管理に入れると、全体の規則とプロジェクトの雛形を配ります。",
-    applies: "S:\\work\\develop\\openclaw（CLAUDE.md・AGENTS.md あり）",
-    options: [{ id: "include", label: "管理に入れる", primary: true }, { id: "exclude", label: "外す（二度と聞かない）" }, { id: "later", label: "あとで" }] },
-];
+const SAMPLE_INBOX = [];   // 見本は、判断の種類が実装されたら外す（J1・J2・J3 は実装済み）
 async function loadInbox() {
   busy("inbox-out");
   const r = await api("GET", "/inbox");
@@ -127,6 +122,9 @@ async function loadInbox() {
       (later.length ? `<h3 class="muted">あとで（${later.length}）</h3>` + later.map((i) => decisionCard(i)).join("") : "");
   }
   $("inbox-sample").innerHTML = SAMPLE_INBOX.map((i) => decisionCard(i, true)).join("");
+  bindDecisionButtons();
+}
+function bindDecisionButtons() {
   document.querySelectorAll(".dc-opt:not(:disabled)").forEach((b) => (b.onclick = async () => {
     const id = b.dataset.id, opt = b.dataset.opt, out = "dc-out-" + id;
     if (["split", "a", "b", "merge"].includes(opt)) { await showDraft(id, opt); return; }
@@ -251,11 +249,21 @@ $("ef-show").onclick = async () => {
 };
 
 // ------------------------------------------------------------ 管理下（UC3）
+const KIND_NAME = { claude_home: "ホーム（Claude Code）", gemini_home: "ホーム（Antigravity）", project: "プロジェクト" };
 async function loadManaged() {
   busy("managed-out");
   const r = await api("GET", "/managed");
   if (!guard("managed-out", r)) return;
-  $("managed-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`;
+  const keys = ["same", "master-ahead", "target-ahead", "diverged", "differs", "missing"];
+  const ts = (r.targets || []).sort((a, b) => (a.kind === "project") - (b.kind === "project") || a.name.localeCompare(b.name));
+  let html = `<p class="muted">${ts.length} か所 ・ 確かめ待ち（J3） ${(r.pending || []).length} 件。プロジェクトへの書き込み（雛形・エージェント定義）はまだしません（各リポジトリに未コミットの変更を作るため、後の段）。プロジェクトの規則は「同時に効く規則の矛盾」の検査に入ります。</p>`;
+  html += ts.length ? `<table><tr><th>名前</th><th>種類</th><th>場所</th>${keys.map((k) => `<th>${badge(k)}</th>`).join("")}<th></th></tr>` +
+    ts.map((t) => `<tr><td>${esc(t.name)}</td><td>${esc(KIND_NAME[t.kind] || t.kind)}</td><td class="path">${esc(t.path)}</td>${keys.map((k) => `<td>${t.counts?.[k] || ""}</td>`).join("")}<td><button class="secondary mg-ex" data-id="${esc(t.id)}">外す</button></td></tr>`).join("") + "</table>"
+    : '<p class="muted">まだありません。「今すぐ点検」で探索します（探索の根は設定）。</p>';
+  if ((r.excluded || []).length) html += `<h3>外したもの（二度と聞かない）</h3><table>` + r.excluded.map((p) => `<tr><td class="path">${esc(p)}</td><td><button class="secondary mg-un" data-p="${esc(p)}">戻す</button></td></tr>`).join("") + "</table>";
+  $("managed-out").innerHTML = html;
+  document.querySelectorAll(".mg-ex").forEach((b) => (b.onclick = async () => { const d = await api("POST", `/managed/${encodeURIComponent(b.dataset.id)}/exclude`); if (guard("managed-out", d)) loadManaged(); }));
+  document.querySelectorAll(".mg-un").forEach((b) => (b.onclick = async () => { const d = await api("POST", "/managed/unexclude", { path: b.dataset.p }); if (guard("managed-out", d)) loadManaged(); }));
 }
 
 // ------------------------------------------------------------ 配布先

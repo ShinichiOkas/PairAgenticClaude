@@ -30,6 +30,10 @@ def isolated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
     monkeypatch.setattr(llm, "chat_structured", no_llm)
     monkeypatch.setattr(llm, "chat_text", no_llm)
+    # 点検の探索は、テストが根を与えたときだけ（既定では空のフォルダを見る）
+    (tmp_path / "noscan").mkdir()
+    from pamgr import settings
+    settings.put({"scan_roots": [str(tmp_path / "noscan")]})
     return tmp_path
 
 
