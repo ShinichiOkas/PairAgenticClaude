@@ -12,7 +12,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from . import changes, inbox, llm, mapping, sections, situations, sweep, targets
-from .changes import Event, LedgerSet, Write, read, sha
+from .changes import Event, LedgerSet, Write, ckey, read, sha
 from .paths import master_root
 
 
@@ -59,11 +59,11 @@ def _j2(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[
     refs = {"item_id": it["id"], "target_id": t["id"], "rel": r["rel"], "src_rel": r["src_rel"]}
     if option == "master":
         ev = Event("decide", "判断: マスターの版にした", f"マスターの {r['src_rel']} → {where}", "師匠の判断（J2）",
-                   [Write(dest, mb, r["th"])], [LedgerSet(t["id"], r["rel"], r["mh"], mb)], refs=refs)  # type: ignore[arg-type]
+                   [Write(dest, mb, r["th"])], [LedgerSet(t["id"], r["rel"], ckey(mb) or "", mb)], refs=refs)  # type: ignore[arg-type]
     elif option == "target":
         ws = [Write(src, tb, r["mh"])] + sweep._mirror_writes(r["src_rel"], mb, tb, sweep.Overlay(), master)  # type: ignore[arg-type]
         ev = Event("decide", "判断: 配布先の版をマスターへ", f"{where} → マスターの {r['src_rel']}", "師匠の判断（J2）",
-                   ws, [LedgerSet(t["id"], r["rel"], r["th"], tb)], refs=refs)  # type: ignore[arg-type]
+                   ws, [LedgerSet(t["id"], r["rel"], ckey(tb) or "", tb)], refs=refs)  # type: ignore[arg-type]
     else:
         raise ValueError(f"選択肢が不明: {option}")
     return changes.commit(ev), "decided"
@@ -191,9 +191,9 @@ def _j1(it: dict[str, Any], option: str, edits: list[dict[str, Any]]) -> tuple[d
             writes += sweep._mirror_writes(mrel, orig[mk], buf[mk].encode("utf-8"), sweep.Overlay(), master)
     ledgers = []
     for k, (tid, rel, mk) in homes.items():
-        if mk in buf and buf[k] == buf[mk]:
+        if mk in buf and ckey(buf[k].encode("utf-8")) == ckey(buf[mk].encode("utf-8")):
             data = buf[k].encode("utf-8")
-            ledgers.append(LedgerSet(tid, rel, sha(data) or "", data))
+            ledgers.append(LedgerSet(tid, rel, ckey(data) or "", data))
     label = {"split": "状況で分けた", "a": "A を採った", "b": "B を採った", "merge": "統合した"}[option]
     ev = Event("decide", f"判断: {label}", it["title"], "師匠の判断（J1）", writes, ledgers, refs=refs)
     return changes.commit(ev), "decided"

@@ -36,6 +36,17 @@ def sha(data: bytes | None) -> str | None:
     return hashlib.sha1(data).hexdigest() if data is not None else None
 
 
+def ckey(data: bytes | None) -> str | None:
+    """中身の鍵: 文字なら改行・空白の違いを除いた中身のハッシュ（PC ごとの改行の設定で揺れない）。文字でなければバイトのハッシュ。"""
+    if data is None:
+        return None
+    try:
+        from .survey import norm_text
+        return "t" + hashlib.sha1(norm_text(data.decode("utf-8")).encode("utf-8")).hexdigest()
+    except UnicodeDecodeError:
+        return "b" + hashlib.sha1(data).hexdigest()
+
+
 def read(p: Path) -> bytes | None:
     try:
         return p.read_bytes() if p.is_file() else None
@@ -84,7 +95,7 @@ def base_text(tid: str, rel: str, last_hash: str | None) -> str | None:
     if not last_hash:
         return None
     data = read(_base_path(tid, rel))
-    if data is None or sha(data) != last_hash:
+    if data is None or ckey(data) != last_hash:
         return None
     return data.decode("utf-8", errors="replace")
 

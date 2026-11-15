@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import changes, conflicts, generalize, gitsync, history, inbox, managed, mapping, sections, settings, store, targets
-from .changes import Event, LedgerSet, Write, sha
+from .changes import Event, LedgerSet, Write, ckey, sha
 from .paths import master_root
 
 FILE = "sweep.json"
@@ -143,10 +143,8 @@ def merge_sections(mtext: str, ttext: str, base: str | None, src_rel: str) -> Me
                 h = hist.get(key) if hist is not None else None
                 if h is None:
                     take[key] = t; res.from_target.append(t.anchor)
-                elif t.norm in h:
-                    take[key] = None; res.dropped.append(t.anchor)     # マスターで消した（配布先は古い）
-                else:
-                    res.conflicts.append(t.anchor)
+                else:   # マスターの履歴にある節: マスターで消したのか、取り込みを取り消したのか決められない → 推測で消さない
+                    res.conflicts.append(f"{t.anchor}（マスターの履歴にあり、いまのマスターに無い）")
 
     # 見出しの付け替え（マスターにだけある節と配布先にだけある節の本文がよく似ている）は推測しない
     m_only = [Mk[k] for k in Mk if k not in Tk]
@@ -205,21 +203,22 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
     tid, tname = t["id"], t["name"]
     dest = Path(t["path"]) / rel
     mb, tb = ov.read(src), ov.read(dest)
-    mh, th = sha(mb), sha(tb)
+    mh, th = sha(mb), sha(tb)            # バイト（書く直前の確かめ）
+    mk, tk = ckey(mb), ckey(tb)          # 中身（改行・空白だけの違いは同じとみなす。PC ごとの改行の設定で揺れない）
     last = ((led.get(tid) or {}).get(rel) or {}).get("hash")
     src_rel = src.relative_to(master).as_posix()
     where = f"{tname}/{rel}"
 
     if mb is None:
         return None
-    if mh == th:
-        if last != th:
-            plan.baselines.append((tid, rel, th, tb))  # type: ignore[arg-type]
+    if mk == tk:
+        if last != tk:
+            plan.baselines.append((tid, rel, tk, tb))  # type: ignore[arg-type]
         return None
 
     def distribute(why: str, what: str = "配った") -> Planned:
         ev = Event("distribute", what, f"マスターの {src_rel} → {where}", why,
-                   [Write(dest, mb, th)], [LedgerSet(tid, rel, mh, mb)], f"{tid}|{rel}|{mh}|{th}",  # type: ignore[arg-type]
+                   [Write(dest, mb, th)], [LedgerSet(tid, rel, mk, mb)], f"{tid}|{rel}|{mk}|{tk}",  # type: ignore[arg-type]
                    {"target_id": tid, "rel": rel, "src_rel": src_rel})
         return Planned(ev, tid, rel)
 
@@ -230,21 +229,21 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
             return None
         ws = [Write(src, tb, mh)] + _mirror_writes(src_rel, mb, tb, ov, master)  # type: ignore[arg-type]
         ev = Event("adopt", "マスターへ取り込んだ", f"{where} → マスターの {src_rel}", why,
-                   ws, [LedgerSet(tid, rel, th, tb)], f"{tid}|{rel}|{mh}|{th}",  # type: ignore[arg-type]
+                   ws, [LedgerSet(tid, rel, tk, tb)], f"{tid}|{rel}|{mk}|{tk}",  # type: ignore[arg-type]
                    {"target_id": tid, "rel": rel, "src_rel": src_rel})
         return Planned(ev, tid, rel)
 
     def j2(why: str, conflicts: list[str]) -> None:
         plan.inbox.append({
-            "kind": "J2", "key": f"J2|{tid}|{rel}|{mh}|{th}", "title": f"{where} — マスターと配布先の両方で変わっている",
+            "kind": "J2", "key": f"J2|{tid}|{rel}|{mk}|{tk}", "title": f"{where} — マスターと配布先の両方で変わっている",
             "what": why + (" ぶつかる箇所: " + "、".join(conflicts[:10]) if conflicts else ""),
-            "applies": where, "refs": {"target_id": tid, "rel": rel, "src_rel": src_rel, "mh": mh, "th": th},
+            "applies": where, "refs": {"target_id": tid, "rel": rel, "src_rel": src_rel, "mh": mh, "th": th, "mk": mk, "tk": tk},
             "options": [{"id": "master", "label": "マスターの版にする（配布先を上書き）", "primary": True},
                         {"id": "target", "label": "配布先の版をマスターへ"}, {"id": "later", "label": "あとで"}]})
 
     if th is None:
         return distribute("配布先に無かった", "配った（新規）")
-    state = "master-ahead" if last == th else "target-ahead" if last == mh else "diverged" if last else "differs"
+    state = "master-ahead" if last == tk else "target-ahead" if last == mk else "diverged" if last else "differs"
     if state == "master-ahead":
         return distribute("マスターが新しく、配布先は最後に配った版のままだった")
     if state == "target-ahead":
@@ -253,15 +252,17 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
     # 双方で変わった（台帳あり）・向き不明（台帳なし）
     mtext, ttext = _decode(mb), _decode(tb)
     base = changes.base_text(tid, rel, last) if last else None
+    if ttext is not None and history.file_seen(src_rel, ttext):     # ファイル全体がマスターの過去の版そのもの → 確実に古い
+        return distribute("配布先はマスターの過去の版だった")
     if e.id in RULE_ENTRIES and mtext is not None and ttext is not None:
         r = merge_sections(mtext, ttext, base, src_rel)
         if r.text is None:
             j2("同じ節が両方で書き換えられていて、自動ではマージできません。", r.conflicts)
             return None
         merged = r.text.encode("utf-8")
-        if merged == tb:      # マスターが古いだけ（配布先の新しい節を取り込めば揃う）
+        if ckey(merged) == tk:      # マスターが古いだけ（配布先の新しい節を取り込めば揃う）
             return adopt("配布先の新しい節をマスターへ（節ごとに照合）: " + "、".join(r.from_target[:6]))
-        if merged == mb:      # 配布先が古いだけ
+        if ckey(merged) == mk:      # 配布先が古いだけ
             return distribute("配布先はマスターの過去の版だった（節ごとに照合）" + (f"。古い節: {'、'.join(r.from_master[:6])}" if r.from_master else ""))
         novel = "\n".join(c.raw for c in sections.parse(r.text) if c.anchor in r.from_target)
         leaks = _novel_leaks(novel, mtext)
@@ -277,13 +278,13 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
         if r.dropped:
             parts.append("消された節: " + "、".join(r.dropped[:6]))
         ev = Event("merge", "節ごとにマージした", f"{where} ⇄ マスターの {src_rel}", "。".join(parts) or "節ごとに照合した",
-                   ws, [LedgerSet(tid, rel, sha(merged) or "", merged)], f"{tid}|{rel}|{mh}|{th}",
+                   ws, [LedgerSet(tid, rel, ckey(merged) or "", merged)], f"{tid}|{rel}|{mk}|{tk}",
                    {"target_id": tid, "rel": rel, "src_rel": src_rel})
         return Planned(ev, tid, rel)
     if ttext is not None and history.file_seen(src_rel, ttext):
         return distribute("配布先はマスターの過去の版だった")
     if base is not None:
-        if sha(base.encode("utf-8")) == mh:
+        if ckey(base.encode("utf-8")) == mk:
             return adopt("配布先だけで書き換えられた")
         j2("マスターと配布先の両方で書き換えられています。", [])
         return None

@@ -25,8 +25,10 @@ STATES = ("same", "missing", "master-ahead", "target-ahead", "diverged", "differ
 
 
 def file_hash(p: Path) -> str | None:
+    """中身の鍵（改行・空白の違いは同じとみなす。台帳と同じ鍵）。"""
+    from .changes import ckey
     try:
-        return hashlib.sha1(p.read_bytes()).hexdigest()
+        return ckey(p.read_bytes())
     except OSError:
         return None
 
@@ -128,5 +130,5 @@ def adopt(tid: str, rel: str) -> dict[str, Any]:
         raise ValueError(f"配布先にファイルが無い: {dest}")
     data = dest.read_bytes()
     src.write_bytes(data)
-    record_ledger(tid, rel, hashlib.sha1(data).hexdigest())
+    record_ledger(tid, rel, file_hash(src) or "")
     return {"written": str(src)}

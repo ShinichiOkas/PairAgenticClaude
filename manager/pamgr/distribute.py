@@ -77,7 +77,7 @@ def apply(plan_id: str, action_ids: list[str]) -> dict[str, Any]:
         dest.parent.mkdir(parents=True, exist_ok=True)
         data = src.read_bytes()
         dest.write_bytes(data)
-        status.record_ledger(a["target_id"], a["dest_rel"], hashlib.sha1(data).hexdigest())
+        status.record_ledger(a["target_id"], a["dest_rel"], status.file_hash(dest) or "")
         applied.append(a)
     p["applied_at"] = store.now_iso()
     p["applied"] = [a["id"] for a in applied]
