@@ -190,13 +190,30 @@ def _when(u: dict[str, Any]) -> str:
     return f"{m.group(0)} の記述" if m else ""
 
 
+def is_stale_copy(c: Cand) -> bool:
+    """プロジェクトにある全体の節の写し（同じ見出し）が、全体の節と食い違う。判断ではなく、写しが古い（実測 2026-11-15: llmbenchmark）。"""
+    from .sections import anchor_key
+    return c.a["scope"] != c.b["scope"] and anchor_key(c.a["anchor"]) == anchor_key(c.b["anchor"])
+
+
+def stale_copies(cands: list[Cand]) -> list[dict[str, Any]]:
+    vd = verdicts()
+    out = []
+    for c in cands:
+        if is_stale_copy(c) and (vd.get(c.key) or {}).get("relation") in J1_RELATIONS + ("overlap", "subsumes"):
+            p = c.a if c.a["scope"] == "project" else c.b
+            out.append({"what": "プロジェクトに全体の規則の古い写しがある", "detail": f"{p['target']}/{p['rel']} › {p['anchor']}",
+                        "why": "全体の同じ見出しの節と食い違う。プロジェクトへの書き込みは後の段（いまは直さない）"})
+    return out
+
+
 def items(cands: list[Cand]) -> list[dict[str, Any]]:
     vd = verdicts()
     out = []
     for c in cands:
         v = vd.get(c.key) or {}
         rel = v.get("relation")
-        if rel not in J1_RELATIONS:
+        if rel not in J1_RELATIONS or is_stale_copy(c):
             continue
         applies = "全プロジェクト（どちらも全体の規則）" if "*" in c.applies else "、".join(sorted(c.applies))
         sit = ""

@@ -381,6 +381,7 @@ def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None,
     if budget > 0 and cands:
         wk = conflicts.work(cands, budget, progress=progress)
     j1 = conflicts.items(cands)
+    p.held += conflicts.stale_copies(cands)
     remaining = wk.get("remaining", len(conflicts.pending(cands)))
     p.steps["conflicts"] = f"候補 {len(cands)} 組・矛盾／状況依存 {len(j1)} 組・未判定 {remaining} 組"
     if remaining:
