@@ -54,35 +54,61 @@ function showTab(name) {
   if (onShow[name]) onShow[name]();
 }
 
-// ------------------------------------------------------------ ヘッダ（常駐の状態）
+// ------------------------------------------------------------ ヘッダ（常駐の状態・点検）
 async function loadHealth() {
   const h = await api("GET", "/health");
   $("hdr-info").textContent = h.master_root ? `マスター: ${h.master_root}` : "";
 }
+const fmtAt = (s) => (s ? String(s).replace("T", " ").slice(0, 19) : "");
 async function loadResident() {
   const r = await api("GET", "/resident");
-  const state = r.implemented === false ? '<span class="badge b-warn">常駐: 未実装</span>' :
-    `<span class="badge ${r.running ? "b-ok" : "b-muted"}">${r.running ? "常駐中" : "停止"}</span> 最終点検 ${esc(r.last_sweep || "-")} ・ 次の点検 ${esc(r.next_sweep || "-")}`;
-  $("resident").innerHTML = `${state} <button id="sweep-now" class="secondary">今すぐ点検</button><span id="sweep-out"></span>`;
-  $("sweep-now").onclick = async () => {
-    const s = await api("POST", "/sweep");
-    $("sweep-out").innerHTML = s.implemented === false ? ' <span class="badge b-warn">未実装</span>' : s.error ? ` <span class="badge b-bad">${esc(s.error)}</span>` : " 点検を始めました";
+  let state;
+  if (r.implemented === false || r.error) state = '<span class="badge b-warn">常駐: 未実装</span>';
+  else {
+    const res = r.resident_implemented === false
+      ? '<span class="badge b-warn" title="自動の点検（常駐）はまだ未実装。いまは「今すぐ点検」だけ">常駐: 未実装</span>'
+      : `<span class="badge ${r.running ? "b-ok" : "b-muted"}">${r.running ? "常駐中" : "停止"}</span>`;
+    state = `${res} <span class="muted">最終点検 ${esc(fmtAt(r.last_sweep) || "まだ")}${r.next_sweep ? " ・ 次 " + esc(fmtAt(r.next_sweep)) : ""}</span>`;
+    $("nav-inbox-n").textContent = r.open || "";
+  }
+  $("resident").innerHTML = `${state} <button id="sweep-now" class="secondary" title="照合して、自動で直せるものは直します（配る・マスターへ取り込む・節ごとのマージ）。書く前の版は退避し、「自動でやったこと」から取り消せます">今すぐ点検（自動で直す）</button><span id="sweep-out">${r.sweeping ? ' <span class="badge b-info">点検中…</span>' : ""}</span>`;
+  $("sweep-now").onclick = () => runSweep(false, "sweep-out");
+}
+async function runSweep(dryRun, outId, done) {
+  const s = await api("POST", "/sweep", { dry_run: dryRun });
+  if (s.error) { $(outId).innerHTML = ` <span class="badge b-bad">${esc(s.error)}</span>`; return; }
+  $(outId).innerHTML = ` <span class="badge b-info">${dryRun ? "予行中…" : "点検中…"}</span>`;
+  const tick = async () => {
+    const j = await api("GET", "/jobs/" + encodeURIComponent(s.job_id));
+    if (j.state === "running") { setTimeout(tick, 700); return; }
+    if (!dryRun) { await loadResident(); refreshCurrent(); }
+    const el = $(outId);
+    if (el) el.innerHTML = j.state === "done" ? ` <span class="badge b-ok">${dryRun ? "予行しました" : "点検しました"}</span>` : ` <span class="badge b-bad">${esc(j.error || "失敗")}</span>`;
+    if (done) done(j);
   };
+  setTimeout(tick, 500);
+}
+function refreshCurrent() {
+  const cur = (location.hash || "#inbox").slice(1);
+  if (cur === "inbox") loadInbox();
+  if (cur === "activity") loadActivity();
 }
 
 // ------------------------------------------------------------ 判断待ち（UC1）
 const J_LABEL = { J1: "同時に効く規則の矛盾", J2: "マージできない変更", J3: "管理に入れるか", J4: "ほかのユーザーの規則" };
 function decisionCard(item, sample) {
-  const opts = (item.options || []).map((o) => `<button class="${o.primary ? "" : "secondary"} dc-opt" data-id="${esc(item.id)}" data-opt="${esc(o.id)}">${esc(o.label)}</button>`).join("");
+  const dis = sample ? "disabled" : "";
+  const opts = (item.options || []).map((o) => `<button ${dis} class="${o.primary ? "" : "secondary"} dc-opt" data-id="${esc(item.id)}" data-opt="${esc(o.id)}">${esc(o.label)}</button>`).join("");
   const rule = (x, k) => x ? `<div class="rule"><div class="muted">${k} ・ ${esc(x.where)} ・ ${esc(x.when || "")}</div><pre>${esc(x.text)}</pre></div>` : "";
+  const diffBtn = item.kind === "J2" && item.refs ? `<button class="secondary dc-diff" data-id="${esc(item.id)}" data-t="${esc(item.refs.target_id)}" data-rel="${esc(item.refs.rel)}">差分を見る（- マスター / + 配布先）</button>` : "";
   return `<div class="card decision ${sample ? "sample" : ""}">
-    ${sample ? '<div class="sample-tag">見本（画面の形を見るためのもの。実データから作った例。中身は未実装）</div>' : ""}
-    <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b></div>
+    ${sample ? '<div class="sample-tag">見本（この種類の判断はまだ未実装。画面の形を見るためのもの。実データから作った例）</div>' : ""}
+    <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b>${item.status === "later" ? ' <span class="badge b-muted">あとで</span>' : ""}</div>
     <p>${esc(item.what)}</p>
     ${item.a || item.b ? `<div class="side">${rule(item.a, "規則 A")}${rule(item.b, "規則 B")}</div>` : ""}
-    ${item.applies ? `<p><b>${item.kind === "J3" ? "場所" : "どこで同時に効くか"}:</b> ${esc(item.applies)}</p>` : ""}
+    ${item.applies ? `<p><b>${item.kind === "J3" ? "場所" : item.kind === "J2" ? "ファイル" : "どこで同時に効くか"}:</b> ${esc(item.applies)}</p>` : ""}
     ${item.ai ? `<div class="ai"><b>AI の見立て（仮説）:</b> ${esc(item.ai)}</div>` : ""}
-    <div class="bar">${opts}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
+    <div class="bar">${opts}${diffBtn}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
 }
 const SAMPLE_INBOX = [
   { id: "sample-j1", kind: "J1", title: "運転方針 × セッションの始め",
@@ -102,37 +128,79 @@ async function loadInbox() {
   const r = await api("GET", "/inbox");
   if (guard("inbox-out", r)) {
     const items = r.items || [];
-    $("nav-inbox-n").textContent = items.length || "";
-    $("inbox-out").innerHTML = items.length ? items.map((i) => decisionCard(i, false)).join("") : '<p class="ok-big">やることはありません。</p>';
+    const open = items.filter((i) => i.status === "open"), later = items.filter((i) => i.status === "later");
+    $("nav-inbox-n").textContent = open.length || "";
+    $("inbox-out").innerHTML = (open.length ? open.map((i) => decisionCard(i)).join("") : '<p class="ok-big">やることはありません。</p>') +
+      (later.length ? `<h3 class="muted">あとで（${later.length}）</h3>` + later.map((i) => decisionCard(i)).join("") : "");
   }
   $("inbox-sample").innerHTML = SAMPLE_INBOX.map((i) => decisionCard(i, true)).join("");
-  document.querySelectorAll(".dc-opt").forEach((b) => (b.onclick = async () => {
+  document.querySelectorAll(".dc-opt:not(:disabled)").forEach((b) => (b.onclick = async () => {
+    const out = "dc-out-" + b.dataset.id;
+    busy(out, "反映中…");
     const d = await api("POST", `/inbox/${encodeURIComponent(b.dataset.id)}/decide`, { option: b.dataset.opt });
-    guard("dc-out-" + b.dataset.id, d) && ($("dc-out-" + b.dataset.id).innerHTML = '<span class="badge b-ok">反映しました</span>');
+    if (!guard(out, d)) return;
+    $(out).innerHTML = `<span class="badge b-ok">${d.status === "later" ? "あとでに回しました" : "反映しました"}</span>${d.sweep_job ? ' <span class="muted">ほかの配布先へ広げています（点検）</span>' : ""}`;
+    setTimeout(() => { loadInbox(); loadResident(); }, 1200);
+  }));
+  document.querySelectorAll(".dc-diff").forEach((b) => (b.onclick = async () => {
+    const out = "dc-out-" + b.dataset.id;
+    busy(out);
+    const d = await api("GET", `/diff?target_id=${encodeURIComponent(b.dataset.t)}&rel=${encodeURIComponent(b.dataset.rel)}`);
+    if (guard(out, d)) renderDiff(out, "差分（- マスター / + 配布先）", d.diff);
   }));
 }
 
 // ------------------------------------------------------------ 自動でやったこと（UC2）
-const SAMPLE_ACTIVITY = [
-  { at: "（見本）", what: "マスターへ取り込んだ", detail: "~/.claude/CLAUDE.md の節「作る順序は UI ファースト（絶対ルール・2026-11-14）」→ マスターの home-claude/CLAUDE.md（全体）", why: "配布先だけで生まれた師匠の宣言。ぶつかる規則なし" },
-  { at: "（見本）", what: "配った", detail: "マスターの rules/pair-agent-core.md の「迷ったら project か archive に保存する」→ ~/.claude/rules/ と ~/.gemini/config/rules/", why: "マスターで直した規則が届いていなかった。同じファイルの配布先側の新しい節は残して節ごとにマージ" },
-];
+const KIND_LABEL = { distribute: "配った", adopt: "取り込んだ", merge: "節マージ", decide: "判断", manage: "管理", undo: "取り消し" };
 async function loadActivity() {
   busy("activity-out");
   const r = await api("GET", "/activity");
   if (guard("activity-out", r)) {
     const ev = r.events || [];
-    $("activity-out").innerHTML = ev.length ? actTable(ev, false) : '<p class="muted">まだありません。</p>';
+    let html = "";
+    if ((r.held || []).length) html += `<div class="card"><h3>見送ったもの（最終点検 ${esc(fmtAt(r.last_sweep))}）</h3><table><tr><th>何を</th><th>どこ</th><th>なぜ</th></tr>` +
+      r.held.map((h) => `<tr><td>${esc(h.what)}</td><td>${esc(h.detail)}</td><td>${esc(h.why)}</td></tr>`).join("") + "</table></div>";
+    if ((r.notes || []).length) html += r.notes.map((n) => `<p class="muted">※ ${esc(n)}</p>`).join("");
+    html += ev.length ? actTable(ev) : '<p class="muted">まだありません。</p>';
+    $("activity-out").innerHTML = html;
+    document.querySelectorAll(".act-undo").forEach((b) => (b.onclick = async () => {
+      const d = await api("POST", `/activity/${encodeURIComponent(b.dataset.id)}/undo`);
+      if (d.error) { b.insertAdjacentHTML("afterend", ` <span class="badge b-bad">${esc(d.error)}</span>`); return; }
+      loadActivity(); loadResident();
+    }));
+    document.querySelectorAll(".act-diff").forEach((b) => (b.onclick = async () => {
+      const cell = $("act-d-" + b.dataset.id);
+      if (cell.dataset.open) { cell.innerHTML = ""; delete cell.dataset.open; return; }
+      const d = await api("GET", `/activity/${encodeURIComponent(b.dataset.id)}/diff`);
+      if (d.error) { cell.innerHTML = `<div class="error">${esc(d.error)}</div>`; return; }
+      cell.dataset.open = "1";
+      cell.innerHTML = (d.files || []).map((f, i) => `<div id="act-d-${esc(b.dataset.id)}-${i}"></div>`).join("");
+      (d.files || []).forEach((f, i) => renderDiff(`act-d-${b.dataset.id}-${i}`, f.path, f.diff));
+    }));
   }
-  $("activity-sample").innerHTML = `<div class="card sample"><div class="sample-tag">見本（この PC の実データで、点検が自動でやるはずのこと。まだ何もしていない）</div>${actTable(SAMPLE_ACTIVITY, true)}</div>`;
-  document.querySelectorAll(".act-undo").forEach((b) => (b.onclick = async () => {
-    const d = await api("POST", `/activity/${encodeURIComponent(b.dataset.id || "sample")}/undo`);
-    b.insertAdjacentHTML("afterend", d.implemented === false ? ' <span class="badge b-warn">未実装</span>' : ' <span class="badge b-ok">取り消しました</span>');
-  }));
+  renderPreview();
 }
-function actTable(ev, sample) {
+function actTable(ev) {
   return `<table><tr><th>いつ</th><th>何を</th><th>どこへ</th><th>なぜ</th><th></th></tr>` +
-    ev.map((e) => `<tr><td>${esc(e.at)}</td><td>${esc(e.what)}</td><td>${esc(e.detail)}</td><td>${esc(e.why)}</td><td><button class="secondary act-undo" data-id="${esc(e.id || "")}">取り消す</button></td></tr>`).join("") + "</table>";
+    ev.map((e) => {
+      const undoable = e.kind !== "undo" && !e.undone;
+      const btns = `${(e.changes || []).length ? `<button class="secondary act-diff" data-id="${esc(e.id)}">差分</button> ` : ""}${undoable ? `<button class="secondary act-undo" data-id="${esc(e.id)}">取り消す</button>` : e.undone ? '<span class="badge b-muted">取り消し済み</span>' : ""}`;
+      return `<tr><td>${esc(fmtAt(e.at))}</td><td><span class="badge b-info">${esc(KIND_LABEL[e.kind] || e.kind)}</span> ${esc(e.what)}</td><td>${esc(e.detail)}</td><td>${esc(e.why)}</td><td style="white-space:nowrap">${btns}</td></tr>` +
+        `<tr><td colspan="5" id="act-d-${esc(e.id)}" style="padding:0;border:0"></td></tr>`;
+    }).join("") + "</table>";
+}
+async function renderPreview() {
+  const r = await api("GET", "/sweep");
+  const p = r.preview;
+  let body = '<p class="muted">点検が次に何をするかを、書かずに見ます。</p>';
+  if (p) {
+    body = `<p class="muted">予行 ${esc(fmtAt(p.at))} ・ 書く ${p.actions.length} 件 ・ 判断待ち ${p.inbox.length} 件 ・ 見送り ${p.held.length} 件</p>` +
+      (p.actions.length ? `<table><tr><th>何を</th><th>どこへ</th><th>なぜ</th></tr>` + p.actions.map((a) => `<tr><td><span class="badge b-info">${esc(KIND_LABEL[a.kind] || a.kind)}</span> ${esc(a.what)}</td><td>${esc(a.detail)}</td><td>${esc(a.why)}</td></tr>`).join("") + "</table>" : '<p class="ok-big">書くものはありません。</p>') +
+      (p.inbox.length ? `<p><b>判断待ちに上がるもの:</b></p><ul>${p.inbox.map((i) => `<li>${esc(J_LABEL[i.kind] || i.kind)}: ${esc(i.title)}</li>`).join("")}</ul>` : "") +
+      (Object.keys(p.steps || {}).length ? `<p class="muted">段: ${Object.entries(p.steps).map(([k, v]) => `${esc(k)}=${esc(v)}`).join(" ・ ")}</p>` : "");
+  }
+  $("activity-sample").innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">予行（書かない）</h3><button id="pv-run" class="secondary">予行する</button><span id="pv-out"></span></div>${body}</div>`;
+  $("pv-run").onclick = () => runSweep(true, "pv-out", () => renderPreview());
 }
 
 // ------------------------------------------------------------ 効いている規則（UC5）

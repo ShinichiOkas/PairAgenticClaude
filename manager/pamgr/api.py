@@ -14,7 +14,7 @@ from typing import Any, Callable
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
-from . import __version__, checks, distribute, generalize, jobs, llm, settings, situations, status, survey, targets
+from . import __version__, changes, checks, decide, distribute, generalize, inbox, jobs, llm, settings, situations, status, survey, sweep, targets
 from .paths import data_home, master_root
 
 router = APIRouter()
@@ -31,6 +31,8 @@ def safe(fn: Callable[..., dict[str, Any]]) -> Callable[..., Any]:
     def wrap(*a: Any, **kw: Any) -> Any:
         try:
             return {"implemented": True, **fn(*a, **kw)}
+        except NotImplementedError as exc:      # 中身の無い分岐は「未実装」
+            return not_implemented(str(exc) or fn.__name__)
         except (ValueError, KeyError, FileExistsError, llm.LLMNotConfigured) as exc:
             msg = exc.args[0] if exc.args else str(exc)
             return JSONResponse({"implemented": True, "error": str(msg)}, status_code=400)
@@ -226,8 +228,11 @@ def distribute_apply(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 # ---------------------------------------------------------------- 常駐と点検（docs/usecases.md §2）
 @router.get("/resident")
+@safe
 def resident_get() -> dict[str, Any]:
-    return not_implemented("resident.get")
+    last = sweep.last() or {}
+    return {"enabled": False, "running": False, "resident_implemented": False, "sweeping": sweep.running(),
+            "last_sweep": last.get("at"), "next_sweep": None, "open": len(inbox.items(("open",)))}
 
 
 @router.put("/resident")
@@ -235,31 +240,62 @@ def resident_put(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
     return not_implemented("resident.put")
 
 
+def start_sweep(dry_run: bool) -> str:
+    if sweep.running():
+        raise ValueError("点検はいま走っています")
+    return jobs.start("sweep-preview" if dry_run else "sweep", lambda p: sweep.run(dry_run, p))
+
+
 @router.post("/sweep")
-def sweep() -> dict[str, Any]:
-    return not_implemented("sweep")
+@safe
+def sweep_start(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    """点検を始める。dry_run=true は予行（計画だけ・何も書かない）。"""
+    return {"job_id": start_sweep(bool(body.get("dry_run")))}
+
+
+@router.get("/sweep")
+@safe
+def sweep_get() -> dict[str, Any]:
+    return {"last": sweep.last(), "preview": sweep.preview(), "running": sweep.running()}
 
 
 # ---------------------------------------------------------------- 判断待ち（UC1・J1〜J4）
 @router.get("/inbox")
+@safe
 def inbox_get() -> dict[str, Any]:
-    return not_implemented("inbox.get")
+    return {"items": inbox.items()}
 
 
 @router.post("/inbox/{item_id}/decide")
+@safe
 def inbox_decide(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
-    return not_implemented("inbox.decide")
+    res = decide.decide(item_id, str(body.get("option", "")), body.get("edits"))
+    if res.get("status") == "decided" and not sweep.running():
+        res["sweep_job"] = jobs.start("sweep", lambda p: sweep.run(False, p))   # 判断をほかの配布先へ広げる
+    return res
 
 
 # ---------------------------------------------------------------- 自動でやったこと（UC2）
 @router.get("/activity")
+@safe
 def activity_get() -> dict[str, Any]:
-    return not_implemented("activity.get")
+    last = sweep.last() or {}
+    return {"events": list(reversed(changes.events()))[:500], "held": last.get("held", []), "notes": last.get("notes", []),
+            "last_sweep": last.get("at")}
+
+
+@router.get("/activity/{event_id}/diff")
+@safe
+def activity_diff(event_id: str) -> dict[str, Any]:
+    return {"files": changes.diff(event_id)}
 
 
 @router.post("/activity/{event_id}/undo")
+@safe
 def activity_undo(event_id: str) -> dict[str, Any]:
-    return not_implemented("activity.undo")
+    res = changes.undo(event_id)
+    decide.after_undo(res.get("refs") or {})
+    return res
 
 
 # ---------------------------------------------------------------- 効いている規則（UC5）・管理下（UC3）
