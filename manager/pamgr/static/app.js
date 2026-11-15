@@ -80,7 +80,7 @@ function decisionCard(item, sample) {
     <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b></div>
     <p>${esc(item.what)}</p>
     ${item.a || item.b ? `<div class="side">${rule(item.a, "規則 A")}${rule(item.b, "規則 B")}</div>` : ""}
-    ${item.applies ? `<p><b>どこで同時に効くか:</b> ${esc(item.applies)}</p>` : ""}
+    ${item.applies ? `<p><b>${item.kind === "J3" ? "場所" : "どこで同時に効くか"}:</b> ${esc(item.applies)}</p>` : ""}
     ${item.ai ? `<div class="ai"><b>AI の見立て（仮説）:</b> ${esc(item.ai)}</div>` : ""}
     <div class="bar">${opts}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
 }
