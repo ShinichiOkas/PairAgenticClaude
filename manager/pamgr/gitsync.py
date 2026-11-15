@@ -12,16 +12,29 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from . import changes, fleet, inbox
+from . import changes, fleet, gitmerge, inbox, settings
 from .changes import Event, Write, read, sha
-from .paths import master_root
+from .fleet import _err, _git
+from .paths import master_root, user_home
+
+VERDICTS_SHARED = "situations/verdicts.json"
+PAIR_REMOTE = "pamgr-sync"
 
 
 def pull_step() -> tuple[dict[str, Any], list[dict[str, Any]]]:
     r = fleet.pull()
-    info = {k: r.get(k) for k in ("ok", "old_head", "new_head", "error", "diverged")}
+    items: list[dict[str, Any]] = []
+    if not r.get("ok") and r.get("diverged"):          # この PC と GitHub の両方で変わった → マージ（節ごと）
+        m = gitmerge.merge_upstream(master_root())
+        if m["ok"]:
+            r = {"ok": True, "old_head": m["old_head"], "new_head": m["new_head"], "changed": m["changed"],
+                 "foreign": m["foreign"], "merged": True, "resolved": m["resolved"]}
+        else:
+            r["merge_error"] = m.get("error")
+            if m.get("conflicts"):
+                items.append(gitmerge.conflict_item("master", "マスター", master_root(), m, fleet.TOOL_PATHS))
+    info = {k: r.get(k) for k in ("ok", "old_head", "new_head", "error", "diverged", "merged", "resolved", "merge_error")}
     info["changed"] = len(r.get("changed") or [])
-    items = []
     foreign = [c for c in (r.get("foreign") or []) if c.get("files")]
     if r.get("ok") and foreign:
         files = sorted({f for c in foreign for f in c["files"]})
@@ -65,10 +78,78 @@ def publish_step(summary: str) -> dict[str, Any]:
     if not st.get("ok"):
         return {"ok": False, "error": st.get("error")}
     dirty = set(st.get("dirty") or [])
-    paths = [p for p in tool_written() if p in dirty]
-    if not paths:
-        return {"ok": True, "commit": None, "files": []}
-    return fleet.publish(f"pamgr: 点検で反映（{len(paths)} ファイル）\n\n{summary}"[:4000], paths)
+    paths = [p for p in tool_written() if p in dirty] + ([VERDICTS_SHARED] if VERDICTS_SHARED in dirty else [])
+    res: dict[str, Any] = {"ok": True, "commit": None, "files": []}
+    if paths:
+        res = fleet.publish(f"pamgr: 点検で反映（{len(paths)} ファイル）\n\n{summary}"[:4000], paths)
+    if res.get("ok") and not res.get("pushed"):          # マージの commit など、先に進んだ分を push する
+        pr = gitmerge.push_if_ahead(master_root())
+        res["pushed"] = pr.get("pushed", False)
+        if not pr.get("ok"):
+            res.update(ok=False, error=pr.get("error"))
+    return res
+
+
+# ---------------------------------------------------------------- ペア固有の層（~/.claude/pair-agent）の同期（師匠が選ぶ）
+def pair_root() -> Path:
+    return user_home() / ".claude" / "pair-agent"
+
+
+def pair_step() -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """ペア固有の層を、師匠が選んだ自分のリポジトリと同期する（設定が空なら何もしない）。
+    ローカルの変更を自動で commit → fetch → マージ（.md は節ごと）→ push。ぶつかって解けなければ J2。"""
+    url = str(settings.get().get("pair_sync_url") or "").strip()
+    if not url:
+        return {"enabled": False}, []
+    root = pair_root()
+    if not (root / ".git").exists():
+        return {"enabled": True, "ok": False, "error": f"git のリポジトリではない: {root}"}, []
+    rc, cur, _ = _git(root, "remote", "get-url", PAIR_REMOTE)
+    if rc != 0:
+        _git(root, "remote", "add", PAIR_REMOTE, url)
+    elif cur.strip() != url:
+        _git(root, "remote", "set-url", PAIR_REMOTE, url)
+    _git(root, "add", "-A")
+    rc, out, _ = _git(root, "diff", "--cached", "--name-only")
+    committed = [x for x in out.splitlines() if x.strip()]
+    if committed:
+        c = _git(root, "commit", "-m", f"pamgr: ペア固有の層の自動コミット（{len(committed)} ファイル）")
+        if c[0] != 0:
+            return {"enabled": True, "ok": False, "error": _err(c, "commit に失敗")}, []
+    f = _git(root, "fetch", PAIR_REMOTE, timeout=180)
+    if f[0] != 0:
+        return {"enabled": True, "ok": False, "error": _err(f, "fetch に失敗"), "committed": len(committed)}, []
+    rc, branch, _ = _git(root, "symbolic-ref", "--short", "-q", "HEAD")
+    branch = branch.strip() or "master"
+    remote_ref = f"{PAIR_REMOTE}/{branch}"
+    has_remote = _git(root, "rev-parse", "-q", "--verify", remote_ref)[0] == 0
+    info: dict[str, Any] = {"enabled": True, "ok": True, "committed": len(committed)}
+    if not has_remote:                                     # 空のリポジトリ: 初めて押し出す
+        p = _git(root, "push", "-u", PAIR_REMOTE, f"HEAD:refs/heads/{branch}", timeout=180)
+        info.update(ok=p[0] == 0, pushed=p[0] == 0, first=True)
+        if p[0] != 0:
+            info["error"] = _err(p, "push に失敗")
+        return info, []
+    _git(root, "branch", f"--set-upstream-to={remote_ref}")
+    if _git(root, "merge-base", "HEAD", remote_ref)[0] != 0:
+        return {**info, "ok": False, "error": "同期先の履歴が、この PC のペア固有の層とつながっていません。空のリポジトリか、この層から作ったリポジトリを指定してください"}, []
+    items: list[dict[str, Any]] = []
+    rc, out, _ = _git(root, "rev-list", "--left-right", "--count", "HEAD...@{u}")
+    a, b = (out.split() + ["0", "0"])[:2]
+    if b.isdigit() and int(b) > 0:
+        m = gitmerge.merge_upstream(root)
+        info["pulled"] = m.get("ok", False)
+        info["resolved"] = m.get("resolved", [])
+        if not m["ok"]:
+            info.update(ok=False, error=m.get("error"))
+            if m.get("conflicts"):
+                items.append(gitmerge.conflict_item("pair", "ペア固有の層", root, m, None))
+            return info, items
+    pr = gitmerge.push_if_ahead(root)
+    info["pushed"] = pr.get("pushed", False)
+    if not pr.get("ok"):
+        info.update(ok=False, error=pr.get("error"))
+    return info, items
 
 
 def reject(it: dict[str, Any]) -> dict[str, Any]:

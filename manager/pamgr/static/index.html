@@ -199,6 +199,8 @@
           <label><input type="checkbox" id="rs-git" checked> GitHub と同期する（点検でマスターを pull し、ツールが書いた変更だけ commit・push）</label>
           <label>点検 1 回で LLM に使う時間（秒） <input id="rs-budget" type="number" value="300" min="0" style="width:6em"></label>
         </div>
+        <label>ペア固有の層（~/.claude/pair-agent: スキル・叱責記録・ビジョン）の同期先 <input id="rs-pair" style="width:100%" placeholder="空なら同期しない（例: https://github.com/<自分>/pair-agent-private.git）"></label>
+        <p class="muted">自分の PC どうしでそろえるときだけ、自分の private リポジトリを指定します（空のリポジトリか、この層から作ったもの）。この PC の中の変更は自動で commit して同期します。空にすると同期しません。ほかの人のツールは、その人が自分で指定しない限り、この層に触れません。</p>
         <div class="bar"><button id="rs-save">保存</button></div>
         <div id="rs-out"></div>
       </div>

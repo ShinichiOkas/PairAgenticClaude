@@ -134,8 +134,41 @@ def candidates(tlist: list[dict[str, Any]] | None = None) -> tuple[list[Cand], d
     return ordered, {"global_sections": len(g), "projects": per_project}
 
 
+def shared_path() -> Path:
+    """全体の規則どうしの判定は、マスターに置いて PC 間で共有する（判定し直さない）。プロジェクトの組は PC の中だけ。"""
+    from .paths import master_root
+    return master_root() / "situations" / "verdicts.json"
+
+
+def _shared() -> dict[str, Any]:
+    import json
+    try:
+        return json.loads(shared_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def verdicts() -> dict[str, Any]:
-    return store.load(VERDICTS, {})
+    local = store.load(VERDICTS, {})
+    for k, v in _shared().items():
+        if k not in local or local[k].get("relation") == "error":
+            local[k] = v
+    return local
+
+
+def share(cands: list[Cand]) -> bool:
+    """いまの全体の規則どうしの組の判定を、マスターの共有ファイルに書く（変わったときだけ）。"""
+    from .gitmerge import dump_lines
+    vd = verdicts()
+    keep = ("relation", "situation_a", "situation_b", "proposed_situation", "reason", "model", "at")
+    out = {c.key: {k: vd[c.key].get(k, "") for k in keep} for c in cands
+           if "*" in c.applies and c.key in vd and vd[c.key].get("relation") not in (None, "error")}
+    if out == _shared():
+        return False
+    p = shared_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(dump_lines(out), encoding="utf-8", newline="")
+    return True
 
 
 def pending(cands: list[Cand], vd: dict[str, Any] | None = None) -> list[Cand]:

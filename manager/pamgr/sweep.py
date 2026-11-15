@@ -373,7 +373,7 @@ def _public(p: Plan, applied: list[dict[str, Any]] | None = None, skipped: list[
             "applied": applied if applied is not None else None, "skipped": skipped or []}
 
 
-def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None,
+def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None, write: bool = False,
                    tlist: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """効いている集合の中の矛盾（J1）。budget 秒まで未判定の組を LLM で判定する（0 なら判定済みの結果だけ使う）。"""
     cands, info = conflicts.candidates(tlist)
@@ -382,6 +382,8 @@ def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None,
         wk = conflicts.work(cands, budget, progress=progress)
     j1 = conflicts.items(cands)
     p.held += conflicts.stale_copies(cands)
+    if write:
+        conflicts.share(cands)                      # 予行では書かない
     remaining = wk.get("remaining", len(conflicts.pending(cands)))
     p.steps["conflicts"] = f"候補 {len(cands)} 組・矛盾／状況依存 {len(j1)} 組・未判定 {remaining} 組"
     if remaining:
@@ -403,7 +405,7 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
             p = plan_all(True, tlist)
             p.steps["managed"] = f"自動で入れる {len(sc['register'])}・確かめる（J3） {len(j3)}"
             p.inbox = j3 + p.inbox
-            j1, cinfo = _conflict_step(p, 0, None, tlist)
+            j1, cinfo = _conflict_step(p, 0, None, tlist=tlist)
             p.inbox += j1
             res = {"dry_run": True, "at": store.now_iso(), **_public(p), "conflicts": cinfo,
                    "managed": {"register": [{"name": c["name"], "path": c["path"], "kind": c["kind"]} for c in sc["register"]]}}
@@ -414,6 +416,7 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
         j4: list[dict[str, Any]] = []
         if gs.get("git_sync"):
             git_info["pull"], j4 = gitsync.pull_step()
+            inbox.sync(("J2",), {i["key"] for i in j4 if i["kind"] == "J2"}, prefix="J2git|master|")
         regs = []
         with changes.LOCK:
             new_j4 = inbox.upsert(j4)
@@ -440,9 +443,9 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
                 except changes.Stale as exc:
                     skipped.append({"detail": a.event.detail, "why": str(exc)})
             new = new_j4 + new_j3 + inbox.upsert([i for i in p.inbox if i["kind"] == "J2"])
-            inbox.sync(("J2",), {i["key"] for i in p.inbox if i["kind"] == "J2"})
+            inbox.sync(("J2",), {i["key"] for i in p.inbox if i["kind"] == "J2"}, prefix="J2|")
         budget = float(settings.get().get("llm_budget_sec", 300)) if llm_budget is None else llm_budget
-        j1, cinfo = _conflict_step(p, budget, progress)
+        j1, cinfo = _conflict_step(p, budget, progress, write=True)
         with changes.LOCK:
             new += inbox.upsert(j1)
             inbox.sync(("J1",), {i["key"] for i in j1})
@@ -463,6 +466,16 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
             p.steps["git"] = f"pull {pull_s}・push {push_s}"
         else:
             p.steps["git"] = "同期しない（設定）"
+        pinfo, pitems = gitsync.pair_step()
+        git_info["pair"] = pinfo
+        if pinfo.get("enabled"):
+            with changes.LOCK:
+                new += inbox.upsert(pitems)
+                inbox.sync(("J2",), {i["key"] for i in pitems}, prefix="J2git|pair|")
+            p.steps["pair"] = ("同期した" + (f"（自動 commit {pinfo.get('committed')}）" if pinfo.get("committed") else "")
+                               if pinfo.get("ok") else f"失敗（{str(pinfo.get('error') or '')[:80]}）")
+        else:
+            p.steps["pair"] = "同期しない（設定）"
         res = {"dry_run": False, "at": store.now_iso(), **_public(p, [{"id": e["id"], "what": e["what"], "detail": e["detail"]} for e in applied], skipped),
                "new_inbox": len(new), "conflicts": cinfo, "git": git_info}
         store.save(FILE, res)

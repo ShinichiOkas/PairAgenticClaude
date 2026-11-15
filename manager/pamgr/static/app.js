@@ -99,7 +99,7 @@ function decisionCard(item, sample) {
   const dis = sample ? "disabled" : "";
   const opts = (item.options || []).map((o) => `<button ${dis} class="${o.primary ? "" : "secondary"} dc-opt" data-id="${esc(item.id)}" data-opt="${esc(o.id)}">${esc(o.label)}</button>`).join("");
   const rule = (x, k) => x ? `<div class="rule"><div class="muted">${k} ・ ${esc(x.where)} ・ ${esc(x.when || "")}</div><pre>${esc(x.text)}</pre></div>` : "";
-  const diffBtn = item.kind === "J2" && item.refs ? `<button class="secondary dc-diff" data-id="${esc(item.id)}" data-t="${esc(item.refs.target_id)}" data-rel="${esc(item.refs.rel)}">差分を見る（- マスター / + 配布先）</button>` : "";
+  const diffBtn = item.kind === "J2" && item.refs && !item.refs.git ? `<button class="secondary dc-diff" data-id="${esc(item.id)}" data-t="${esc(item.refs.target_id)}" data-rel="${esc(item.refs.rel)}">差分を見る（- マスター / + 配布先）</button>` : "";
   return `<div class="card decision ${sample ? "sample" : ""}">
     ${sample ? '<div class="sample-tag">見本（「管理に入れるか」の判断はまだ未実装。画面の形を見るためのもの。実データから作った例）</div>' : ""}
     <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b>${item.status === "later" ? ' <span class="badge b-muted">あとで</span>' : ""}</div>
@@ -196,7 +196,7 @@ async function loadActivity() {
 function actTable(ev) {
   return `<table><tr><th>いつ</th><th>何を</th><th>どこへ</th><th>なぜ</th><th></th></tr>` +
     ev.map((e) => {
-      const undoable = e.kind !== "undo" && !e.undone;
+      const undoable = e.kind !== "undo" && !e.undone && !(e.refs || {}).no_undo;
       const btns = `${(e.changes || []).length ? `<button class="secondary act-diff" data-id="${esc(e.id)}">差分</button> ` : ""}${undoable ? `<button class="secondary act-undo" data-id="${esc(e.id)}">取り消す</button>` : e.undone ? '<span class="badge b-muted">取り消し済み</span>' : ""}`;
       return `<tr><td>${esc(fmtAt(e.at))}</td><td><span class="badge b-info">${esc(KIND_LABEL[e.kind] || e.kind)}</span> ${esc(e.what)}</td><td>${esc(e.detail)}</td><td>${esc(e.why)}</td><td style="white-space:nowrap">${btns}</td></tr>` +
         `<tr><td colspan="5" id="act-d-${esc(e.id)}" style="padding:0;border:0"></td></tr>`;
@@ -554,7 +554,7 @@ $("cf-test").onclick = async () => {
 
 $("rs-save").onclick = async () => {
   const r = await api("PUT", "/resident", { autostart: $("rs-autostart").checked, notify: $("rs-notify").checked, interval_min: Number($("rs-interval").value),
-    watch: $("rs-watch").checked, git_sync: $("rs-git").checked, llm_budget_sec: Number($("rs-budget").value) });
+    watch: $("rs-watch").checked, git_sync: $("rs-git").checked, llm_budget_sec: Number($("rs-budget").value), pair_sync_url: $("rs-pair").value.trim() });
   if (guard("rs-out", r)) { $("rs-out").innerHTML = '<p><span class="badge b-ok">保存しました</span></p>'; loadResident(); }
 };
 async function loadResidentSettings() {
@@ -563,6 +563,7 @@ async function loadResidentSettings() {
   const s = r.settings || {};
   $("rs-autostart").checked = !!r.autostart; $("rs-notify").checked = !!s.notify; $("rs-watch").checked = !!s.watch;
   $("rs-git").checked = !!s.git_sync; $("rs-interval").value = s.interval_min ?? 30; $("rs-budget").value = s.llm_budget_sec ?? 300;
+  $("rs-pair").value = s.pair_sync_url || "";
 }
 
 // ------------------------------------------------------------ 起動

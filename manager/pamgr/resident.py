@@ -147,13 +147,13 @@ def state() -> dict[str, Any]:
             "last_sweep": last.get("at"), "next_sweep": _STATE.get("next_sweep") if running() else None,
             "last_reason": _STATE.get("last_reason"), "last_error": _STATE.get("last_error"),
             "open": len(inbox.items(("open",))), "remaining": (last.get("conflicts") or {}).get("remaining"),
-            "settings": {k: s.get(k) for k in ("interval_min", "watch", "notify", "git_sync", "llm_budget_sec")},
+            "settings": {k: s.get(k) for k in ("interval_min", "watch", "notify", "git_sync", "llm_budget_sec", "pair_sync_url")},
             "autostart": autostart.is_enabled()}
 
 
 def configure(body: dict[str, Any]) -> dict[str, Any]:
     from . import autostart
-    keys = ("resident_enabled", "interval_min", "watch", "notify", "git_sync", "llm_budget_sec")
+    keys = ("resident_enabled", "interval_min", "watch", "notify", "git_sync", "llm_budget_sec", "pair_sync_url")
     vals = {k: body[k] for k in keys if k in body}
     if "enabled" in body:
         vals["resident_enabled"] = bool(body["enabled"])

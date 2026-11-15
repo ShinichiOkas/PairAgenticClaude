@@ -37,6 +37,7 @@ def defaults() -> dict[str, Any]:
         "watch": True,                # 規則・スキルのファイルが変わったら点検する
         "notify": True,               # 判断待ちができたら Windows の通知を出す
         "git_sync": True,             # 点検でマスターを pull し、取り込んだ変更を commit・push する（UC4）
+        "pair_sync_url": "",          # ペア固有の層（~/.claude/pair-agent）の同期先（自分の private リポジトリ）。空なら同期しない
     }
 
 

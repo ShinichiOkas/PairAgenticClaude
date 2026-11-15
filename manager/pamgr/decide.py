@@ -47,6 +47,8 @@ def after_undo(refs: dict[str, Any]) -> None:
 # ---------------------------------------------------------------- J2: マージできない変更
 def _j2(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[dict[str, Any], str]:
     r = it["refs"]
+    if r.get("git"):
+        return _j2_git(it, option)
     t = targets.get_target(r["target_id"])
     if t is None:
         raise KeyError("配布先が管理下にありません")
@@ -67,6 +69,23 @@ def _j2(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[
     else:
         raise ValueError(f"選択肢が不明: {option}")
     return changes.commit(ev), "decided"
+
+
+def _j2_git(it: dict[str, Any], option: str) -> tuple[dict[str, Any], str]:
+    """git の衝突: 選んだ側を優先してマージし直し、push する。git のマージは自動では取り消さない（git revert で戻す）。"""
+    from . import gitmerge
+    r = it["refs"]
+    if r.get("outside") or option not in ("ours", "theirs"):
+        raise ValueError("規則の外のファイルがぶつかっているので、手で git pull して直してください" if r.get("outside") else f"選択肢が不明: {option}")
+    root = Path(r["root"])
+    m = gitmerge.merge_upstream(root, prefer=option)
+    if not m["ok"]:
+        raise ValueError(f"マージできませんでした: {m.get('error')}")
+    pr = gitmerge.push_if_ahead(root)
+    label = "この PC の版を優先" if option == "ours" else "GitHub の版を優先"
+    return changes.record("decide", f"判断: git の衝突を{label}してマージ", it["title"],
+                          "師匠の判断（J2）" + ("。push した" if pr.get("pushed") else f"。push はまだ（{pr.get('error', '')}）"),
+                          refs={"item_id": it["id"], "no_undo": True}), "decided"
 
 
 # ---------------------------------------------------------------- J1: 同時に効く規則の矛盾

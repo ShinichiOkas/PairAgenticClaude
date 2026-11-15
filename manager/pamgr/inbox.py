@@ -49,12 +49,12 @@ def upsert(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return new
 
 
-def sync(kinds: tuple[str, ...], detected: set[str]) -> int:
-    """その種類で、今回見つからなかった open・later を gone にする。"""
+def sync(kinds: tuple[str, ...], detected: set[str], prefix: str = "") -> int:
+    """その種類（と鍵の頭）で、今回見つからなかった open・info・later を gone にする。"""
     d = _load()
     n = 0
     for it in d["items"].values():
-        if it["kind"] in kinds and it["status"] in ACTIVE and it["key"] not in detected:
+        if it["kind"] in kinds and it["key"].startswith(prefix) and it["status"] in ACTIVE and it["key"] not in detected:
             it["status"] = "gone"
             it["gone_at"] = store.now_iso()
             n += 1

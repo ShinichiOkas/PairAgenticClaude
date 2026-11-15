@@ -220,6 +220,8 @@ def undo(eid: str) -> dict[str, Any]:
             raise ValueError("もう取り消してあります")
         if e["kind"] == "undo":
             raise ValueError("取り消しは取り消せません")
+        if (e.get("refs") or {}).get("no_undo"):
+            raise ValueError("git のマージは自動では取り消せません（git revert で戻してください）")
         for c in e["changes"]:
             if sha(read(Path(c["path"]))) != c["after_hash"]:
                 raise ValueError(f"その後さらに変わっているので、自動では戻せません: {c['path']}")
