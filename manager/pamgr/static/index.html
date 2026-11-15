@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair Agent Manager</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>Pair Agent Manager</h1>
+  <span id="hdr-info" class="muted"></span>
+</header>
+<div class="layout">
+  <nav id="nav">
+    <a data-tab="dashboard" class="active">ダッシュボード</a>
+    <a data-tab="targets">配布先（探索・登録）</a>
+    <a data-tab="status">配布状況・差分</a>
+    <a data-tab="survey">サーベイ</a>
+    <a data-tab="checks">検査（矛盾・冗長）</a>
+    <a data-tab="situations">状況定義</a>
+    <a data-tab="generalize">一般化</a>
+    <a data-tab="distribute">再配布</a>
+    <a data-tab="fleet">GitHub（PC・ユーザー横断）</a>
+    <a data-tab="settings">設定（LLM）</a>
+  </nav>
+  <main>
+    <!-- ダッシュボード -->
+    <section id="tab-dashboard" class="tab active">
+      <h2>ダッシュボード</h2>
+      <div class="bar"><button id="dash-refresh">更新</button></div>
+      <div id="dash-out"></div>
+    </section>
+
+    <!-- 配布先 -->
+    <section id="tab-targets" class="tab">
+      <h2>配布先（探索・登録）</h2>
+      <div class="card">
+        <h3>探索</h3>
+        <label>探索する根（1 行に 1 つ。空なら設定の既定）</label>
+        <textarea id="disc-roots" rows="3" placeholder="S:\work\develop"></textarea>
+        <div class="bar">
+          <label>深さ <input id="disc-depth" type="number" value="2" min="1" max="5" style="width:4em"></label>
+          <button id="disc-run">探索</button>
+          <button id="disc-register" class="secondary">選んだものを登録</button>
+        </div>
+        <div id="disc-out"></div>
+      </div>
+      <div class="card">
+        <h3>登録済み</h3>
+        <div class="bar"><button id="tgt-refresh">更新</button></div>
+        <div id="tgt-out"></div>
+      </div>
+    </section>
+
+    <!-- 配布状況・差分 -->
+    <section id="tab-status" class="tab">
+      <h2>配布状況・マスターとの差分</h2>
+      <div class="bar">
+        <button id="st-all">全配布先の状況</button>
+        <select id="st-target"></select>
+        <button id="st-one">この配布先の詳細</button>
+        <label><input type="checkbox" id="st-hide-same" checked> 一致を隠す</label>
+      </div>
+      <div id="st-out"></div>
+      <div id="diff-out"></div>
+    </section>
+
+    <!-- サーベイ -->
+    <section id="tab-survey" class="tab">
+      <h2>サーベイ（ルール・スキルの収集）</h2>
+      <div class="bar">
+        <button id="sv-run">収集を実行</button>
+        <button id="sv-load" class="secondary">前回の結果</button>
+        <input id="sv-filter" placeholder="絞り込み（名前・本文・場所）">
+        <select id="sv-scope"><option value="">全スコープ</option><option>master</option><option>global</option><option>user</option><option>project</option></select>
+        <select id="sv-kind"><option value="">全種類</option><option value="skill">skill</option><option value="rule-section">rule-section</option><option value="agent">agent</option></select>
+      </div>
+      <div id="sv-out"></div>
+      <div id="sv-unit"></div>
+    </section>
+
+    <!-- 検査 -->
+    <section id="tab-checks" class="tab">
+      <h2>検査（矛盾・冗長）</h2>
+      <p class="muted">冗長は機械（文字の類似）で検出。矛盾は類似の組を LLM が判定し、「状況次第で両方真」なら状況を提案する。LLM の判定はすべて<b>仮説</b>として出す（資産は書き換えない）。</p>
+      <div class="bar">
+        <select id="ck-mode">
+          <option value="redundancy">冗長（機械）</option>
+          <option value="conflict">矛盾・状況依存（LLM）</option>
+        </select>
+        <label>LLM の判定の上限 <input id="ck-limit" type="number" value="20" min="1" style="width:5em"></label>
+        <button id="ck-run">検査を実行</button>
+        <button id="ck-load" class="secondary">前回の結果</button>
+      </div>
+      <div id="ck-job"></div>
+      <div id="ck-out"></div>
+    </section>
+
+    <!-- 状況定義 -->
+    <section id="tab-situations" class="tab">
+      <h2>状況定義</h2>
+      <p class="muted">矛盾して見える 2 つの指示が、別の状況ではそれぞれ真になることがある。その「状況」を名前と定義で登録する。検査の LLM はこの一覧を参照して判定する。</p>
+      <div class="bar"><button id="si-load">更新</button></div>
+      <div id="si-out"></div>
+      <div class="card">
+        <h3>追加・更新</h3>
+        <div class="grid2">
+          <label>ID <input id="si-id" placeholder="main-agent"></label>
+          <label>名前 <input id="si-name" placeholder="主エージェントとして対話している"></label>
+        </div>
+        <label>定義（いつ当てはまるか）</label>
+        <textarea id="si-def" rows="2"></textarea>
+        <label>手がかり（機械で判定できる兆候。1 行に 1 つ）</label>
+        <textarea id="si-signals" rows="2"></textarea>
+        <div class="bar"><button id="si-save">保存</button></div>
+      </div>
+    </section>
+
+    <!-- 一般化 -->
+    <section id="tab-generalize" class="tab">
+      <h2>一般化（プロジェクト固有の排除）</h2>
+      <div class="bar">
+        <input id="gn-filter" placeholder="サーベイ済みの単位から探す">
+        <button id="gn-search">探す</button>
+      </div>
+      <div id="gn-list"></div>
+      <div id="gn-out"></div>
+    </section>
+
+    <!-- 再配布 -->
+    <section id="tab-distribute" class="tab">
+      <h2>再配布（全体・ユーザー固有・プロジェクト固有）</h2>
+      <div class="bar">
+        <select id="ds-scope">
+          <option value="global">全体（~/.claude・~/.gemini/config の規範・スキル）</option>
+          <option value="user">ユーザー固有（ペア固有スキル）</option>
+          <option value="project">プロジェクト固有（各プロジェクトの雛形・エージェント定義）</option>
+        </select>
+        <button id="ds-plan">計画を作る</button>
+        <button id="ds-apply" class="danger">選んだ行を適用</button>
+      </div>
+      <div id="ds-targets" class="checks"></div>
+      <div id="ds-out"></div>
+      <div id="ds-diff"></div>
+    </section>
+
+    <!-- GitHub -->
+    <section id="tab-fleet" class="tab">
+      <h2>GitHub（PC・ユーザー横断）</h2>
+      <p class="muted">各 PC のサーベイ結果をこのリポジトリの <code>fleet/&lt;user&gt;/&lt;host&gt;/</code> にコミットし、pull して横断で集計する。</p>
+      <div class="bar">
+        <button id="fl-load">状態</button>
+        <button id="fl-publish">この PC の結果をコミット・push</button>
+        <button id="fl-pull">pull して集計</button>
+      </div>
+      <div id="fl-out"></div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="tab-settings" class="tab">
+      <h2>設定（LLM・探索）</h2>
+      <div class="card">
+        <h3>LLM（OmniAISDK 経由の Ollama）</h3>
+        <label>Ollama の口 <input id="cf-base" placeholder="http://127.0.0.1:11434"></label>
+        <div class="bar">
+          <button id="cf-models">モデル一覧を取る</button>
+        </div>
+        <div class="grid2">
+          <label>判定用モデル（矛盾・状況） <select id="cf-model-judge"></select></label>
+          <label>書き換え用モデル（一般化） <select id="cf-model-rewrite"></select></label>
+        </div>
+        <div class="bar"><button id="cf-test" class="secondary">判定用モデルで試す</button></div>
+        <div id="cf-llm-out"></div>
+      </div>
+      <div class="card">
+        <h3>探索の既定</h3>
+        <label>探索する根（1 行に 1 つ）</label>
+        <textarea id="cf-roots" rows="3"></textarea>
+        <label>深さ <input id="cf-depth" type="number" value="2" min="1" max="5" style="width:4em"></label>
+      </div>
+      <div class="bar"><button id="cf-load" class="secondary">読み込み</button><button id="cf-save">保存</button></div>
+      <div id="cf-out"></div>
+    </section>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
