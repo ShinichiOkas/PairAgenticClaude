@@ -115,6 +115,39 @@ def by_key(chunks: list[Chunk]) -> dict[str, Chunk]:
     return {c.key: c for c in chunks}
 
 
+def _body_hash(c: Chunk) -> str:
+    from .survey import split_frontmatter, text_hash
+    return text_hash(split_frontmatter(c.raw)[1] if c.anchor == PREAMBLE else c.raw)
+
+
+def locate(text: str, anchor: str, text_hash: str) -> int:
+    """サーベイの単位（見出し・中身のハッシュ）に当たる節の位置。中身が変わっていれば ValueError。"""
+    chunks = parse(text)
+    hit = [i for i, c in enumerate(chunks) if _body_hash(c) == text_hash]
+    if len(hit) >= 1:
+        same = [i for i in hit if chunks[i].key == anchor_key(anchor)]
+        return (same or hit)[0]
+    if any(c.key == anchor_key(anchor) for c in chunks):
+        raise ValueError(f"節がその後に変わっています: {anchor}")
+    raise ValueError(f"節が見つからない: {anchor}")
+
+
+def replace_at(text: str, i: int, new_raw: str) -> str:
+    """i 番目の節を差し替える（空なら消す）。冒頭の節のフロントマターは残す。"""
+    chunks = parse(text)
+    c = chunks[i]
+    if not new_raw.strip():
+        del chunks[i]
+        return join(chunks)
+    raw = with_newline(new_raw, newline(text), _tail(c.raw))
+    if c.anchor == PREAMBLE and c.raw.startswith("---"):
+        from .survey import split_frontmatter
+        body = split_frontmatter(c.raw)[1]
+        raw = c.raw[: len(c.raw) - len(body)] + raw
+    chunks[i] = Chunk(c.anchor, raw, c.prev)
+    return join(chunks)
+
+
 def replace(text: str, anchor: str, expect_norm: str | None, new_raw: str) -> str:
     """節を 1 つ差し替える（new_raw が空なら節を消す）。expect_norm が今の節と合わなければ ValueError。"""
     chunks = parse(text)

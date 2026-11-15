@@ -22,6 +22,14 @@ def isolated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("PAMGR_MASTER", str(tmp_path / "master"))
     (tmp_path / "userhome").mkdir()
     (tmp_path / "master").mkdir()
+    # テストは LLM を呼ばない（使うテストは自分で差し替える）
+    from pamgr import llm
+
+    def no_llm(*_a: object, **_k: object) -> None:
+        raise llm.LLMNotConfigured("テストでは LLM を使わない")
+
+    monkeypatch.setattr(llm, "chat_structured", no_llm)
+    monkeypatch.setattr(llm, "chat_text", no_llm)
     return tmp_path
 
 

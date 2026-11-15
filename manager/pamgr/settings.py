@@ -31,6 +31,7 @@ def defaults() -> dict[str, Any]:
         "model_rewrite": DEFAULT_MODEL,
         "scan_roots": [str(master_root().parent)],
         "scan_depth": 2,
+        "llm_budget_sec": 300,        # 点検 1 回で LLM の判定に使う時間の上限（秒）。残りは次の点検で
     }
 
 
@@ -47,6 +48,7 @@ def put(values: dict[str, Any]) -> dict[str, Any]:
             s[k] = values[k]
     s["scan_roots"] = [str(r) for r in s["scan_roots"] if str(r).strip()]
     s["scan_depth"] = max(1, min(5, int(s["scan_depth"])))
+    s["llm_budget_sec"] = max(0, min(3600, int(s["llm_budget_sec"])))
     s["ollama_base_url"] = str(s["ollama_base_url"]).strip().rstrip("/") or _default_base_url()
     store.save(FILE, s)
     return s

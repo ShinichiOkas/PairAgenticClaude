@@ -14,7 +14,7 @@ from typing import Any, Callable
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
-from . import __version__, changes, checks, decide, distribute, generalize, inbox, jobs, llm, settings, situations, status, survey, sweep, targets
+from . import __version__, changes, checks, conflicts, decide, distribute, generalize, inbox, jobs, llm, settings, situations, status, survey, sweep, targets
 from .paths import data_home, master_root
 
 router = APIRouter()
@@ -266,6 +266,13 @@ def inbox_get() -> dict[str, Any]:
     return {"items": inbox.items()}
 
 
+@router.post("/inbox/{item_id}/draft")
+@safe
+def inbox_draft(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    """J1 の文案（AI）。師匠が直してから decide に edits を渡す。"""
+    return decide.draft(item_id, str(body.get("option", "")))
+
+
 @router.post("/inbox/{item_id}/decide")
 @safe
 def inbox_decide(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
@@ -300,8 +307,13 @@ def activity_undo(event_id: str) -> dict[str, Any]:
 
 # ---------------------------------------------------------------- 効いている規則（UC5）・管理下（UC3）
 @router.get("/effective/{target_id}")
+@safe
 def effective_get(target_id: str) -> dict[str, Any]:
-    return not_implemented("effective.get")
+    eff = conflicts.effective(target_id)
+    hs = set(eff["hashes"])
+    eff["j1"] = [i for i in inbox.items(("open", "later", "decided", "dismissed"))
+                 if i["kind"] == "J1" and {i["refs"]["a"]["hash"], i["refs"]["b"]["hash"]} <= hs]
+    return eff
 
 
 @router.get("/managed")

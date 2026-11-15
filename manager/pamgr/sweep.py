@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from . import changes, generalize, history, inbox, mapping, sections, store, targets
+from . import changes, conflicts, generalize, history, inbox, mapping, sections, settings, store, targets
 from .changes import Event, LedgerSet, Write, sha
 from .paths import master_root
 
@@ -352,7 +352,6 @@ def plan_all(dry_run: bool) -> Plan:
         _NAMES = None
     plan.steps["homes"] = "済"
     plan.steps["managed"] = "未実装"
-    plan.steps["conflicts"] = "未実装"
     plan.steps["projects"] = "未実装（プロジェクトへの書き込みは後の段）"
     plan.steps["git"] = "未実装"
     return plan
@@ -366,20 +365,36 @@ def _public(p: Plan, applied: list[dict[str, Any]] | None = None, skipped: list[
             "applied": applied if applied is not None else None, "skipped": skipped or []}
 
 
-def run(dry_run: bool = False, progress: Callable[..., Any] | None = None) -> dict[str, Any]:
-    """点検する。dry_run は計画だけ（何も書かない）。同時には 1 つだけ走る。"""
+def _conflict_step(p: Plan, budget: float, progress: Callable[..., Any] | None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """効いている集合の中の矛盾（J1）。budget 秒まで未判定の組を LLM で判定する（0 なら判定済みの結果だけ使う）。"""
+    cands, info = conflicts.candidates()
+    wk: dict[str, Any] = {}
+    if budget > 0 and cands:
+        wk = conflicts.work(cands, budget, progress=progress)
+    j1 = conflicts.items(cands)
+    remaining = wk.get("remaining", len(conflicts.pending(cands)))
+    p.steps["conflicts"] = f"候補 {len(cands)} 組・矛盾／状況依存 {len(j1)} 組・未判定 {remaining} 組"
+    if remaining:
+        p.notes.append(f"矛盾の検査: 未判定の組が {remaining} 組あります（LLM で順に判定します）" + (f"。止まった理由: {wk['stopped']}" if wk.get("stopped") else ""))
+    return j1, {"candidates": len(cands), "j1": len(j1), "remaining": remaining, **info, **{k: v for k, v in wk.items() if k != "remaining"}}
+
+
+def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_budget: float | None = None) -> dict[str, Any]:
+    """点検する。dry_run は計画だけ（何も書かない・LLM も呼ばない）。同時には 1 つだけ走る。"""
     if not _RUN.acquire(blocking=False):
         raise ValueError("点検はいま走っています")
     try:
         if progress:
-            progress(0, 2, "照合中")
+            progress(0, 3, "照合中")
         p = plan_all(dry_run)
         if dry_run:
-            res = {"dry_run": True, "at": store.now_iso(), **_public(p)}
+            j1, cinfo = _conflict_step(p, 0, None)
+            p.inbox += j1
+            res = {"dry_run": True, "at": store.now_iso(), **_public(p), "conflicts": cinfo}
             store.save("preview.json", res)
             return res
         if progress:
-            progress(1, 2, "反映中")
+            progress(1, 3, "反映中")
         applied, skipped = [], []
         with changes.LOCK:
             led_now = changes.ledger()
@@ -394,11 +409,17 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None) -> di
                     skipped.append({"detail": a.event.detail, "why": str(exc)})
             new = inbox.upsert(p.inbox)
             inbox.sync(("J2",), {i["key"] for i in p.inbox})
+        budget = float(settings.get().get("llm_budget_sec", 300)) if llm_budget is None else llm_budget
+        j1, cinfo = _conflict_step(p, budget, progress)
+        with changes.LOCK:
+            new += inbox.upsert(j1)
+            inbox.sync(("J1",), {i["key"] for i in j1})
+        p.inbox += j1
         res = {"dry_run": False, "at": store.now_iso(), **_public(p, [{"id": e["id"], "what": e["what"], "detail": e["detail"]} for e in applied], skipped),
-               "new_inbox": len(new)}
+               "new_inbox": len(new), "conflicts": cinfo}
         store.save(FILE, res)
         if progress:
-            progress(2, 2, "完了")
+            progress(3, 3, "完了")
         return res
     finally:
         _RUN.release()

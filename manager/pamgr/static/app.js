@@ -102,7 +102,7 @@ function decisionCard(item, sample) {
   const rule = (x, k) => x ? `<div class="rule"><div class="muted">${k} ・ ${esc(x.where)} ・ ${esc(x.when || "")}</div><pre>${esc(x.text)}</pre></div>` : "";
   const diffBtn = item.kind === "J2" && item.refs ? `<button class="secondary dc-diff" data-id="${esc(item.id)}" data-t="${esc(item.refs.target_id)}" data-rel="${esc(item.refs.rel)}">差分を見る（- マスター / + 配布先）</button>` : "";
   return `<div class="card decision ${sample ? "sample" : ""}">
-    ${sample ? '<div class="sample-tag">見本（この種類の判断はまだ未実装。画面の形を見るためのもの。実データから作った例）</div>' : ""}
+    ${sample ? '<div class="sample-tag">見本（「管理に入れるか」の判断はまだ未実装。画面の形を見るためのもの。実データから作った例）</div>' : ""}
     <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b>${item.status === "later" ? ' <span class="badge b-muted">あとで</span>' : ""}</div>
     <p>${esc(item.what)}</p>
     ${item.a || item.b ? `<div class="side">${rule(item.a, "規則 A")}${rule(item.b, "規則 B")}</div>` : ""}
@@ -111,13 +111,6 @@ function decisionCard(item, sample) {
     <div class="bar">${opts}${diffBtn}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
 }
 const SAMPLE_INBOX = [
-  { id: "sample-j1", kind: "J1", title: "運転方針 × セッションの始め",
-    what: "2 つの規則が、すべてのプロジェクトのエージェントに同時に効いています。依頼が無いのに着手するのか、待つのかがぶつかって見えます。",
-    a: { where: "~/.claude/CLAUDE.md › 運転方針", when: "2026-10-27 の宣言", text: "依頼を受けたら、聞き返さずに推奨を決めて着手する。最初の一言は問いかけではなく「こうやる」の 1 行。" },
-    b: { where: "~/.claude/rules/pair-agent-core.md › セッションの始め", when: "2026-11-05 の宣言", text: "セッションの始めに自分から何も始めない。ツールを 1 つも走らせない。最初の発話が依頼でないなら「何を始めますか？」の 1 行だけ返して待つ。" },
-    applies: "全プロジェクト（どちらも全体の規則）",
-    ai: "矛盾ではなく、状況次第で両方真。A は「依頼を受けた後」、B は「セッション開始直後で依頼がまだ無い」ときに効く（状況定義 main-agent ／ session-start-no-request）。",
-    options: [{ id: "split", label: "状況で分ける（AI の案を直せる）", primary: true }, { id: "a", label: "A を採る" }, { id: "b", label: "B を採る" }, { id: "merge", label: "統合した文案にする" }, { id: "later", label: "あとで" }] },
   { id: "sample-j3", kind: "J3", title: "openclaw を管理に入れるか",
     what: "CLAUDE.md を持つリポジトリが見つかりました。.pair-agent/ が無いので、他人のリポジトリかもしれません。管理に入れると、全体の規則とプロジェクトの雛形を配ります。",
     applies: "S:\\work\\develop\\openclaw（CLAUDE.md・AGENTS.md あり）",
@@ -135,12 +128,9 @@ async function loadInbox() {
   }
   $("inbox-sample").innerHTML = SAMPLE_INBOX.map((i) => decisionCard(i, true)).join("");
   document.querySelectorAll(".dc-opt:not(:disabled)").forEach((b) => (b.onclick = async () => {
-    const out = "dc-out-" + b.dataset.id;
-    busy(out, "反映中…");
-    const d = await api("POST", `/inbox/${encodeURIComponent(b.dataset.id)}/decide`, { option: b.dataset.opt });
-    if (!guard(out, d)) return;
-    $(out).innerHTML = `<span class="badge b-ok">${d.status === "later" ? "あとでに回しました" : "反映しました"}</span>${d.sweep_job ? ' <span class="muted">ほかの配布先へ広げています（点検）</span>' : ""}`;
-    setTimeout(() => { loadInbox(); loadResident(); }, 1200);
+    const id = b.dataset.id, opt = b.dataset.opt, out = "dc-out-" + id;
+    if (["split", "a", "b", "merge"].includes(opt)) { await showDraft(id, opt); return; }
+    await sendDecision(id, opt);
   }));
   document.querySelectorAll(".dc-diff").forEach((b) => (b.onclick = async () => {
     const out = "dc-out-" + b.dataset.id;
@@ -148,6 +138,31 @@ async function loadInbox() {
     const d = await api("GET", `/diff?target_id=${encodeURIComponent(b.dataset.t)}&rel=${encodeURIComponent(b.dataset.rel)}`);
     if (guard(out, d)) renderDiff(out, "差分（- マスター / + 配布先）", d.diff);
   }));
+}
+
+async function sendDecision(id, opt, edits) {
+  const out = "dc-out-" + id;
+  busy(out, "反映中…");
+  const d = await api("POST", `/inbox/${encodeURIComponent(id)}/decide`, { option: opt, edits });
+  if (!guard(out, d)) return;
+  $(out).innerHTML = `<span class="badge b-ok">${d.status === "later" ? "あとでに回しました" : d.status === "dismissed" ? "このままにしました" : "反映しました"}</span>${d.sweep_job ? ' <span class="muted">ほかの配布先へ広げています（点検）</span>' : ""}`;
+  setTimeout(() => { loadInbox(); loadResident(); }, 1500);
+}
+const SIDE_ACTION = { replace: "書き換える", delete: "この節を消す" };
+async function showDraft(id, opt) {
+  const out = "dc-out-" + id;
+  busy(out, "AI が文案を作っています…（数秒〜数十秒）");
+  const d = await api("POST", `/inbox/${encodeURIComponent(id)}/draft`, { option: opt });
+  if (!guard(out, d)) return;
+  $(out).innerHTML = `<div class="card"><p><b>文案</b> <span class="muted">${esc(d.note || "")} ${d.model ? "・ " + esc(d.model) : ""}</span></p>` +
+    d.edits.map((e, i) => `<div class="side"><div><div class="muted">規則 ${e.side.toUpperCase()} の今 ・ ${esc(e.where)}</div><pre>${esc(e.before)}</pre></div>` +
+      `<div><div class="muted">${esc(SIDE_ACTION[e.action] || e.action)}${e.action === "replace" ? "（直せます）" : ""}</div>${e.action === "replace" ? `<textarea class="dr-text" data-i="${i}" rows="14">${esc(e.text)}</textarea>` : '<p class="muted">（節を消します）</p>'}</div></div>`).join("") +
+    `<div class="bar"><button id="dr-go-${esc(id)}">この文で反映（マスターと配布先）</button><button class="secondary" id="dr-cancel-${esc(id)}">やめる</button></div></div>`;
+  $("dr-cancel-" + id).onclick = () => ($(out).innerHTML = "");
+  $("dr-go-" + id).onclick = () => {
+    const edits = d.edits.map((e, i) => ({ ...e, text: e.action === "replace" ? document.querySelector(`#${out} .dr-text[data-i="${i}"]`).value : "" }));
+    sendDecision(id, opt, edits);
+  };
 }
 
 // ------------------------------------------------------------ 自動でやったこと（UC2）
@@ -206,13 +221,33 @@ async function renderPreview() {
 // ------------------------------------------------------------ 効いている規則（UC5）
 async function fillEffectiveSelect() {
   const r = await api("GET", "/targets");
-  $("ef-target").innerHTML = r.implemented === false ? "" : (r.targets || []).filter((t) => t.kind === "project").map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("") || '<option value="">（管理下のプロジェクトがありません）</option>';
+  const ts = (r.targets || []);
+  const opts = ts.filter((t) => t.kind === "claude_home").map((t) => `<option value="${esc(t.id)}">全体だけ（${esc(t.name)}）</option>`).concat(
+    ts.filter((t) => t.kind === "project").sort((a, b) => a.name.localeCompare(b.name)).map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`));
+  const cur = $("ef-target").value;
+  $("ef-target").innerHTML = opts.join("") || '<option value="">（管理下がありません）</option>';
+  if (cur) $("ef-target").value = cur;
 }
 $("ef-show").onclick = async () => {
   busy("ef-out");
   const r = await api("GET", "/effective/" + encodeURIComponent($("ef-target").value || "_"));
   if (!guard("ef-out", r)) return;
-  $("ef-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`;
+  const j1 = r.j1 || [];
+  const inJ1 = (h) => j1.filter((i) => i.refs.a.hash === h || i.refs.b.hash === h);
+  const ST = { open: ["判断待ち", "b-bad"], later: ["あとで", "b-warn"], decided: ["判断済み", "b-ok"], dismissed: ["このままでよい", "b-muted"] };
+  let html = `<p class="muted">${esc(r.note || "")}</p>`;
+  if (j1.length) html += `<div class="card"><h3>この集合の中の矛盾・状況依存（${j1.length}）</h3><ul>${j1.map((i) => `<li><span class="badge ${ST[i.status]?.[1] || "b-muted"}">${esc(ST[i.status]?.[0] || i.status)}</span> ${esc(i.title)}</li>`).join("")}</ul></div>`;
+  for (const L of r.layers || []) {
+    html += `<h3>${esc(L.layer)} <span class="muted">${L.units.length} 節</span></h3><table><tr><th>節</th><th>ファイル</th><th>大きさ</th><th></th></tr>` +
+      L.units.map((u) => `<tr class="click ef-row" data-id="${esc(u.id)}" data-path="${esc(u.path)}" data-anchor="${esc(u.anchor)}"><td>${esc(u.anchor || u.name)}</td><td class="path">${esc(u.rel)}</td><td>${u.size}</td><td>${inJ1(u.hash).map((i) => `<span class="badge ${ST[i.status]?.[1] || "b-muted"}" title="${esc(i.title)}">J1</span>`).join(" ")}</td></tr>`).join("") + "</table>";
+  }
+  $("ef-out").innerHTML = html + '<div id="ef-unit"></div>';
+  const all = (r.layers || []).flatMap((L) => L.units);
+  document.querySelectorAll(".ef-row").forEach((tr) => (tr.onclick = () => {
+    const u = all.find((x) => x.id === tr.dataset.id);
+    $("ef-unit").innerHTML = `<div class="card"><h3>${esc(u.anchor || u.name)}</h3><p class="muted">${esc(u.path)}</p><pre>${esc(u.text)}</pre></div>`;
+    $("ef-unit").scrollIntoView({ behavior: "smooth" });
+  }));
 };
 
 // ------------------------------------------------------------ 管理下（UC3）
