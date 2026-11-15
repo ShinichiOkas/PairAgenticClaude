@@ -33,7 +33,11 @@ def test_every_api_route_answers_json(client: TestClient) -> None:
             assert data["message"] == "未実装"
 
 
-def test_fleet_is_not_implemented_yet(client: TestClient) -> None:
-    for method, path in (("get", "/api/fleet"), ("post", "/api/fleet/publish"), ("post", "/api/fleet/pull")):
+def test_usecase_entrances_answer_not_implemented(client: TestClient) -> None:
+    """docs/usecases.md の口（常駐・判断待ち・自動でやったこと・効いている規則・管理下・GitHub）は、いまは「未実装」を返す。"""
+    for method, path in (("get", "/api/fleet"), ("post", "/api/fleet/publish"), ("post", "/api/fleet/pull"),
+                         ("get", "/api/resident"), ("put", "/api/resident"), ("post", "/api/sweep"),
+                         ("get", "/api/inbox"), ("post", "/api/inbox/x/decide"), ("get", "/api/activity"),
+                         ("post", "/api/activity/x/undo"), ("get", "/api/effective/x"), ("get", "/api/managed")):
         data = getattr(client, method)(path).json()
         assert data == {"implemented": False, "message": "未実装", "feature": data["feature"]}

@@ -50,25 +50,110 @@ function showTab(name) {
   document.querySelectorAll("#nav a").forEach((x) => x.classList.toggle("active", x.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x.id === "tab-" + name));
   location.hash = name;
-  const onShow = { targets: loadTargets, status: fillTargetSelect, situations: loadSituations, distribute: fillDistTargets, settings: loadSettings, dashboard: loadDashboard };
+  const onShow = { inbox: loadInbox, activity: loadActivity, effective: fillEffectiveSelect, managed: loadManaged, targets: loadTargets, status: fillTargetSelect, situations: loadSituations, distribute: fillDistTargets, settings: loadSettings };
   if (onShow[name]) onShow[name]();
 }
 
-// ------------------------------------------------------------ ヘッダ・ダッシュボード
+// ------------------------------------------------------------ ヘッダ（常駐の状態）
 async function loadHealth() {
   const h = await api("GET", "/health");
-  $("hdr-info").textContent = h.master_root ? `v${h.version} ・ マスター: ${h.master_root} ・ データ: ${h.data_home}` : "";
+  $("hdr-info").textContent = h.master_root ? `マスター: ${h.master_root}` : "";
 }
-async function loadDashboard() {
-  busy("dash-out");
-  const r = await api("GET", "/dashboard");
-  if (!guard("dash-out", r)) return;
-  const s = r.stats || {};
-  const card = (n, l) => `<div class="stat"><div class="n">${esc(n ?? "-")}</div><div class="l">${esc(l)}</div></div>`;
-  $("dash-out").innerHTML = `<div class="stats">${card(s.targets, "登録済みの配布先")}${card(s.drift, "マスターとずれているファイル")}${card(s.units, "サーベイ済みの単位")}${card(s.findings, "検査の指摘（仮説）")}${card(s.situations, "状況定義")}</div>` +
-    (r.notes || []).map((n) => `<p class="muted">${esc(n)}</p>`).join("");
+async function loadResident() {
+  const r = await api("GET", "/resident");
+  const state = r.implemented === false ? '<span class="badge b-warn">常駐: 未実装</span>' :
+    `<span class="badge ${r.running ? "b-ok" : "b-muted"}">${r.running ? "常駐中" : "停止"}</span> 最終点検 ${esc(r.last_sweep || "-")} ・ 次の点検 ${esc(r.next_sweep || "-")}`;
+  $("resident").innerHTML = `${state} <button id="sweep-now" class="secondary">今すぐ点検</button><span id="sweep-out"></span>`;
+  $("sweep-now").onclick = async () => {
+    const s = await api("POST", "/sweep");
+    $("sweep-out").innerHTML = s.implemented === false ? ' <span class="badge b-warn">未実装</span>' : s.error ? ` <span class="badge b-bad">${esc(s.error)}</span>` : " 点検を始めました";
+  };
 }
-$("dash-refresh").onclick = loadDashboard;
+
+// ------------------------------------------------------------ 判断待ち（UC1）
+const J_LABEL = { J1: "同時に効く規則の矛盾", J2: "マージできない変更", J3: "管理に入れるか", J4: "ほかのユーザーの規則" };
+function decisionCard(item, sample) {
+  const opts = (item.options || []).map((o) => `<button class="${o.primary ? "" : "secondary"} dc-opt" data-id="${esc(item.id)}" data-opt="${esc(o.id)}">${esc(o.label)}</button>`).join("");
+  const rule = (x, k) => x ? `<div class="rule"><div class="muted">${k} ・ ${esc(x.where)} ・ ${esc(x.when || "")}</div><pre>${esc(x.text)}</pre></div>` : "";
+  return `<div class="card decision ${sample ? "sample" : ""}">
+    ${sample ? '<div class="sample-tag">見本（画面の形を見るためのもの。実データから作った例。中身は未実装）</div>' : ""}
+    <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b></div>
+    <p>${esc(item.what)}</p>
+    ${item.a || item.b ? `<div class="side">${rule(item.a, "規則 A")}${rule(item.b, "規則 B")}</div>` : ""}
+    ${item.applies ? `<p><b>どこで同時に効くか:</b> ${esc(item.applies)}</p>` : ""}
+    ${item.ai ? `<div class="ai"><b>AI の見立て（仮説）:</b> ${esc(item.ai)}</div>` : ""}
+    <div class="bar">${opts}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
+}
+const SAMPLE_INBOX = [
+  { id: "sample-j1", kind: "J1", title: "運転方針 × セッションの始め",
+    what: "2 つの規則が、すべてのプロジェクトのエージェントに同時に効いています。依頼が無いのに着手するのか、待つのかがぶつかって見えます。",
+    a: { where: "~/.claude/CLAUDE.md › 運転方針", when: "2026-10-27 の宣言", text: "依頼を受けたら、聞き返さずに推奨を決めて着手する。最初の一言は問いかけではなく「こうやる」の 1 行。" },
+    b: { where: "~/.claude/rules/pair-agent-core.md › セッションの始め", when: "2026-11-05 の宣言", text: "セッションの始めに自分から何も始めない。ツールを 1 つも走らせない。最初の発話が依頼でないなら「何を始めますか？」の 1 行だけ返して待つ。" },
+    applies: "全プロジェクト（どちらも全体の規則）",
+    ai: "矛盾ではなく、状況次第で両方真。A は「依頼を受けた後」、B は「セッション開始直後で依頼がまだ無い」ときに効く（状況定義 main-agent ／ session-start-no-request）。",
+    options: [{ id: "split", label: "状況で分ける（AI の案を直せる）", primary: true }, { id: "a", label: "A を採る" }, { id: "b", label: "B を採る" }, { id: "merge", label: "統合した文案にする" }, { id: "later", label: "あとで" }] },
+  { id: "sample-j3", kind: "J3", title: "openclaw を管理に入れるか",
+    what: "CLAUDE.md を持つリポジトリが見つかりました。.pair-agent/ が無いので、他人のリポジトリかもしれません。管理に入れると、全体の規則とプロジェクトの雛形を配ります。",
+    applies: "S:\\work\\develop\\openclaw（CLAUDE.md・AGENTS.md あり）",
+    options: [{ id: "include", label: "管理に入れる", primary: true }, { id: "exclude", label: "外す（二度と聞かない）" }, { id: "later", label: "あとで" }] },
+];
+async function loadInbox() {
+  busy("inbox-out");
+  const r = await api("GET", "/inbox");
+  if (guard("inbox-out", r)) {
+    const items = r.items || [];
+    $("nav-inbox-n").textContent = items.length || "";
+    $("inbox-out").innerHTML = items.length ? items.map((i) => decisionCard(i, false)).join("") : '<p class="ok-big">やることはありません。</p>';
+  }
+  $("inbox-sample").innerHTML = SAMPLE_INBOX.map((i) => decisionCard(i, true)).join("");
+  document.querySelectorAll(".dc-opt").forEach((b) => (b.onclick = async () => {
+    const d = await api("POST", `/inbox/${encodeURIComponent(b.dataset.id)}/decide`, { option: b.dataset.opt });
+    guard("dc-out-" + b.dataset.id, d) && ($("dc-out-" + b.dataset.id).innerHTML = '<span class="badge b-ok">反映しました</span>');
+  }));
+}
+
+// ------------------------------------------------------------ 自動でやったこと（UC2）
+const SAMPLE_ACTIVITY = [
+  { at: "（見本）", what: "マスターへ取り込んだ", detail: "~/.claude/CLAUDE.md の節「作る順序は UI ファースト（絶対ルール・2026-11-14）」→ マスターの home-claude/CLAUDE.md（全体）", why: "配布先だけで生まれた師匠の宣言。ぶつかる規則なし" },
+  { at: "（見本）", what: "配った", detail: "マスターの rules/pair-agent-core.md の「迷ったら project か archive に保存する」→ ~/.claude/rules/ と ~/.gemini/config/rules/", why: "マスターで直した規則が届いていなかった。同じファイルの配布先側の新しい節は残して節ごとにマージ" },
+];
+async function loadActivity() {
+  busy("activity-out");
+  const r = await api("GET", "/activity");
+  if (guard("activity-out", r)) {
+    const ev = r.events || [];
+    $("activity-out").innerHTML = ev.length ? actTable(ev, false) : '<p class="muted">まだありません。</p>';
+  }
+  $("activity-sample").innerHTML = `<div class="card sample"><div class="sample-tag">見本（この PC の実データで、点検が自動でやるはずのこと。まだ何もしていない）</div>${actTable(SAMPLE_ACTIVITY, true)}</div>`;
+  document.querySelectorAll(".act-undo").forEach((b) => (b.onclick = async () => {
+    const d = await api("POST", `/activity/${encodeURIComponent(b.dataset.id || "sample")}/undo`);
+    b.insertAdjacentHTML("afterend", d.implemented === false ? ' <span class="badge b-warn">未実装</span>' : ' <span class="badge b-ok">取り消しました</span>');
+  }));
+}
+function actTable(ev, sample) {
+  return `<table><tr><th>いつ</th><th>何を</th><th>どこへ</th><th>なぜ</th><th></th></tr>` +
+    ev.map((e) => `<tr><td>${esc(e.at)}</td><td>${esc(e.what)}</td><td>${esc(e.detail)}</td><td>${esc(e.why)}</td><td><button class="secondary act-undo" data-id="${esc(e.id || "")}">取り消す</button></td></tr>`).join("") + "</table>";
+}
+
+// ------------------------------------------------------------ 効いている規則（UC5）
+async function fillEffectiveSelect() {
+  const r = await api("GET", "/targets");
+  $("ef-target").innerHTML = r.implemented === false ? "" : (r.targets || []).filter((t) => t.kind === "project").map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("") || '<option value="">（管理下のプロジェクトがありません）</option>';
+}
+$("ef-show").onclick = async () => {
+  busy("ef-out");
+  const r = await api("GET", "/effective/" + encodeURIComponent($("ef-target").value || "_"));
+  if (!guard("ef-out", r)) return;
+  $("ef-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`;
+};
+
+// ------------------------------------------------------------ 管理下（UC3）
+async function loadManaged() {
+  busy("managed-out");
+  const r = await api("GET", "/managed");
+  if (!guard("managed-out", r)) return;
+  $("managed-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`;
+}
 
 // ------------------------------------------------------------ 配布先
 let discovered = [];
@@ -332,6 +417,13 @@ $("cf-test").onclick = async () => {
   $("cf-llm-out").innerHTML = `<p><span class="badge ${r.ok ? "b-ok" : "b-bad"}">${r.ok ? "応答あり" : "失敗"}</span> ${esc(r.model)} ・ ${r.elapsed_ms ?? "-"} ms</p><pre>${esc(r.content || r.error || "")}</pre>`;
 };
 
+$("rs-save").onclick = async () => {
+  const r = await api("PUT", "/resident", { autostart: $("rs-autostart").checked, notify: $("rs-notify").checked, interval_min: Number($("rs-interval").value), watch: $("rs-watch").checked });
+  if (guard("rs-out", r)) $("rs-out").innerHTML = '<p><span class="badge b-ok">保存しました</span></p>';
+};
+
 // ------------------------------------------------------------ 起動
 loadHealth();
-showTab((location.hash || "#dashboard").slice(1));
+loadResident();
+const first = (location.hash || "#inbox").slice(1);
+showTab(document.getElementById("tab-" + first) ? first : "inbox");

@@ -224,7 +224,56 @@ def distribute_apply(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     return distribute.apply(body["plan_id"], list(body.get("action_ids") or []))
 
 
-# ---------------------------------------------------------------- GitHub（PC・ユーザー横断）
+# ---------------------------------------------------------------- 常駐と点検（docs/usecases.md §2）
+@router.get("/resident")
+def resident_get() -> dict[str, Any]:
+    return not_implemented("resident.get")
+
+
+@router.put("/resident")
+def resident_put(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    return not_implemented("resident.put")
+
+
+@router.post("/sweep")
+def sweep() -> dict[str, Any]:
+    return not_implemented("sweep")
+
+
+# ---------------------------------------------------------------- 判断待ち（UC1・J1〜J4）
+@router.get("/inbox")
+def inbox_get() -> dict[str, Any]:
+    return not_implemented("inbox.get")
+
+
+@router.post("/inbox/{item_id}/decide")
+def inbox_decide(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    return not_implemented("inbox.decide")
+
+
+# ---------------------------------------------------------------- 自動でやったこと（UC2）
+@router.get("/activity")
+def activity_get() -> dict[str, Any]:
+    return not_implemented("activity.get")
+
+
+@router.post("/activity/{event_id}/undo")
+def activity_undo(event_id: str) -> dict[str, Any]:
+    return not_implemented("activity.undo")
+
+
+# ---------------------------------------------------------------- 効いている規則（UC5）・管理下（UC3）
+@router.get("/effective/{target_id}")
+def effective_get(target_id: str) -> dict[str, Any]:
+    return not_implemented("effective.get")
+
+
+@router.get("/managed")
+def managed_get() -> dict[str, Any]:
+    return not_implemented("managed.get")
+
+
+# ---------------------------------------------------------------- GitHub（PC・ユーザー横断・UC4）
 @router.get("/fleet")
 def fleet_get() -> dict[str, Any]:
     return not_implemented("fleet.get")

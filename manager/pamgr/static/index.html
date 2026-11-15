@@ -9,27 +9,68 @@
 <body>
 <header>
   <h1>Pair Agent Manager</h1>
+  <div id="resident" class="resident"></div>
   <span id="hdr-info" class="muted"></span>
 </header>
 <div class="layout">
   <nav id="nav">
-    <a data-tab="dashboard" class="active">ダッシュボード</a>
-    <a data-tab="targets">配布先（探索・登録）</a>
-    <a data-tab="status">配布状況・差分</a>
-    <a data-tab="survey">サーベイ</a>
-    <a data-tab="checks">検査（矛盾・冗長）</a>
-    <a data-tab="situations">状況定義</a>
-    <a data-tab="generalize">一般化</a>
-    <a data-tab="distribute">再配布</a>
-    <a data-tab="fleet">GitHub（PC・ユーザー横断）</a>
-    <a data-tab="settings">設定（LLM）</a>
+    <a data-tab="inbox" class="active">判断待ち <span id="nav-inbox-n" class="badge b-bad"></span></a>
+    <a data-tab="activity">自動でやったこと</a>
+    <a data-tab="effective">効いている規則</a>
+    <a data-tab="managed">管理下（PC・プロジェクト）</a>
+    <a data-tab="settings">設定</a>
+    <div class="nav-group">道具（調べるとき）</div>
+    <a data-tab="targets" class="sub">配布先の探索・登録</a>
+    <a data-tab="status" class="sub">配布状況・差分</a>
+    <a data-tab="survey" class="sub">サーベイ</a>
+    <a data-tab="checks" class="sub">検査（矛盾・冗長）</a>
+    <a data-tab="situations" class="sub">状況定義</a>
+    <a data-tab="generalize" class="sub">一般化</a>
+    <a data-tab="distribute" class="sub">再配布</a>
   </nav>
   <main>
-    <!-- ダッシュボード -->
-    <section id="tab-dashboard" class="tab active">
-      <h2>ダッシュボード</h2>
-      <div class="bar"><button id="dash-refresh">更新</button></div>
-      <div id="dash-out"></div>
+    <!-- 判断待ち（UC1・J1〜J4） -->
+    <section id="tab-inbox" class="tab active">
+      <h2>判断待ち</h2>
+      <p class="muted">師匠の判断が要るものだけが、ここに上がります（同時に効く規則の矛盾・マージできない変更・管理に入れるかの確認・ほかのユーザーの規則）。それ以外は自動で片づけ、「自動でやったこと」に載せます。</p>
+      <div id="inbox-out"></div>
+      <div id="inbox-sample"></div>
+    </section>
+
+    <!-- 自動でやったこと（UC2） -->
+    <section id="tab-activity" class="tab">
+      <h2>自動でやったこと</h2>
+      <p class="muted">点検が自動でやったこと（配る・マスターへ取り込む・一般化・管理に入れる）の時系列です。違っていれば取り消せます。通知はしません。</p>
+      <div id="activity-out"></div>
+      <div id="activity-sample"></div>
+    </section>
+
+    <!-- 効いている規則（UC5） -->
+    <section id="tab-effective" class="tab">
+      <h2>効いている規則</h2>
+      <p class="muted">あるプロジェクトのエージェントが同時に読む規則の全部（全体＋ユーザー固有＋そのプロジェクト）を、出所つきで見ます。矛盾の検査はこの集合の中で行います。</p>
+      <div class="bar"><select id="ef-target"></select><button id="ef-show">表示</button></div>
+      <div id="ef-out"></div>
+    </section>
+
+    <!-- 管理下（UC3・UC4） -->
+    <section id="tab-managed" class="tab">
+      <h2>管理下（PC・プロジェクト）</h2>
+      <div class="card">
+        <h3>この PC</h3>
+        <p class="muted"><code>.pair-agent/</code> を持つプロジェクトは自動で管理下に入ります。持たないもの（他人のリポジトリかもしれない）は「判断待ち」で確かめます。外したものは二度と聞きません。</p>
+        <div id="managed-out"></div>
+      </div>
+      <div class="card">
+        <h3>ほかの PC・ほかのユーザー（GitHub）</h3>
+        <p class="muted">各 PC が取り込んだ変更をマスター（このリポジトリ）に commit・push し、ほかの PC は pull して同じ流れで配ります。</p>
+        <div class="bar">
+          <button id="fl-load" class="secondary">状態</button>
+          <button id="fl-publish" class="secondary">この PC の変更を commit・push</button>
+          <button id="fl-pull" class="secondary">pull して配る</button>
+        </div>
+        <div id="fl-out"></div>
+      </div>
     </section>
 
     <!-- 配布先 -->
@@ -145,21 +186,20 @@
       <div id="ds-diff"></div>
     </section>
 
-    <!-- GitHub -->
-    <section id="tab-fleet" class="tab">
-      <h2>GitHub（PC・ユーザー横断）</h2>
-      <p class="muted">各 PC のサーベイ結果をこのリポジトリの <code>fleet/&lt;user&gt;/&lt;host&gt;/</code> にコミットし、pull して横断で集計する。</p>
-      <div class="bar">
-        <button id="fl-load">状態</button>
-        <button id="fl-publish">この PC の結果をコミット・push</button>
-        <button id="fl-pull">pull して集計</button>
-      </div>
-      <div id="fl-out"></div>
-    </section>
-
     <!-- 設定 -->
     <section id="tab-settings" class="tab">
-      <h2>設定（LLM・探索）</h2>
+      <h2>設定</h2>
+      <div class="card">
+        <h3>常駐と点検</h3>
+        <div class="bar">
+          <label><input type="checkbox" id="rs-autostart"> ログオンで常駐を始める</label>
+          <label><input type="checkbox" id="rs-notify" checked> 判断待ちができたら Windows の通知を出す</label>
+          <label>定期の点検の間隔（分） <input id="rs-interval" type="number" value="30" min="5" style="width:5em"></label>
+          <label><input type="checkbox" id="rs-watch" checked> ルール・スキルのファイルが変わったら点検する</label>
+        </div>
+        <div class="bar"><button id="rs-save">保存</button></div>
+        <div id="rs-out"></div>
+      </div>
       <div class="card">
         <h3>LLM（OmniAISDK 経由の Ollama）</h3>
         <label>Ollama の口 <input id="cf-base" placeholder="http://127.0.0.1:11434"></label>
