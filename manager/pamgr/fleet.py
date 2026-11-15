@@ -193,8 +193,9 @@ def _tool_paths(root: Path) -> list[str]:
     return res
 
 
-def publish(message: str) -> dict:
-    """TOOL_PATHS だけを stage・commit し、upstream があれば push する（force しない）。"""
+def publish(message: str, paths: list[str] | None = None) -> dict:
+    """TOOL_PATHS だけを stage・commit し、upstream があれば push する（force しない）。
+    paths を渡したときは、その中の TOOL_PATHS の下のファイルだけ（点検が自分で書いたものだけを出すため）。"""
     root = _root()
     res: dict = {"ok": False, "commit": None, "pushed": False, "files": []}
     rc, out, err = _git(root, "rev-parse", "--is-inside-work-tree")
@@ -204,7 +205,7 @@ def publish(message: str) -> dict:
     if not (message or "").strip():
         res["error"] = "コミットメッセージが空"
         return res
-    tp = _tool_paths(root)
+    tp = _tool_paths(root) if paths is None else [x for x in paths if x.replace("\\", "/").split("/")[0] in TOOL_PATHS]
     if not tp:
         res["ok"] = True
         return res

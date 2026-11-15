@@ -50,7 +50,7 @@ function showTab(name) {
   document.querySelectorAll("#nav a").forEach((x) => x.classList.toggle("active", x.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x.id === "tab-" + name));
   location.hash = name;
-  const onShow = { inbox: loadInbox, activity: loadActivity, effective: fillEffectiveSelect, managed: loadManaged, targets: loadTargets, status: fillTargetSelect, situations: loadSituations, distribute: fillDistTargets, settings: loadSettings };
+  const onShow = { inbox: loadInbox, activity: loadActivity, effective: fillEffectiveSelect, managed: loadManaged, targets: loadTargets, status: fillTargetSelect, situations: loadSituations, distribute: fillDistTargets, settings: () => { loadSettings(); loadResidentSettings(); } };
   if (onShow[name]) onShow[name]();
 }
 
@@ -62,18 +62,17 @@ async function loadHealth() {
 const fmtAt = (s) => (s ? String(s).replace("T", " ").slice(0, 19) : "");
 async function loadResident() {
   const r = await api("GET", "/resident");
-  let state;
-  if (r.implemented === false || r.error) state = '<span class="badge b-warn">常駐: 未実装</span>';
-  else {
-    const res = r.resident_implemented === false
-      ? '<span class="badge b-warn" title="自動の点検（常駐）はまだ未実装。いまは「今すぐ点検」だけ">常駐: 未実装</span>'
-      : `<span class="badge ${r.running ? "b-ok" : "b-muted"}">${r.running ? "常駐中" : "停止"}</span>`;
-    state = `${res} <span class="muted">最終点検 ${esc(fmtAt(r.last_sweep) || "まだ")}${r.next_sweep ? " ・ 次 " + esc(fmtAt(r.next_sweep)) : ""}</span>`;
-    $("nav-inbox-n").textContent = r.open || "";
-  }
-  $("resident").innerHTML = `${state} <button id="sweep-now" class="secondary" title="照合して、自動で直せるものは直します（配る・マスターへ取り込む・節ごとのマージ）。書く前の版は退避し、「自動でやったこと」から取り消せます">今すぐ点検（自動で直す）</button><span id="sweep-out">${r.sweeping ? ' <span class="badge b-info">点検中…</span>' : ""}</span>`;
+  if (r.implemented === false || r.error) { $("resident").innerHTML = `<span class="badge b-warn">常駐: ${esc(r.error || "未実装")}</span>`; return; }
+  $("nav-inbox-n").textContent = r.open || "";
+  const res = r.running ? '<span class="badge b-ok">常駐中</span>' : '<span class="badge b-muted">停止</span>';
+  const info = `最終点検 ${esc(fmtAt(r.last_sweep) || "まだ")}${r.next_sweep ? " ・ 次 " + esc(fmtAt(r.next_sweep)) : ""}${r.remaining ? ` ・ 矛盾の未判定 ${r.remaining} 組` : ""}`;
+  $("resident").innerHTML = `${res} <span class="muted">${info}</span>${r.last_error ? ` <span class="badge b-bad" title="${esc(r.last_error)}">常駐でエラー</span>` : ""}
+    <button id="rs-toggle" class="secondary" title="${r.running ? "自動の点検を止めます" : "ファイルの変更と定期（設定の間隔）で自動に点検し、直せるものは直します。書く前の版は退避し、取り消せます"}">${r.running ? "常駐を止める" : "常駐を始める（自動で直す）"}</button>
+    <button id="sweep-now" class="secondary" title="照合して、自動で直せるものは直します（配る・マスターへ取り込む・節ごとのマージ・GitHub と同期）。書く前の版は退避し、「自動でやったこと」から取り消せます">今すぐ点検（自動で直す）</button><span id="sweep-out">${r.sweeping ? ' <span class="badge b-info">点検中…</span>' : ""}</span>`;
   $("sweep-now").onclick = () => runSweep(false, "sweep-out");
+  $("rs-toggle").onclick = async () => { const d = await api("PUT", "/resident", { enabled: !r.running }); if (d.error) $("sweep-out").innerHTML = ` <span class="badge b-bad">${esc(d.error)}</span>`; loadResident(); };
 }
+setInterval(loadResident, 30000);
 async function runSweep(dryRun, outId, done) {
   const s = await api("POST", "/sweep", { dry_run: dryRun });
   if (s.error) { $(outId).innerHTML = ` <span class="badge b-bad">${esc(s.error)}</span>`; return; }
@@ -116,10 +115,11 @@ async function loadInbox() {
   const r = await api("GET", "/inbox");
   if (guard("inbox-out", r)) {
     const items = r.items || [];
-    const open = items.filter((i) => i.status === "open"), later = items.filter((i) => i.status === "later");
+    const open = items.filter((i) => i.status === "open"), later = items.filter((i) => i.status === "later"), info = items.filter((i) => i.status === "info");
     $("nav-inbox-n").textContent = open.length || "";
     $("inbox-out").innerHTML = (open.length ? open.map((i) => decisionCard(i)).join("") : '<p class="ok-big">やることはありません。</p>') +
-      (later.length ? `<h3 class="muted">あとで（${later.length}）</h3>` + later.map((i) => decisionCard(i)).join("") : "");
+      (later.length ? `<h3 class="muted">あとで（${later.length}）</h3>` + later.map((i) => decisionCard(i)).join("") : "") +
+      (info.length ? `<details class="card"><summary><b>急ぎではないもの（${info.length}）</b> <span class="muted">AI が「状況次第で両方真」と見た組。通知しません。状況を書き分けるか、このままでよいかを、手が空いたときに。</span></summary>${info.map((i) => decisionCard(i)).join("")}</details>` : "");
   }
   $("inbox-sample").innerHTML = SAMPLE_INBOX.map((i) => decisionCard(i, true)).join("");
   bindDecisionButtons();
@@ -202,14 +202,23 @@ function actTable(ev) {
         `<tr><td colspan="5" id="act-d-${esc(e.id)}" style="padding:0;border:0"></td></tr>`;
     }).join("") + "</table>";
 }
+const PLAN_LABEL = { distribute: "配る", adopt: "マスターへ取り込む", merge: "節ごとにマージする", decide: "判断", manage: "管理に入れる" };
 async function renderPreview() {
   const r = await api("GET", "/sweep");
   const p = r.preview;
   let body = '<p class="muted">点検が次に何をするかを、書かずに見ます。</p>';
   if (p) {
-    body = `<p class="muted">予行 ${esc(fmtAt(p.at))} ・ 書く ${p.actions.length} 件 ・ 判断待ち ${p.inbox.length} 件 ・ 見送り ${p.held.length} 件</p>` +
-      (p.actions.length ? `<table><tr><th>何を</th><th>どこへ</th><th>なぜ</th></tr>` + p.actions.map((a) => `<tr><td><span class="badge b-info">${esc(KIND_LABEL[a.kind] || a.kind)}</span> ${esc(a.what)}</td><td>${esc(a.detail)}</td><td>${esc(a.why)}</td></tr>`).join("") + "</table>" : '<p class="ok-big">書くものはありません。</p>') +
-      (p.inbox.length ? `<p><b>判断待ちに上がるもの:</b></p><ul>${p.inbox.map((i) => `<li>${esc(J_LABEL[i.kind] || i.kind)}: ${esc(i.title)}</li>`).join("")}</ul>` : "") +
+    const open = p.inbox.filter((i) => i.status !== "info"), info = p.inbox.filter((i) => i.status === "info");
+    const byKind = {};
+    open.forEach((i) => (byKind[i.kind] = (byKind[i.kind] || []).concat(i)));
+    const reg = (p.managed?.register || []);
+    body = `<p class="muted">予行 ${esc(fmtAt(p.at))} ・ 書く ${p.actions.length} 件 ・ 管理に入れる ${reg.length} か所 ・ 判断待ち ${open.length} 件（急ぎではないもの ${info.length} 件）・ 見送り ${p.held.length} 件</p>` +
+      `<h3>点検がやること（予定）</h3>` +
+      (p.actions.length ? `<table><tr><th>何を</th><th>どこへ</th><th>なぜ</th></tr>` + p.actions.map((a) => `<tr><td><span class="badge b-info">${esc(PLAN_LABEL[a.kind] || a.kind)}</span></td><td>${esc(a.detail)}</td><td>${esc(a.why)}</td></tr>`).join("") + "</table>" : '<p class="ok-big">書くものはありません。</p>') +
+      (reg.length ? `<details><summary>管理に入れる（.pair-agent/ あり・ホーム） ${reg.length} か所</summary><p>${reg.map((c) => esc(c.name)).join("、")}</p></details>` : "") +
+      Object.entries(byKind).map(([k, xs]) => `<details ${k === "J1" || k === "J2" ? "open" : ""}><summary>判断待ちに上がる: ${esc(J_LABEL[k] || k)} ${xs.length} 件</summary><ul>${xs.map((i) => `<li>${esc(i.title)}</li>`).join("")}</ul></details>`).join("") +
+      (info.length ? `<p class="muted">急ぎではないもの（AI が「状況次第で両方真」と見た組） ${info.length} 件は、判断待ちの下にたたんで出します（通知しません）。</p>` : "") +
+      (p.held.length ? `<details><summary>見送るもの ${p.held.length} 件</summary><ul>${p.held.map((h) => `<li>${esc(h.what)}: ${esc(h.detail)} — ${esc(h.why)}</li>`).join("")}</ul></details>` : "") +
       (Object.keys(p.steps || {}).length ? `<p class="muted">段: ${Object.entries(p.steps).map(([k, v]) => `${esc(k)}=${esc(v)}`).join(" ・ ")}</p>` : "");
   }
   $("activity-sample").innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">予行（書かない）</h3><button id="pv-run" class="secondary">予行する</button><span id="pv-out"></span></div>${body}</div>`;
@@ -232,7 +241,7 @@ $("ef-show").onclick = async () => {
   if (!guard("ef-out", r)) return;
   const j1 = r.j1 || [];
   const inJ1 = (h) => j1.filter((i) => i.refs.a.hash === h || i.refs.b.hash === h);
-  const ST = { open: ["判断待ち", "b-bad"], later: ["あとで", "b-warn"], decided: ["判断済み", "b-ok"], dismissed: ["このままでよい", "b-muted"] };
+  const ST = { open: ["判断待ち", "b-bad"], info: ["急ぎではない", "b-info"], later: ["あとで", "b-warn"], decided: ["判断済み", "b-ok"], dismissed: ["このままでよい", "b-muted"] };
   let html = `<p class="muted">${esc(r.note || "")}</p>`;
   if (j1.length) html += `<div class="card"><h3>この集合の中の矛盾・状況依存（${j1.length}）</h3><ul>${j1.map((i) => `<li><span class="badge ${ST[i.status]?.[1] || "b-muted"}">${esc(ST[i.status]?.[0] || i.status)}</span> ${esc(i.title)}</li>`).join("")}</ul></div>`;
   for (const L of r.layers || []) {
@@ -485,9 +494,20 @@ $("ds-apply").onclick = async () => {
 };
 
 // ------------------------------------------------------------ GitHub
-$("fl-load").onclick = async () => { busy("fl-out"); const r = await api("GET", "/fleet"); if (guard("fl-out", r)) $("fl-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`; };
-$("fl-publish").onclick = async () => { busy("fl-out"); const r = await api("POST", "/fleet/publish"); if (guard("fl-out", r)) $("fl-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`; };
-$("fl-pull").onclick = async () => { busy("fl-out"); const r = await api("POST", "/fleet/pull"); if (guard("fl-out", r)) $("fl-out").innerHTML = `<pre>${esc(JSON.stringify(r, null, 2))}</pre>`; };
+function renderFleet(r) {
+  const st = r.status || {};
+  let html = `<table><tr><th>マスター</th><td class="path">${esc(st.root)}</td></tr><tr><th>枝・リモート</th><td>${esc(st.branch || "-")} ・ ${esc(st.remote || "（upstream なし）")}</td></tr>` +
+    `<tr><th>先行・遅れ</th><td>push していない ${st.ahead ?? "-"} ・ pull していない ${st.behind ?? "-"}</td></tr>` +
+    `<tr><th>ツールが書いた未コミット</th><td>${(r.tool_written || []).map((x) => `<code>${esc(x)}</code>`).join(" ") || "なし"}</td></tr>` +
+    `<tr><th>規則・状況の未コミット（全部）</th><td>${(st.dirty || []).map((x) => `<code>${esc(x)}</code>`).join(" ") || "なし"}</td></tr>` +
+    `<tr><th>点検での同期</th><td>${r.sync ? "する" : "しない（設定）"}</td></tr></table>`;
+  if (st.error) html += `<div class="error">${esc(st.error)}</div>`;
+  if (r.publish) html += `<p>${r.publish.pushed ? `<span class="badge b-ok">push しました</span> ${(r.publish.files || []).length} ファイル` : r.publish.ok ? "出すものはありません" : `<span class="badge b-bad">${esc(r.publish.error)}</span>`}</p>`;
+  $("fl-out").innerHTML = html;
+}
+$("fl-load").onclick = async () => { busy("fl-out"); const r = await api("GET", "/fleet"); if (guard("fl-out", r)) renderFleet(r); };
+$("fl-publish").onclick = async () => { busy("fl-out"); const p = await api("POST", "/fleet/publish"); if (!guard("fl-out", p)) return; const r = await api("GET", "/fleet"); if (guard("fl-out", r)) renderFleet({ ...r, publish: p.publish }); };
+$("fl-pull").onclick = () => runSweep(false, "fl-out", () => $("fl-load").onclick());
 
 // ------------------------------------------------------------ 設定
 function fillModelSelects(models, cur) {
@@ -529,9 +549,17 @@ $("cf-test").onclick = async () => {
 };
 
 $("rs-save").onclick = async () => {
-  const r = await api("PUT", "/resident", { autostart: $("rs-autostart").checked, notify: $("rs-notify").checked, interval_min: Number($("rs-interval").value), watch: $("rs-watch").checked });
-  if (guard("rs-out", r)) $("rs-out").innerHTML = '<p><span class="badge b-ok">保存しました</span></p>';
+  const r = await api("PUT", "/resident", { autostart: $("rs-autostart").checked, notify: $("rs-notify").checked, interval_min: Number($("rs-interval").value),
+    watch: $("rs-watch").checked, git_sync: $("rs-git").checked, llm_budget_sec: Number($("rs-budget").value) });
+  if (guard("rs-out", r)) { $("rs-out").innerHTML = '<p><span class="badge b-ok">保存しました</span></p>'; loadResident(); }
 };
+async function loadResidentSettings() {
+  const r = await api("GET", "/resident");
+  if (r.error || r.implemented === false) return;
+  const s = r.settings || {};
+  $("rs-autostart").checked = !!r.autostart; $("rs-notify").checked = !!s.notify; $("rs-watch").checked = !!s.watch;
+  $("rs-git").checked = !!s.git_sync; $("rs-interval").value = s.interval_min ?? 30; $("rs-budget").value = s.llm_budget_sec ?? 300;
+}
 
 // ------------------------------------------------------------ 起動
 loadHealth();

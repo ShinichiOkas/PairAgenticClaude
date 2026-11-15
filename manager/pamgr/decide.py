@@ -212,4 +212,15 @@ def _j3(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[
     raise ValueError(f"選択肢が不明: {option}")
 
 
-HANDLERS = {"J1": _j1, "J2": _j2, "J3": _j3}
+# ---------------------------------------------------------------- J4: ほかのユーザーの規則
+def _j4(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[dict[str, Any], str]:
+    from . import gitsync
+    if option == "take":
+        return changes.record("decide", "判断: ほかのユーザーの変更を取り入れた", it["title"], "師匠の判断（J4）。次の点検で配る",
+                              refs={"item_id": it["id"]}), "decided"
+    if option == "reject":
+        return gitsync.reject(it), "decided"
+    raise ValueError(f"選択肢が不明: {option}")
+
+
+HANDLERS = {"J1": _j1, "J2": _j2, "J3": _j3, "J4": _j4}

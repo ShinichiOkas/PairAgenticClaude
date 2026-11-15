@@ -1,7 +1,8 @@
 """判断待ち（J1〜J4）の置き場。点検が見つけるたびに鍵で重ねる（同じものを 2 回出さない）。
 
 状態:
-  open      判断待ち
+  open      判断待ち（通知し、数に入れる）
+  info      急ぎではない（AI が「状況次第で両方真」と見た組など。通知せず、下にたたんで出す）
   later     「あとで」（下の段に出す）
   decided   判断して反映した
   dismissed 「このままでよい」「外す」（同じ鍵では二度と出さない）
@@ -17,7 +18,7 @@ from . import store
 
 FILE = "inbox.json"
 ORDER = {"J1": 0, "J2": 1, "J4": 2, "J3": 3}
-ACTIVE = ("open", "later")
+ACTIVE = ("open", "info", "later")
 
 
 def _load() -> dict[str, Any]:
@@ -39,7 +40,7 @@ def upsert(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         iid = item_id(it["key"])
         cur = d["items"].get(iid)
         if cur is None or cur["status"] == "gone":
-            d["items"][iid] = {**it, "id": iid, "status": "open", "created_at": store.now_iso(), "seen_at": store.now_iso()}
+            d["items"][iid] = {**it, "id": iid, "status": it.get("initial_status", "open"), "created_at": store.now_iso(), "seen_at": store.now_iso()}
             new.append(d["items"][iid])
         else:
             keep = {k: cur[k] for k in ("status", "created_at", "decision", "draft") if k in cur}
@@ -63,7 +64,8 @@ def sync(kinds: tuple[str, ...], detected: set[str]) -> int:
 
 def items(statuses: tuple[str, ...] = ACTIVE) -> list[dict[str, Any]]:
     out = [it for it in _load()["items"].values() if it["status"] in statuses]
-    return sorted(out, key=lambda it: (it["status"] != "open", ORDER.get(it["kind"], 9), it.get("created_at", "")))
+    rank = {"open": 0, "later": 1, "info": 2}
+    return sorted(out, key=lambda it: (rank.get(it["status"], 3), ORDER.get(it["kind"], 9), it.get("created_at", "")))
 
 
 def get(iid: str) -> dict[str, Any] | None:

@@ -14,7 +14,7 @@ from typing import Any, Callable
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
-from . import __version__, changes, checks, conflicts, decide, distribute, generalize, inbox, jobs, llm, managed, settings, situations, status, survey, sweep, targets
+from . import __version__, changes, checks, conflicts, decide, distribute, fleet, generalize, gitsync, inbox, jobs, llm, managed, resident, settings, situations, status, survey, sweep, targets
 from .paths import data_home, master_root
 
 router = APIRouter()
@@ -230,20 +230,20 @@ def distribute_apply(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 @router.get("/resident")
 @safe
 def resident_get() -> dict[str, Any]:
-    last = sweep.last() or {}
-    return {"enabled": False, "running": False, "resident_implemented": False, "sweeping": sweep.running(),
-            "last_sweep": last.get("at"), "next_sweep": None, "open": len(inbox.items(("open",)))}
+    return resident.state()
 
 
 @router.put("/resident")
+@safe
 def resident_put(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
-    return not_implemented("resident.put")
+    """常駐の入り切り・ログオン起動・点検の間隔・監視・通知・GitHub 同期。"""
+    return resident.configure(body)
 
 
 def start_sweep(dry_run: bool) -> str:
     if sweep.running():
         raise ValueError("点検はいま走っています")
-    return jobs.start("sweep-preview" if dry_run else "sweep", lambda p: sweep.run(dry_run, p))
+    return jobs.start("sweep-preview" if dry_run else "sweep", lambda p: resident.sweep_and_notify(dry_run, p, "手動"))
 
 
 @router.post("/sweep")
@@ -278,7 +278,7 @@ def inbox_draft(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[s
 def inbox_decide(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
     res = decide.decide(item_id, str(body.get("option", "")), body.get("edits"))
     if res.get("status") == "decided" and not sweep.running():
-        res["sweep_job"] = jobs.start("sweep", lambda p: sweep.run(False, p))   # 判断をほかの配布先へ広げる
+        res["sweep_job"] = jobs.start("sweep", lambda p: resident.sweep_and_notify(False, p, "判断の反映"))   # 判断をほかの配布先へ広げる
     return res
 
 
@@ -312,7 +312,7 @@ def activity_undo(event_id: str) -> dict[str, Any]:
 def effective_get(target_id: str) -> dict[str, Any]:
     eff = conflicts.effective(target_id)
     hs = set(eff["hashes"])
-    eff["j1"] = [i for i in inbox.items(("open", "later", "decided", "dismissed"))
+    eff["j1"] = [i for i in inbox.items(("open", "info", "later", "decided", "dismissed"))
                  if i["kind"] == "J1" and {i["refs"]["a"]["hash"], i["refs"]["b"]["hash"]} <= hs]
     return eff
 
@@ -340,18 +340,25 @@ def managed_unexclude(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 # ---------------------------------------------------------------- GitHub（PC・ユーザー横断・UC4）
 @router.get("/fleet")
+@safe
 def fleet_get() -> dict[str, Any]:
-    return not_implemented("fleet.get")
+    st = fleet.status(fetch=True)
+    return {"status": st, "tool_written": [x for x in gitsync.tool_written() if x in set(st.get("dirty") or [])],
+            "sync": settings.get().get("git_sync"), "last": (sweep.last() or {}).get("git")}
 
 
 @router.post("/fleet/publish")
+@safe
 def fleet_publish() -> dict[str, Any]:
-    return not_implemented("fleet.publish")
+    """この PC でツールが書いた変更（マスターの規則）だけを commit・push する。"""
+    return {"publish": gitsync.publish_step("- 手動で出した")}
 
 
 @router.post("/fleet/pull")
+@safe
 def fleet_pull() -> dict[str, Any]:
-    return not_implemented("fleet.pull")
+    """pull して点検する（ほかの PC の変更をこの PC へ配る）。点検は GitHub の段で pull する。"""
+    return {"job_id": start_sweep(False)}
 
 
 # ---------------------------------------------------------------- 設定・LLM

@@ -33,9 +33,9 @@ def test_every_api_route_answers_json(client: TestClient) -> None:
             assert data["message"] == "未実装"
 
 
-def test_usecase_entrances_answer_not_implemented(client: TestClient) -> None:
-    """docs/usecases.md の口のうち、中身がまだ無いものは「未実装」を返す（中身を入れたら、ここから外す）。"""
-    for method, path in (("get", "/api/fleet"), ("post", "/api/fleet/publish"), ("post", "/api/fleet/pull"),
-                         ("put", "/api/resident"),):
+def test_usecase_entrances_are_implemented(client: TestClient) -> None:
+    """docs/usecases.md の口は、すべて中身が入った（未実装を返さない）。"""
+    for method, path in (("get", "/api/resident"), ("get", "/api/inbox"), ("get", "/api/activity"), ("get", "/api/managed"),
+                         ("get", "/api/sweep"), ("get", "/api/fleet")):
         data = getattr(client, method)(path).json()
-        assert data == {"implemented": False, "message": "未実装", "feature": data["feature"]}
+        assert data.get("implemented") is True, (path, data)

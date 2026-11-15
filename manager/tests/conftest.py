@@ -33,7 +33,9 @@ def isolated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # 点検の探索は、テストが根を与えたときだけ（既定では空のフォルダを見る）
     (tmp_path / "noscan").mkdir()
     from pamgr import settings
-    settings.put({"scan_roots": [str(tmp_path / "noscan")]})
+    settings.put({"scan_roots": [str(tmp_path / "noscan")], "git_sync": False, "notify": False})
+    monkeypatch.setenv("PAMGR_NOTIFY", "off")
+    monkeypatch.setenv("PAMGR_STARTUP_DIR", str(tmp_path / "startup"))
     return tmp_path
 
 

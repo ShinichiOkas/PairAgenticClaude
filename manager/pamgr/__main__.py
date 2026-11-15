@@ -18,7 +18,10 @@ def main() -> None:
 
     from .app import create_app
 
+    from . import runtime
+
     port = _free_port(args.host, args.port)
+    runtime.HOST, runtime.PORT = args.host, port
     url = f"http://{args.host}:{port}/"
     if not args.no_browser:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()

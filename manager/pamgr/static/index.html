@@ -196,6 +196,8 @@
           <label><input type="checkbox" id="rs-notify" checked> 判断待ちができたら Windows の通知を出す</label>
           <label>定期の点検の間隔（分） <input id="rs-interval" type="number" value="30" min="5" style="width:5em"></label>
           <label><input type="checkbox" id="rs-watch" checked> ルール・スキルのファイルが変わったら点検する</label>
+          <label><input type="checkbox" id="rs-git" checked> GitHub と同期する（点検でマスターを pull し、ツールが書いた変更だけ commit・push）</label>
+          <label>点検 1 回で LLM に使う時間（秒） <input id="rs-budget" type="number" value="300" min="0" style="width:6em"></label>
         </div>
         <div class="bar"><button id="rs-save">保存</button></div>
         <div id="rs-out"></div>

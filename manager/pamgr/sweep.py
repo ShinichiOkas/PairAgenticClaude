@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from . import changes, conflicts, generalize, history, inbox, managed, mapping, sections, settings, store, targets
+from . import changes, conflicts, generalize, gitsync, history, inbox, managed, mapping, sections, settings, store, targets
 from .changes import Event, LedgerSet, Write, sha
 from .paths import master_root
 
@@ -219,7 +219,7 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
 
     def distribute(why: str, what: str = "配った") -> Planned:
         ev = Event("distribute", what, f"マスターの {src_rel} → {where}", why,
-                   [Write(dest, mb, th)], [LedgerSet(tid, rel, mh, mb)], f"distribute|{tid}|{rel}|{mh}|{th}",  # type: ignore[arg-type]
+                   [Write(dest, mb, th)], [LedgerSet(tid, rel, mh, mb)], f"{tid}|{rel}|{mh}|{th}",  # type: ignore[arg-type]
                    {"target_id": tid, "rel": rel, "src_rel": src_rel})
         return Planned(ev, tid, rel)
 
@@ -230,7 +230,7 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
             return None
         ws = [Write(src, tb, mh)] + _mirror_writes(src_rel, mb, tb, ov, master)  # type: ignore[arg-type]
         ev = Event("adopt", "マスターへ取り込んだ", f"{where} → マスターの {src_rel}", why,
-                   ws, [LedgerSet(tid, rel, th, tb)], f"adopt|{tid}|{rel}|{mh}|{th}",  # type: ignore[arg-type]
+                   ws, [LedgerSet(tid, rel, th, tb)], f"{tid}|{rel}|{mh}|{th}",  # type: ignore[arg-type]
                    {"target_id": tid, "rel": rel, "src_rel": src_rel})
         return Planned(ev, tid, rel)
 
@@ -277,7 +277,7 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
         if r.dropped:
             parts.append("消された節: " + "、".join(r.dropped[:6]))
         ev = Event("merge", "節ごとにマージした", f"{where} ⇄ マスターの {src_rel}", "。".join(parts) or "節ごとに照合した",
-                   ws, [LedgerSet(tid, rel, sha(merged) or "", merged)], f"merge|{tid}|{rel}|{mh}|{th}",
+                   ws, [LedgerSet(tid, rel, sha(merged) or "", merged)], f"{tid}|{rel}|{mh}|{th}",
                    {"target_id": tid, "rel": rel, "src_rel": src_rel})
         return Planned(ev, tid, rel)
     if ttext is not None and history.file_seen(src_rel, ttext):
@@ -302,9 +302,11 @@ def _apply_overlay(p: Planned, ov: Overlay, led: dict[str, Any]) -> None:
         led.setdefault(l.tid, {})[l.rel] = {"hash": l.hash}
 
 
-def plan_homes(plan: Plan, tlist: list[dict[str, Any]]) -> None:
+def plan_homes(plan: Plan, tlist: list[dict[str, Any]], held: set[str] | None = None) -> None:
     master = master_root()
     ov, led, sup = Overlay(), changes.ledger(), changes.suppressed()
+    held = held or set()
+    held_noted: set[str] = set()
     homes = [t for t in tlist if t["kind"] in HOMES]
     if not homes:
         plan.notes.append("ホーム（~/.claude・~/.gemini/config）が管理下にありません")
@@ -323,6 +325,12 @@ def plan_homes(plan: Plan, tlist: list[dict[str, Any]]) -> None:
                     continue
                 for src, rel in mapping.expand(e, master):
                     if (t["id"], rel) in done:
+                        continue
+                    src_rel = src.relative_to(master).as_posix()
+                    if src_rel in held:
+                        if src_rel not in held_noted:
+                            plan.held.append({"what": "配るのを止めている", "detail": src_rel, "why": "ほかのユーザーの変更（J4）の判断待ち"})
+                            held_noted.add(src_rel)
                         continue
                     p = _file(t, e, src, rel, ov, led, sup, plan, master)
                     if p is None:
@@ -347,19 +355,19 @@ def plan_all(dry_run: bool, tlist: list[dict[str, Any]] | None = None) -> Plan:
     plan = Plan()
     _NAMES = generalize.project_names()
     try:
-        plan_homes(plan, targets.list_targets() if tlist is None else tlist)
+        plan_homes(plan, targets.list_targets() if tlist is None else tlist, gitsync.held_files())
     finally:
         _NAMES = None
     plan.steps["homes"] = "済"
     plan.steps["projects"] = "未実装（プロジェクトへの書き込みは後の段）"
-    plan.steps["git"] = "未実装"
     return plan
 
 
 def _public(p: Plan, applied: list[dict[str, Any]] | None = None, skipped: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     acts = [{"kind": a.event.kind, "what": a.event.what, "detail": a.event.detail, "why": a.event.why,
              "files": [str(w.path) for w in a.event.writes]} for a in p.actions]
-    return {"actions": acts, "inbox": [{k: i[k] for k in ("kind", "title", "what")} for i in p.inbox], "held": p.held,
+    return {"actions": acts, "inbox": [{"kind": i["kind"], "title": i["title"], "what": i["what"], "status": i.get("initial_status", "open")} for i in p.inbox],
+            "held": p.held,
             "notes": p.notes, "steps": p.steps, "baselines": len(p.baselines),
             "applied": applied if applied is not None else None, "skipped": skipped or []}
 
@@ -399,8 +407,14 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
                    "managed": {"register": [{"name": c["name"], "path": c["path"], "kind": c["kind"]} for c in sc["register"]]}}
             store.save("preview.json", res)
             return res
+        gs = settings.get()
+        git_info: dict[str, Any] = {}
+        j4: list[dict[str, Any]] = []
+        if gs.get("git_sync"):
+            git_info["pull"], j4 = gitsync.pull_step()
         regs = []
         with changes.LOCK:
+            new_j4 = inbox.upsert(j4)
             for c in sc["register"]:
                 why = "ホーム（全体の規則の配布先）" if c["kind"] != "project" else ".pair-agent/ を持つ（Pair Agent を導入済み）"
                 regs.append(managed.include(c, why))
@@ -408,7 +422,7 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
             inbox.sync(("J3",), {i["key"] for i in j3})
         p = plan_all(False)
         p.steps["managed"] = f"自動で入れた {len(regs)}・確かめる（J3） {len(j3)}"
-        p.inbox = j3 + p.inbox
+        p.inbox = j4 + j3 + p.inbox
         if progress:
             progress(1, 3, "反映中")
         applied, skipped = [], []
@@ -423,7 +437,7 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
                     applied.append(changes.commit(a.event))
                 except changes.Stale as exc:
                     skipped.append({"detail": a.event.detail, "why": str(exc)})
-            new = new_j3 + inbox.upsert([i for i in p.inbox if i["kind"] == "J2"])
+            new = new_j4 + new_j3 + inbox.upsert([i for i in p.inbox if i["kind"] == "J2"])
             inbox.sync(("J2",), {i["key"] for i in p.inbox if i["kind"] == "J2"})
         budget = float(settings.get().get("llm_budget_sec", 300)) if llm_budget is None else llm_budget
         j1, cinfo = _conflict_step(p, budget, progress)
@@ -432,8 +446,23 @@ def run(dry_run: bool = False, progress: Callable[..., Any] | None = None, llm_b
             inbox.sync(("J1",), {i["key"] for i in j1})
         p.inbox += j1
         applied = regs + applied
+        if gs.get("git_sync"):
+            summ = "\n".join(f"- {e['what']}: {e['detail']}" for e in applied if e.get("changes"))
+            git_info["publish"] = gitsync.publish_step(summ or "- 判断の反映・取り消し")
+            pub = git_info["publish"]
+            pl = git_info.get("pull") or {}
+            pull_s = "済" if pl.get("ok") else f"失敗（{str(pl.get('error') or '')[:80]}）"
+            if pub.get("pushed"):
+                push_s = f"済 {len(pub.get('files') or [])} ファイル"
+            elif pub.get("ok"):
+                push_s = "出すものは無い" if not pub.get("commit") else "commit 済（upstream が無い）"
+            else:
+                push_s = f"失敗（{str(pub.get('error') or '')[:80]}）"
+            p.steps["git"] = f"pull {pull_s}・push {push_s}"
+        else:
+            p.steps["git"] = "同期しない（設定）"
         res = {"dry_run": False, "at": store.now_iso(), **_public(p, [{"id": e["id"], "what": e["what"], "detail": e["detail"]} for e in applied], skipped),
-               "new_inbox": len(new), "conflicts": cinfo}
+               "new_inbox": len(new), "conflicts": cinfo, "git": git_info}
         store.save(FILE, res)
         if progress:
             progress(3, 3, "完了")

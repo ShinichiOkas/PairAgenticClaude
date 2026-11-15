@@ -212,6 +212,7 @@ def items(cands: list[Cand]) -> list[dict[str, Any]]:
             "b": {"where": _where(c.b), "when": _when(c.b), "text": c.b["text"]},
             "applies": applies, "ai": f"{REL_LABEL[rel]}。{v.get('reason', '')}{sit}（{v.get('model', '')}）",
             "relation": rel, "refs": {"a": _ref(c.a), "b": _ref(c.b), "pair": c.key, "verdict": v},
+            "initial_status": "open" if rel == "conflict" else "info",
             "options": [{"id": "split", "label": "状況で分ける（AI の案を直せる）", "primary": rel == "context_dependent"},
                         {"id": "a", "label": "A を採る（B を A に合わせる）", "primary": rel == "conflict"},
                         {"id": "b", "label": "B を採る（A を B に合わせる）"},
