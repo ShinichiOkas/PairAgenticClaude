@@ -221,8 +221,12 @@ async function renderPreview() {
       (p.held.length ? `<details><summary>見送るもの ${p.held.length} 件</summary><ul>${p.held.map((h) => `<li>${esc(h.what)}: ${esc(h.detail)} — ${esc(h.why)}</li>`).join("")}</ul></details>` : "") +
       (Object.keys(p.steps || {}).length ? `<p class="muted">段: ${Object.entries(p.steps).map(([k, v]) => `${esc(k)}=${esc(v)}`).join(" ・ ")}</p>` : "");
   }
-  $("activity-sample").innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">予行（書かない）</h3><button id="pv-run" class="secondary">予行する</button><span id="pv-out"></span></div>${body}</div>`;
+  let gitSync = false;
+  try { const rs = await api("GET", "/resident"); gitSync = !!(rs.settings && rs.settings.git_sync); } catch (e) { /* 設定が読めなくても予行の欄は出す */ }
+  const note = "ここに出ているものは、まだ何も書いていません。実施するのは「この内容で実施する」かヘッダの「今すぐ点検」を押したとき、または常駐を始めたときです（書く前の版は退避し、「自動でやったこと」から取り消せます）。" + (gitSync ? "GitHub と同期する設定なので、マスターに書いた変更は commit・push します。" : "");
+  $("activity-sample").innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">次の点検でやること（予行・まだ書いていない）</h3><button id="pv-run" class="secondary">予行し直す</button>${p ? '<button id="pv-apply">この内容で実施する</button>' : ""}<span id="pv-out"></span></div><p class="muted">${esc(note)}</p>${body}</div>`;
   $("pv-run").onclick = () => runSweep(true, "pv-out", () => renderPreview());
+  if (p) $("pv-apply").onclick = () => runSweep(false, "pv-out", () => { loadActivity(); });
 }
 
 // ------------------------------------------------------------ 効いている規則（UC5）
