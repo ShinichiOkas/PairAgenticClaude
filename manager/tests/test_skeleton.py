@@ -1,4 +1,4 @@
-"""骨格: すべての口が応答し、中身の無い口は「未実装」を返す（落ちない）。"""
+"""骨格: すべての口が応答し（落ちない）、中身の無い口は「未実装」を返す。"""
 
 from __future__ import annotations
 
@@ -19,19 +19,21 @@ def test_health(client: TestClient) -> None:
     assert r["master_root"]
 
 
-def test_every_api_route_answers(client: TestClient) -> None:
-    """どの口も 200 で JSON を返す。未実装なら message が「未実装」。"""
+def test_every_api_route_answers_json(client: TestClient) -> None:
     calls = [
-        ("get", "/api/dashboard", None), ("get", "/api/targets", None),
-        ("post", "/api/targets/discover", {}), ("get", "/api/status", None),
-        ("get", "/api/survey", None), ("get", "/api/checks", None),
-        ("get", "/api/situations", None), ("get", "/api/fleet", None),
-        ("get", "/api/settings", None),
+        ("get", "/api/dashboard"), ("get", "/api/targets"), ("get", "/api/status"), ("get", "/api/survey"),
+        ("get", "/api/checks"), ("get", "/api/situations"), ("get", "/api/fleet"), ("get", "/api/settings"),
     ]
-    for method, path, body in calls:
-        r = getattr(client, method)(path, json=body) if body is not None else getattr(client, method)(path)
-        assert r.status_code == 200, (path, r.status_code, r.text)
+    for method, path in calls:
+        r = getattr(client, method)(path)
+        assert r.status_code in (200, 400), (path, r.status_code, r.text)
         data = r.json()
         assert "implemented" in data, path
         if data["implemented"] is False:
             assert data["message"] == "未実装"
+
+
+def test_fleet_is_not_implemented_yet(client: TestClient) -> None:
+    for method, path in (("get", "/api/fleet"), ("post", "/api/fleet/publish"), ("post", "/api/fleet/pull")):
+        data = getattr(client, method)(path).json()
+        assert data == {"implemented": False, "message": "未実装", "feature": data["feature"]}

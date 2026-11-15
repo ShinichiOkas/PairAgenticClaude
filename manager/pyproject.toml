@@ -11,6 +11,8 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "pyyaml>=6.0",
+    "numpy>=1.26",
+    "scipy>=1.11",
     # LLM は OmniAISDK を使う（師匠の指示 2026-11-15）。版は SHA で固定する（Mnemo と同じ流儀）
     "omni-ai-sdk @ git+https://github.com/ShinichiOkas/OmniAISDK.git@f1432bb7dd0c174cf2ca61f8095bca3f5d5d0761",
 ]

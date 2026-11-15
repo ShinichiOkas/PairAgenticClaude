@@ -128,14 +128,21 @@ $("st-one").onclick = async () => {
   const files = (r.files || []).filter((f) => !(hide && f.state === "same"));
   $("st-out").innerHTML = `<p class="muted">${esc(r.target?.name)} ・ ${esc(r.target?.path)} ・ 表示 ${files.length} / 全 ${(r.files || []).length}</p>` +
     `<table><tr><th>状態</th><th>区分</th><th>マスター</th><th>配布先</th></tr>` +
-    files.map((f) => `<tr class="click st-file" data-rel="${esc(f.dest_rel)}"><td>${badge(f.state)}</td><td>${esc(f.entry)}</td><td class="path">${esc(f.src_rel)}</td><td class="path">${esc(f.dest_rel)}</td></tr>`).join("") + "</table>";
-  document.querySelectorAll(".st-file").forEach((tr) => (tr.onclick = () => showDiff(id, tr.dataset.rel, "diff-out")));
+    files.map((f) => `<tr class="click st-file" data-rel="${esc(f.dest_rel)}" data-adopt="${["differs", "target-ahead", "diverged"].includes(f.state) && f.src_rel ? 1 : ""}"><td>${badge(f.state)}${f.newer ? `<br><span class="muted">更新時刻は${f.newer === "target" ? "配布先" : "マスター"}が新しい</span>` : ""}</td><td>${esc(f.label || f.entry)}</td><td class="path">${esc(f.src_rel)}</td><td class="path">${esc(f.dest_rel)}</td></tr>`).join("") + "</table>";
+  document.querySelectorAll(".st-file").forEach((tr) => (tr.onclick = () => showDiff(id, tr.dataset.rel, "diff-out", !!tr.dataset.adopt)));
 };
-async function showDiff(targetId, rel, outId) {
+async function showDiff(targetId, rel, outId, canAdopt) {
   busy(outId);
   const r = await api("GET", `/diff?target_id=${encodeURIComponent(targetId)}&rel=${encodeURIComponent(rel)}`);
   if (!guard(outId, r)) return;
   renderDiff(outId, `差分: ${rel}（- マスター / + 配布先）`, r.diff);
+  if (canAdopt) {
+    $(outId).insertAdjacentHTML("afterbegin", `<div class="bar"><button id="adopt-btn" class="secondary">配布先の版をマスターに取り込む</button><span class="muted">マスターは git 管理なので戻せます</span></div><div id="adopt-out"></div>`);
+    $("adopt-btn").onclick = async () => {
+      const a = await api("POST", "/status/adopt", { target_id: targetId, rel });
+      if (guard("adopt-out", a)) $("adopt-out").innerHTML = `<p><span class="badge b-ok">取り込みました</span> <code>${esc(a.written)}</code></p>`;
+    };
+  }
 }
 
 // ------------------------------------------------------------ サーベイ
