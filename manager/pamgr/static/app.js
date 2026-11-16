@@ -100,6 +100,7 @@ function decisionCard(item, sample) {
   const opts = (item.options || []).map((o) => `<button ${dis} class="${o.primary ? "" : "secondary"} dc-opt" data-id="${esc(item.id)}" data-opt="${esc(o.id)}">${esc(o.label)}</button>`).join("");
   const rule = (x, k) => x ? `<div class="rule"><div class="muted">${k} ・ ${esc(x.where)} ・ ${esc(x.when || "")}</div><pre>${esc(x.text)}</pre></div>` : "";
   const diffBtn = item.kind === "J2" && item.refs && !item.refs.git ? `<button class="secondary dc-diff" data-id="${esc(item.id)}" data-t="${esc(item.refs.target_id)}" data-rel="${esc(item.refs.rel)}">差分を見る（- マスター / + 配布先）</button>` : "";
+  const summaryBtn = item.kind === "J1" ? `<button ${dis} class="secondary dc-summary" data-id="${esc(item.id)}">違いを要約（AI・仮説）</button>` : "";
   return `<div class="card decision ${sample ? "sample" : ""}">
     ${sample ? '<div class="sample-tag">見本（「管理に入れるか」の判断はまだ未実装。画面の形を見るためのもの。実データから作った例）</div>' : ""}
     <div class="bar"><span class="badge b-bad">${esc(J_LABEL[item.kind] || item.kind)}</span><b>${esc(item.title)}</b>${item.status === "later" ? ' <span class="badge b-muted">あとで</span>' : ""}</div>
@@ -107,7 +108,7 @@ function decisionCard(item, sample) {
     ${item.a || item.b ? `<div class="side">${rule(item.a, "規則 A")}${rule(item.b, "規則 B")}</div>` : ""}
     ${item.applies ? `<p><b>${item.kind === "J3" ? "場所" : item.kind === "J2" ? "ファイル" : "どこで同時に効くか"}:</b> ${esc(item.applies)}</p>` : ""}
     ${item.ai ? `<div class="ai"><b>AI の見立て（仮説）:</b> ${esc(item.ai)}</div>` : ""}
-    <div class="bar">${opts}${diffBtn}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
+    <div class="bar">${summaryBtn}${opts}${diffBtn}</div><div class="dc-out" id="dc-out-${esc(item.id)}"></div></div>`;
 }
 const SAMPLE_INBOX = [];   // 見本は、判断の種類が実装されたら外す（J1・J2・J3 は実装済み）
 async function loadInbox() {
@@ -127,7 +128,7 @@ async function loadInbox() {
 function bindDecisionButtons() {
   document.querySelectorAll(".dc-opt:not(:disabled)").forEach((b) => (b.onclick = async () => {
     const id = b.dataset.id, opt = b.dataset.opt, out = "dc-out-" + id;
-    if (["split", "a", "b", "merge"].includes(opt)) { await showDraft(id, opt); return; }
+    if (["split", "a", "b", "a_plus_b", "merge"].includes(opt)) { await showDraft(id, opt); return; }
     await sendDecision(id, opt);
   }));
   document.querySelectorAll(".dc-diff").forEach((b) => (b.onclick = async () => {
@@ -136,6 +137,18 @@ function bindDecisionButtons() {
     const d = await api("GET", `/diff?target_id=${encodeURIComponent(b.dataset.t)}&rel=${encodeURIComponent(b.dataset.rel)}`);
     if (guard(out, d)) renderDiff(out, "差分（- マスター / + 配布先）", d.diff);
   }));
+  document.querySelectorAll(".dc-summary").forEach((b) => (b.onclick = async () => {
+    const out = "dc-out-" + b.dataset.id;
+    busy(out, "AI が違いを要約しています…（数秒〜数十秒）");
+    const d = await api("POST", `/inbox/${encodeURIComponent(b.dataset.id)}/summary`);
+    if (!guard(out, d)) return;
+    const s = d.summary || {};
+    const list = (arr, label, cls) => (arr && arr.length) ? `<div><div class="muted">${label}</div><ul class="${cls}">${arr.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
+    $(out).innerHTML = `<div class="card"><p><b>違いの要約</b> <span class="badge b-muted">仮説</span> <span class="muted">${esc(d.model || "")}</span></p>` +
+      `<div class="side">${list(s.only_a, "A にだけある", "")}${list(s.only_b, "B にだけある", "")}</div>` +
+      `<div class="side">${list(s.shared, "両方にある", "")}${list(s.clash, "ぶつかる点", "")}</div>` +
+      (s.note ? `<p>${esc(s.note)}</p>` : "") + `</div>`;
+  }));
 }
 
 async function sendDecision(id, opt, edits) {
@@ -143,8 +156,33 @@ async function sendDecision(id, opt, edits) {
   busy(out, "反映中…");
   const d = await api("POST", `/inbox/${encodeURIComponent(id)}/decide`, { option: opt, edits });
   if (!guard(out, d)) return;
-  $(out).innerHTML = `<span class="badge b-ok">${d.status === "later" ? "あとでに回しました" : d.status === "dismissed" ? "このままにしました" : "反映しました"}</span>${d.sweep_job ? ' <span class="muted">ほかの配布先へ広げています（点検）</span>' : ""}`;
-  setTimeout(() => { loadInbox(); loadResident(); }, 1500);
+  const base = `<span class="badge b-ok">${d.status === "later" ? "あとでに回しました" : d.status === "dismissed" ? "このままにしました" : "反映しました"}</span>`;
+  if (d.sweep_job) {
+    $(out).innerHTML = `${base} <span id="rd-${id}" class="badge b-info">再配布中…</span> <button class="secondary" disabled>再配布（走っています）</button>`;
+    pollRedistribute(id, d.sweep_job, out, base);
+  } else {
+    $(out).innerHTML = `${base} <button class="secondary rd-go" data-id="${esc(id)}">いま再配布する</button> <span id="rd-${id}"></span>`;
+    document.querySelectorAll(`.rd-go[data-id="${id}"]`).forEach((b) => (b.onclick = () => redistributeNow(id, out, base)));
+    setTimeout(() => { loadInbox(); loadResident(); }, 1500);
+  }
+}
+async function pollRedistribute(id, jobId, out, base) {
+  const tag = () => $("rd-" + id);
+  const tick = async () => {
+    const j = await api("GET", "/jobs/" + encodeURIComponent(jobId));
+    if (j.state === "running") { if (tag()) tag().textContent = "再配布中…"; setTimeout(tick, 900); return; }
+    const ok = j.state === "done";
+    $(out).innerHTML = `${base} <span class="badge ${ok ? "b-ok" : "b-bad"}">${ok ? "再配布しました" : esc(j.error || "再配布に失敗")}</span> <button class="secondary rd-go" data-id="${esc(id)}">もう一度配る</button>`;
+    document.querySelectorAll(`.rd-go[data-id="${id}"]`).forEach((b) => (b.onclick = () => redistributeNow(id, out, base)));
+    loadResident(); if (ok) setTimeout(() => loadInbox(), 1200);
+  };
+  setTimeout(tick, 700);
+}
+async function redistributeNow(id, out, base) {
+  $(out).innerHTML = `${base} <span id="rd-${id}" class="badge b-info">再配布中…</span>`;
+  const s = await api("POST", "/sweep", { dry_run: false });
+  if (s.error) { $(out).innerHTML = `${base} <span class="badge b-bad">${esc(s.error)}</span>`; return; }
+  pollRedistribute(id, s.job_id, out, base);
 }
 const SIDE_ACTION = { replace: "書き換える", delete: "この節を消す" };
 async function showDraft(id, opt) {

@@ -77,6 +77,54 @@ def test_draft_then_decide_rewrites_master_and_home_and_undo(judged: dict, monke
     assert [i["status"] for i in inbox.items() if i["kind"] == "J1"] == ["open"]
 
 
+def test_a_plus_b_merges_into_a_and_summarize_diff(judged: dict, monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
+    sweep.run(llm_budget=30)
+    it = [i for i in inbox.items() if i["kind"] == "J1"][0]
+    # 違いの要約（LLM 仮説）
+    def fake_summary(system: str, user: str, schema: type, **kw: object) -> tuple[decide.DiffSummary, str]:
+        return decide.DiffSummary(only_a=["推奨で着手"], only_b=["依頼が無ければ待つ"], shared=[], clash=["着手の向き"], note="場面で違う"), "fake"
+    monkeypatch.setattr(llm, "chat_structured", fake_summary)
+    s = client.post(f"/api/inbox/{it['id']}/summary").json()
+    assert s["implemented"] and s["hypothesis"] and s["summary"]["only_a"] == ["推奨で着手"]
+
+    # A ベースに B の要素を取り込む: SIDES=('replace','replace')・両側 edits が出る
+    def fake_a_plus_b(system: str, user: str, schema: type, **kw: object) -> tuple[decide.Draft, str]:
+        return decide.Draft(
+            a_text="## 運転方針\n依頼を受けたら、聞き返さずに推奨を決めて着手する。\n\n補足: 依頼が無ければ待つ。",
+            b_text="",
+            note="B の『待つ』を A の末尾に補足として取り込み、B は空にした",
+        ), "fake"
+    monkeypatch.setattr(llm, "chat_structured", fake_a_plus_b)
+    d = decide.draft(it["id"], "a_plus_b")
+    assert [e["side"] for e in d["edits"]] == ["a", "b"]
+    assert [e["action"] for e in d["edits"]] == ["replace", "replace"]
+    out = decide.decide(it["id"], "a_plus_b", d["edits"])
+    assert out["status"] == "decided"
+    mc = (judged["master"] / "home-claude/CLAUDE.md").read_text(encoding="utf-8")
+    assert "補足: 依頼が無ければ待つ。" in mc
+    assert (judged["home"] / "CLAUDE.md").read_text(encoding="utf-8") == mc
+
+
+def test_decide_api_starts_sweep_job_for_redistribute(judged: dict, monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
+    sweep.run(llm_budget=30)
+    it = [i for i in inbox.items() if i["kind"] == "J1"][0]
+    def fake_draft(system: str, user: str, schema: type, **kw: object) -> tuple[decide.Draft, str]:
+        return decide.Draft(a_text="", b_text="", note="そのまま"), "fake"
+    monkeypatch.setattr(llm, "chat_structured", fake_draft)
+    d = client.post(f"/api/inbox/{it['id']}/draft", json={"option": "a"}).json()
+    r = client.post(f"/api/inbox/{it['id']}/decide", json={"option": "a", "edits": d["edits"]}).json()
+    assert r["implemented"] and r["status"] == "decided"
+    assert "sweep_job" in r and r["sweep_job"], "決定カードで『再配布中』を出すために sweep_job が要る"
+    # 後続テストの lock 衝突を避けるため、起こした sweep job の完了を待つ
+    import time
+    for _ in range(200):
+        j = client.get(f"/api/jobs/{r['sweep_job']}").json()
+        if j.get("state") != "running":
+            break
+        time.sleep(0.05)
+    assert j.get("state") in ("done", "error"), j
+
+
 def test_ok_dismisses_and_does_not_come_back(judged: dict) -> None:
     sweep.run(llm_budget=30)
     it = [i for i in inbox.items() if i["kind"] == "J1"][0]

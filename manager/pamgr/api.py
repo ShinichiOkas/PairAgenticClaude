@@ -273,6 +273,13 @@ def inbox_draft(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[s
     return decide.draft(item_id, str(body.get("option", "")))
 
 
+@router.post("/inbox/{item_id}/summary")
+@safe
+def inbox_summary(item_id: str) -> dict[str, Any]:
+    """J1 の A と B の違いを意味で要約する（LLM・仮説）。DIFF では見づらいときに使う。"""
+    return decide.summarize_diff(item_id)
+
+
 @router.post("/inbox/{item_id}/decide")
 @safe
 def inbox_decide(item_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:

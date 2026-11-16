@@ -266,6 +266,7 @@ def items(cands: list[Cand]) -> list[dict[str, Any]]:
             "options": [{"id": "split", "label": "状況で分ける（AI の案を直せる）", "primary": rel == "context_dependent"},
                         {"id": "a", "label": "A を採る（B を A に合わせる）", "primary": rel == "conflict"},
                         {"id": "b", "label": "B を採る（A を B に合わせる）"},
+                        {"id": "a_plus_b", "label": "A をベースに B の要素を取り込む"},
                         {"id": "merge", "label": "統合した文案にする"},
                         {"id": "ok", "label": "このままでよい"}, {"id": "later", "label": "あとで"}]})
     out.sort(key=lambda i: (i["relation"] != "conflict",))
