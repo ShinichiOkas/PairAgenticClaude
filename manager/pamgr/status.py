@@ -118,8 +118,10 @@ def diff(tid: str, rel: str) -> dict[str, Any]:
     return {"diff": text, "src": str(src) if src else None, "dest": str(dest)}
 
 
-def adopt(tid: str, rel: str) -> dict[str, Any]:
-    """配布先の版をマスターに取り込む（配布先で改変されたものを正とするとき）。マスターは git 管理なので戻せる。"""
+def adopt(tid: str, rel: str, force: bool = False) -> dict[str, Any]:
+    """配布先の版をマスターに取り込む（配布先で改変されたものを正とするとき）。マスターは git 管理なので戻せる。
+    マスターにだけある段落が消えるなら、force（消えると知ったうえで取り込む）が無い限り止めて、消える箇所を返す。"""
+    from .sections import lost_blocks
     t = targets.get_target(tid)
     if t is None:
         raise KeyError(f"配布先が無い: {tid}")
@@ -129,6 +131,14 @@ def adopt(tid: str, rel: str) -> dict[str, Any]:
     if not dest.is_file():
         raise ValueError(f"配布先にファイルが無い: {dest}")
     data = dest.read_bytes()
+    if not force and src.is_file():
+        try:
+            lost = lost_blocks(src.read_bytes().decode("utf-8"), data.decode("utf-8"))
+        except UnicodeDecodeError:
+            lost = []
+        if lost:
+            raise ValueError(f"取り込むと、マスターにだけある箇所が {len(lost)} つ消えるので止めました: " + "、".join(lost[:8])
+                             + ("…" if len(lost) > 8 else "") + "。消えてよいなら「消えると承知で取り込む」を押してください")
     src.write_bytes(data)
     record_ledger(tid, rel, file_hash(src) or "")
     return {"written": str(src)}

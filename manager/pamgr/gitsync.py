@@ -53,10 +53,10 @@ def held_files() -> set[str]:
     return {f for i in inbox.items() if i["kind"] == "J4" for f in i["refs"].get("files", [])}
 
 
-def tool_written() -> list[str]:
-    """マスターの中で、いまの中身がツールの書いた中身のままのファイル（マスターの根からの相対パス）。"""
+def tool_writers() -> dict[str, dict[str, Any]]:
+    """マスターの中で、いまの中身がツールの書いた中身のままのファイル → それを書いた出来事（最後のもの）。"""
     root = master_root()
-    want: dict[str, set[str]] = {}
+    want: dict[str, dict[str, dict[str, Any]]] = {}
     for e in changes.events():
         for c in e.get("changes", []):
             p = Path(c["path"])
@@ -65,12 +65,18 @@ def tool_written() -> list[str]:
             except ValueError:
                 continue
             h = c["before_hash"] if e.get("undone") else c["after_hash"]
-            want.setdefault(rel, set()).add(str(h))
-    out = []
+            want.setdefault(rel, {})[str(h)] = e
+    out: dict[str, dict[str, Any]] = {}
     for rel, hs in want.items():
-        if str(sha(read(root / rel))) in hs:
-            out.append(rel)
-    return sorted(out)
+        e = hs.get(str(sha(read(root / rel))))
+        if e is not None:
+            out[rel] = e
+    return dict(sorted(out.items()))
+
+
+def tool_written() -> list[str]:
+    """マスターの中で、いまの中身がツールの書いた中身のままのファイル（マスターの根からの相対パス）。"""
+    return list(tool_writers())
 
 
 def publish_step(summary: str) -> dict[str, Any]:
@@ -78,10 +84,15 @@ def publish_step(summary: str) -> dict[str, Any]:
     if not st.get("ok"):
         return {"ok": False, "error": st.get("error")}
     dirty = set(st.get("dirty") or [])
-    paths = [p for p in tool_written() if p in dirty] + ([VERDICTS_SHARED] if VERDICTS_SHARED in dirty else [])
+    writers = tool_writers()
+    paths = [p for p in writers if p in dirty] + ([VERDICTS_SHARED] if VERDICTS_SHARED in dirty else [])
     res: dict[str, Any] = {"ok": True, "commit": None, "files": []}
     if paths:
-        res = fleet.publish(f"pamgr: 点検で反映（{len(paths)} ファイル）\n\n{summary}"[:4000], paths)
+        # 本文には、この点検の出来事だけでなく、入れるファイルと、それを書いた出来事を全部書く
+        # （前の判断・取り込みで書いたファイルも入るため。6378f12 は本文に無いファイルを入れていた）
+        files = "\n".join(f"- {p}" + (f"（{writers[p].get('what', '')}: {writers[p].get('detail', '')}・{writers[p].get('at', '')}）"
+                                      if p in writers else "（判定の共有）") for p in paths)
+        res = fleet.publish(f"pamgr: 点検で反映（{len(paths)} ファイル）\n\n入れたファイル:\n{files}\n\nこの点検でやったこと:\n{summary}"[:4000], paths)
     if res.get("ok") and not res.get("pushed"):          # マージの commit など、先に進んだ分を push する
         pr = gitmerge.push_if_ahead(master_root())
         res["pushed"] = pr.get("pushed", False)

@@ -101,6 +101,63 @@ def _tail(raw: str) -> int:
     return len(raw) - len(raw.rstrip("\r\n")) - raw[len(raw.rstrip("\r\n")):].count("\r")
 
 
+# ---------------------------------------------------------------- 丸ごと置き換えで消える箇所
+# 節（##）だけで比べると、最初の ## より前（冒頭）の塊は 1 つの節になり、
+# その中の「> [!IMPORTANT]」の塊が消えても気づけない（2026-11-17 の 6378f12 で実際に起きた）。
+# だから段落（空行で区切った塊）の単位で、消える箇所を数える。
+KEEP_RATIO = 0.6          # これ以上似た段落が新しい版にあれば、書き換えとみなす（消えたとはみなさない）
+_MIN_BLOCK = 12           # これより短い段落（空白を除いた文字数）は数えない
+_CALLOUT = re.compile(r"^\[!\w+\]$")
+
+
+def blocks(text: str) -> list[str]:
+    """空行で区切った段落（コードフェンスの中の空行では切らない）。"""
+    out: list[str] = []
+    cur: list[str] = []
+    in_code = False
+    for ln in text.replace("\r\n", "\n").split("\n"):
+        if _FENCE.match(ln):
+            in_code = not in_code
+        if not in_code and not ln.strip():
+            if cur:
+                out.append("\n".join(cur))
+                cur = []
+            continue
+        cur.append(ln)
+    if cur:
+        out.append("\n".join(cur))
+    return out
+
+
+def _label(block: str, width: int = 48) -> str:
+    for ln in block.split("\n"):
+        s = re.sub(r"^[\s>#*\-]+", "", ln).replace("**", "").strip()
+        if s and not _CALLOUT.match(s):
+            return s if len(s) <= width else s[:width] + "…"
+    return block.strip()[:width]
+
+
+def lost_blocks(old: str, new: str) -> list[str]:
+    """old を new で丸ごと置き換えると消える段落の見出し（先頭の文）。new に同じか似た段落があれば消えたとはみなさない。"""
+    import difflib
+    new_norm = norm_text(new)
+    nb = [norm_text(b) for b in blocks(new)]
+    lost: list[str] = []
+    for b in blocks(old):
+        n = norm_text(b)
+        if len(n.replace(" ", "")) < _MIN_BLOCK or n in new_norm:
+            continue
+        kept = False
+        for x in nb:
+            sm = difflib.SequenceMatcher(None, n, x, autojunk=False)
+            if sm.real_quick_ratio() >= KEEP_RATIO and sm.quick_ratio() >= KEEP_RATIO and sm.ratio() >= KEEP_RATIO:
+                kept = True
+                break
+        if not kept:
+            lost.append(_label(b))
+    return lost
+
+
 def duplicated_anchors(chunks: list[Chunk]) -> list[str]:
     seen: set[str] = set()
     dup: list[str] = []

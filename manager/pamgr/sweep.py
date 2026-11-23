@@ -178,6 +178,35 @@ def _body(c: sections.Chunk) -> str:
     return c.norm.split(" ", 1)[1] if " " in c.norm else c.norm
 
 
+# ---------------------------------------------------------------- 丸ごと置き換えで消える箇所（黙って消さない）
+def _lost(old: bytes | None, new: bytes | None) -> list[str]:
+    """old を new で丸ごと置き換えると消える段落（文字でなければ数えない）。"""
+    a, b = _decode(old), _decode(new)
+    if a is None or b is None:
+        return []
+    return sections.lost_blocks(a, b)
+
+
+def _few(xs: list[str], n: int = 8) -> str:
+    return "、".join(xs[:n]) + ("…" if len(xs) > n else "")
+
+
+def loss_note(m_lost: list[str], t_lost: list[str]) -> str:
+    out = ""
+    if m_lost:
+        out += f" 配布先の版をマスターへ入れると、マスターにだけある {len(m_lost)} 箇所が消えます: {_few(m_lost)}。"
+    if t_lost:
+        out += f" マスターの版にすると、配布先にだけある {len(t_lost)} 箇所が消えます: {_few(t_lost)}。"
+    return out
+
+
+def j2_options(m_lost: list[str], t_lost: list[str]) -> list[dict[str, Any]]:
+    """J2 の選択肢。消える箇所があるなら、選ぶ前に数が分かるように書く。"""
+    m = "マスターの版にする（配布先を上書き" + (f"・配布先にだけある {len(t_lost)} 箇所が消える）" if t_lost else "）")
+    t = "配布先の版をマスターへ" + (f"（マスターにだけある {len(m_lost)} 箇所が消える）" if m_lost else "")
+    return [{"id": "master", "label": m, "primary": True}, {"id": "target", "label": t}, {"id": "later", "label": "あとで"}]
+
+
 # ---------------------------------------------------------------- 1 ファイルの判定
 def _novel_leaks(new_text: str, master_text: str) -> list[str]:
     """取り込もうとする中身に、マスターに無い固有の語があるか（プロジェクト名・絶対パス・ユーザー名）。"""
@@ -223,6 +252,10 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
         return Planned(ev, tid, rel)
 
     def adopt(why: str) -> Planned | None:
+        lost = _lost(mb, tb) if e.id in RULE_ENTRIES else []
+        if lost:            # 規範の文書をマスターごと置き換えると、マスターにだけある段落が消える → 黙って消さず、止めて知らせる
+            j2(f"配布先の版をマスターへ取り込むと、マスターにだけある箇所が消えるので止めました（{why}）。", [])
+            return None
         leaks = _novel_leaks(_decode(tb) or "", _decode(mb) or "")
         if leaks:
             plan.held.append({"what": "取り込みを見送った", "detail": where, "why": "固有の語が混じっている: " + "、".join(leaks[:8])})
@@ -234,12 +267,13 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
         return Planned(ev, tid, rel)
 
     def j2(why: str, conflicts: list[str]) -> None:
+        m_lost, t_lost = _lost(mb, tb), _lost(tb, mb)     # どちらかの版で丸ごと置き換えると消える段落（判断の前に見せる）
         plan.inbox.append({
             "kind": "J2", "key": f"J2|{tid}|{rel}|{mk}|{tk}", "title": f"{where} — マスターと配布先の両方で変わっている",
-            "what": why + (" ぶつかる箇所: " + "、".join(conflicts[:10]) if conflicts else ""),
-            "applies": where, "refs": {"target_id": tid, "rel": rel, "src_rel": src_rel, "mh": mh, "th": th, "mk": mk, "tk": tk},
-            "options": [{"id": "master", "label": "マスターの版にする（配布先を上書き）", "primary": True},
-                        {"id": "target", "label": "配布先の版をマスターへ"}, {"id": "later", "label": "あとで"}]})
+            "what": why + (" ぶつかる箇所: " + "、".join(conflicts[:10]) if conflicts else "") + loss_note(m_lost, t_lost),
+            "applies": where, "refs": {"target_id": tid, "rel": rel, "src_rel": src_rel, "mh": mh, "th": th, "mk": mk, "tk": tk,
+                                       "m_lost": m_lost, "t_lost": t_lost},
+            "options": j2_options(m_lost, t_lost)})
 
     if th is None:
         return distribute("配布先に無かった", "配った（新規）")
@@ -264,6 +298,9 @@ def _file(t: dict[str, Any], e: mapping.Entry, src: Path, rel: str, ov: Overlay,
             return adopt("配布先の新しい節をマスターへ（節ごとに照合）: " + "、".join(r.from_target[:6]))
         if ckey(merged) == mk:      # 配布先が古いだけ
             return distribute("配布先はマスターの過去の版だった（節ごとに照合）" + (f"。古い節: {'、'.join(r.from_master[:6])}" if r.from_master else ""))
+        if _lost(mb, merged):       # マージの結果でマスターの段落が消える（配布先で消した・書き換えた節を取った）→ 止めて知らせる
+            j2("節ごとのマージでは、マスターにだけある箇所が消えるので止めました。", r.conflicts)
+            return None
         novel = "\n".join(c.raw for c in sections.parse(r.text) if c.anchor in r.from_target)
         leaks = _novel_leaks(novel, mtext)
         if leaks:
@@ -501,4 +538,4 @@ def running() -> bool:
     return True
 
 
-__all__ = ["run", "plan_all", "merge_sections", "last", "preview", "running", "asdict"]
+__all__ = ["run", "plan_all", "merge_sections", "last", "preview", "running", "asdict", "loss_note", "j2_options"]

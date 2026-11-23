@@ -59,6 +59,14 @@ def _j2(it: dict[str, Any], option: str, _edits: list[dict[str, Any]]) -> tuple[
         raise ValueError("判断待ちに上げた後で、ファイルが変わりました。点検し直してください")
     where = f"{t['name']}/{r['rel']}"
     refs = {"item_id": it["id"], "target_id": t["id"], "rel": r["rel"], "src_rel": r["src_rel"]}
+    # 丸ごと置き換えで消える段落を、判断待ちに見せたものと照らす。見せていない消え方（この直しの前に上げた項目など）は止める
+    if option in ("master", "target"):
+        lost = sweep._lost(tb, mb) if option == "master" else sweep._lost(mb, tb)
+        shown = r.get("t_lost" if option == "master" else "m_lost")
+        if lost and shown != lost:
+            side = "配布先" if option == "master" else "マスター"
+            raise ValueError(f"この判断で{side}にだけある {len(lost)} 箇所が消えます（{sweep._few(lost)}）。"
+                             "判断待ちにはそれが出ていないので、点検し直してから選んでください")
     if option == "master":
         ev = Event("decide", "判断: マスターの版にした", f"マスターの {r['src_rel']} → {where}", "師匠の判断（J2）",
                    [Write(dest, mb, r["th"])], [LedgerSet(t["id"], r["rel"], ckey(mb) or "", mb)], refs=refs)  # type: ignore[arg-type]

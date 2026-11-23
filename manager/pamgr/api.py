@@ -125,7 +125,7 @@ def diff(target_id: str, rel: str) -> dict[str, Any]:
 @router.post("/status/adopt")
 @safe
 def adopt(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
-    return status.adopt(body["target_id"], body["rel"])
+    return status.adopt(body["target_id"], body["rel"], force=bool(body.get("force")))
 
 
 # ---------------------------------------------------------------- サーベイ

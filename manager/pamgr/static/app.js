@@ -385,10 +385,15 @@ async function showDiff(targetId, rel, outId, canAdopt) {
   renderDiff(outId, `差分: ${rel}（- マスター / + 配布先）`, r.diff);
   if (canAdopt) {
     $(outId).insertAdjacentHTML("afterbegin", `<div class="bar"><button id="adopt-btn" class="secondary">配布先の版をマスターに取り込む</button><span class="muted">マスターは git 管理なので戻せます</span></div><div id="adopt-out"></div>`);
-    $("adopt-btn").onclick = async () => {
-      const a = await api("POST", "/status/adopt", { target_id: targetId, rel });
-      if (guard("adopt-out", a)) $("adopt-out").innerHTML = `<p><span class="badge b-ok">取り込みました</span> <code>${esc(a.written)}</code></p>`;
+    const doAdopt = async (force) => {
+      const a = await api("POST", "/status/adopt", { target_id: targetId, rel, force });
+      if (guard("adopt-out", a)) { $("adopt-out").innerHTML = `<p><span class="badge b-ok">取り込みました</span> <code>${esc(a.written)}</code></p>`; return; }
+      if (!force && a && a.error && a.error.includes("消える")) {   // 消える箇所を見せて止めた → 承知のうえでなら取り込める
+        $("adopt-out").insertAdjacentHTML("beforeend", `<button id="adopt-force" class="secondary">消えると承知で取り込む</button>`);
+        $("adopt-force").onclick = () => doAdopt(true);
+      }
     };
+    $("adopt-btn").onclick = () => doAdopt(false);
   }
 }
 
