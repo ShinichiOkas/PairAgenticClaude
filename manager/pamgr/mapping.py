@@ -3,7 +3,7 @@
 根の install.bat（全体）と emit_agents.py（プロジェクト）の配り方を写したもの。
 scope:
   global   全体（~/.claude・~/.gemini/config の規範・スキル・エージェント・道具・雛形）
-  user     ユーザー固有（ペア固有スキル: external/pair-agent-skills → ~/.claude/pair-agent/skills）
+  user     ユーザー固有（ペア固有の Skill・叱責記録・ビジョン: external/pair-agent-skills/{skills,corrections,vision} → ~/.claude/pair-agent/…）
   project  プロジェクト固有（雛形・エージェント定義・ワークフロー）
 """
 
@@ -46,7 +46,12 @@ ENTRIES: tuple[Entry, ...] = (
     Entry("hooks", "global", ("claude_home",), "home-claude/hooks", "hooks", ("*.py",), label="フック（Claude Code のみ。settings.json の項目は install が足す）"),
     Entry("tools", "global", HOMES, "tools", "pair-agent/tools", files=INSTALL_TOOLS, label="道具"),
     Entry("template", "global", HOMES, "home-claude/pair-agent/template", "pair-agent/template", ("**/*",), label="プロジェクトの雛形"),
-    Entry("pair-skills", "user", HOMES, "external/pair-agent-skills", "pair-agent/skills", ("*.md",), track_extra=True, label="ペア固有スキル"),
+    # 実体は external/pair-agent-skills の skills/・corrections/・vision/ の下（根の直下には GOVERNANCE.md だけ）。
+    # 配り方の正は install.bat・install.sh（tools/sync_pair_assets.py）。ここは同じ対応を状態の照合に使う。
+    Entry("pair-skills", "user", HOMES, "external/pair-agent-skills/skills", "pair-agent/skills", ("*.md",), track_extra=True, label="ペア固有スキル"),
+    Entry("pair-corrections", "user", HOMES, "external/pair-agent-skills/corrections", "pair-agent/corrections", ("*.md",), label="ペア固有の叱責記録"),
+    Entry("pair-vision", "user", HOMES, "external/pair-agent-skills/vision", "pair-agent/vision", ("*.md",), label="ペア固有のビジョン記録"),
+    Entry("pair-governance", "user", HOMES, "external/pair-agent-skills/GOVERNANCE.md", "pair-agent/GOVERNANCE.md", label="ペア固有資産の運用規則"),
     Entry("project-template", "project", ("project",), "project-template", "", ("**/*",), label="プロジェクトの雛形"),
     Entry("claude-agents", "project", ("project",), ".claude/agents", ".claude/agents", ("*.md",), requires_dest_dir=True, label="役割エージェント（Claude）"),
     Entry("claude-workflows", "project", ("project",), ".claude/workflows", ".claude/workflows", ("*",), requires_dest_dir=True, label="ワークフロー（Claude）"),

@@ -38,6 +38,15 @@ chmod +x install.sh
 .\install.bat
 ```
 
+ペア固有の資産（Skill・叱責記録・ビジョン）の正は GitHub の `ShinichiOkas/pair-agent-skills`（このリポジトリの submodule `external/pair-agent-skills`）です。`install.sh`・`install.bat` が `git submodule update --init external/pair-agent-skills` で取得し、`tools/sync_pair_assets.py` が `skills/*.md`・`corrections/*.md`・`vision/*.md` を `~/.claude/pair-agent/` と `~/.gemini/config/pair-agent/` の同名フォルダへ、`GOVERNANCE.md` を `pair-agent/GOVERNANCE.md` へ**足します**（`archive/`・`skill-library/` などは配りません）。写し先の既存ファイルは消さず・減らしません:
+
+- 写し先に無いファイル → 写す。同じ内容（改行の違いは無視）→ 何もしない。2 回目の実行は変化なし
+- 内容が違うファイルは、写し先の中身が上流の履歴にある過去の版と一致するとき（上流の古い写し）だけ新しい版へ更新する。その PC で直した版・ローカルにだけある版は触らず、実行の出力に名前を出す（取り込みたければ手で比べて直す）
+- submodule を取れず中身も無いとき、install は残りの手順を終えたうえで終了コード 1 を返す（Skill が届かなかったことが分かる）
+- 上流の作業ツリーでブランチに乗っている `external/pair-agent-skills`（編集用の checkout）は、`submodule update` で動かさずそのまま使う
+
+`git pull` のあとは、各 PC で `install.sh`／`install.bat` をもう一度走らせると、上流に増えた Skill が届きます。
+
 既存の `CLAUDE.md` がある場合はバックアップを作成し、Antigravity用に `GEMINI.md` も作成します。
 
 Claude Code のフック（`home-claude/hooks/*.py`）は `~/.claude/hooks/` へ写します（Antigravity には Claude Code のフックが無いので配りません）。

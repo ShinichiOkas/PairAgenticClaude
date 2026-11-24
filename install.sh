@@ -211,6 +211,31 @@ if [[ -d "${PAIR_AGENT_SRC}/hooks" ]]; then
     fi
 fi
 
+# Pair-specific assets: skills / corrections / vision (external/pair-agent-skills -> ~/.claude/pair-agent and ~/.gemini/config/pair-agent)
+# Existing files in the destination are never deleted or shrunk (see tools/sync_pair_assets.py).
+PAIR_SKILLS_FAIL=0
+PAIR_SKILLS_DIR="${SCRIPT_DIR}/external/pair-agent-skills"
+if [[ -e "${PAIR_SKILLS_DIR}/.git" ]] && git -C "${PAIR_SKILLS_DIR}" symbolic-ref -q HEAD >/dev/null 2>&1; then
+    info "external/pair-agent-skills is on a branch (working checkout). Using it as is."
+elif ! git -C "${SCRIPT_DIR}" submodule update --init external/pair-agent-skills; then
+    warn "git submodule update --init external/pair-agent-skills failed."
+fi
+PY=""
+for c in python3 python; do
+    if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys" >/dev/null 2>&1; then PY="$c"; break; fi
+done
+if [[ -z "${PY}" ]]; then
+    error "python not found: pair-specific skills/corrections/vision NOT distributed."
+    PAIR_SKILLS_FAIL=1
+elif ! "${PY}" "${SCRIPT_DIR}/tools/sync_pair_assets.py" --src "${PAIR_SKILLS_DIR}" --home "${CLAUDE_HOME}" --home "${ANTIGRAVITY_CONFIG}"; then
+    error "pair-specific skills/corrections/vision NOT distributed (see message above). Fix and re-run install.sh."
+    PAIR_SKILLS_FAIL=1
+fi
+if [[ "${PAIR_SKILLS_FAIL}" -ne 0 ]]; then
+    error "Installation finished with errors."
+    exit 1
+fi
+
 info ""  
 info "Installation complete!"  
 info ""  

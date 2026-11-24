@@ -134,6 +134,37 @@ if exist "%PAIR_AGENT_SRC%\hooks" (
     )
 )
 
+
+:: Pair-specific assets: skills / corrections / vision (external\pair-agent-skills -^> pair-agent\ of both homes)
+:: Existing files in the destination are never deleted or shrunk (see tools\sync_pair_assets.py).
+set "PAIR_FAIL=0"
+set "PAIR_SKILLS_DIR=%SCRIPT_DIR%external\pair-agent-skills"
+set "PAIR_ON_BRANCH=0"
+if exist "!PAIR_SKILLS_DIR!\.git" git -C "!PAIR_SKILLS_DIR!" symbolic-ref -q HEAD >nul 2>&1 && set "PAIR_ON_BRANCH=1"
+if "!PAIR_ON_BRANCH!"=="1" (
+    echo !GREEN![pair-agent]!NC! external\pair-agent-skills is on a branch ^(working checkout^). Using it as is.
+) else (
+    git -C "%SCRIPT_DIR%." submodule update --init external/pair-agent-skills
+    if errorlevel 1 echo !YELLOW![pair-agent]!NC! git submodule update --init external/pair-agent-skills failed.
+)
+set "PY="
+python -c "import sys" >nul 2>&1 && set "PY=python"
+if not defined PY py -3 -c "import sys" >nul 2>&1 && set "PY=py -3"
+if not defined PY (
+    echo !YELLOW![pair-agent]!NC! python not found: pair-specific skills/corrections/vision NOT distributed.
+    set "PAIR_FAIL=1"
+) else (
+    !PY! "%SCRIPT_DIR%tools\sync_pair_assets.py" --src "!PAIR_SKILLS_DIR!" --home "%CLAUDE_HOME%" --home "%ANTIGRAVITY_CONFIG%"
+    if errorlevel 1 (
+        echo !YELLOW![pair-agent]!NC! pair-specific skills/corrections/vision NOT distributed ^(see message above^). Fix and re-run install.bat.
+        set "PAIR_FAIL=1"
+    )
+)
+if "!PAIR_FAIL!"=="1" (
+    echo !YELLOW![pair-agent]!NC! Installation finished with errors.
+    exit /b 1
+)
+
 echo.
 echo !GREEN![pair-agent]!NC! Installation complete!
 goto end

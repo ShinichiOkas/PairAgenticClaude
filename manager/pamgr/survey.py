@@ -167,7 +167,7 @@ def survey_master() -> Iterator[dict[str, Any]]:
         yield _skill(tid, tn, "master", root, p)
     for p in _files(root / "home-claude" / "agents", "*.md"):
         yield _unit(tid, tn, "master", "agent", root, p, _read(p))
-    for p in _files(root / "external" / "pair-agent-skills", "*.md"):
+    for p in _files(root / "external" / "pair-agent-skills" / "skills", "*.md"):
         yield _skill(tid, tn, "master", root, p)
 
 

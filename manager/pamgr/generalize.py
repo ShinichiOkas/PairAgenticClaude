@@ -104,7 +104,7 @@ def promote(text: str, scope: str, name: str, overwrite: bool = False) -> Path:
         root = master / "external" / "pair-agent-skills"
         if not (root / ".git").exists():
             raise ValueError("external/pair-agent-skills が空（サブモジュール未取得）。git submodule update --init が要る")
-        dest = root / f"{name}.md"
+        dest = root / "skills" / f"{name}.md"
     elif scope == "global":
         dest = master / "home-claude" / "skills" / name / "SKILL.md"
     else:
