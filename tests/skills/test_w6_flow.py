@@ -1,4 +1,4 @@
-"""process 系 Skill の武器スクリプト（進行系: sprint-lifecycle / agreement-document / slice-size-management / subagent-cost-management / project-init / project-start-existing）のテスト。"""
+"""process 系 Skill の武器スクリプト（進行系: sprint-lifecycle / agreement-document / slice-size-management / subagent-cost-management / project-init）のテスト。"""
 import hashlib
 import importlib.util
 import json
@@ -349,32 +349,3 @@ def test_project_init_does_not_overwrite_gemini(tmp_path):
     (p / "GEMINI.md").write_text("B", encoding="utf-8")
     assert i.main(["--project", str(p), "--home", str(home), "--host", "H", "--toplevel", "/t", "--apply"]) == 0
     assert (p / "GEMINI.md").read_text(encoding="utf-8") == "B"
-
-
-# ------------------------------------------------------------ project-start-existing
-def test_survey_project(tmp_path, capsys):
-    sv = load("project-start-existing", "survey_project")
-    p = tmp_path / "proj"
-    p.mkdir()
-    assert sv.main(["--project", str(p)]) == 0
-    assert "project-start-empty" in capsys.readouterr().out
-    (p / "README.md").write_text("# Title\n\nA tool for things.\n", encoding="utf-8")
-    (p / "pyproject.toml").write_text("[x]", encoding="utf-8")
-    (p / "tests").mkdir()
-    (p / "src").mkdir()
-    (p / "src" / "big.py").write_text("x" * 5000, encoding="utf-8")
-    (p / "node_modules").mkdir()
-    (p / "node_modules" / "skip.js").write_text("y" * 99999, encoding="utf-8")
-    subprocess.run(["git", "-C", str(p), "init", "-q"], check=True, capture_output=True)
-    capsys.readouterr()
-    s = sv.survey(p)
-    assert s["verdict"] == "needs-init" and s["files"] == 3  # node_modules は数えない
-    assert s["build"] == ["Python"] and s["tests"] == ["tests"] and s["readme"] == "README.md"
-    assert s["biggest"][0]["path"] == "src/big.py" and s["git"]["is_repo"] and s["git"]["dirty_files"] >= 1
-    assert sv.main(["--project", str(p)]) == 0
-    assert "project-init を展開" in capsys.readouterr().out
-    (p / ".pair-agent").mkdir()
-    assert sv.survey(p)["verdict"] == "initialized"
-    sv.main(["--project", str(p), "--json"])
-    assert json.loads(capsys.readouterr().out)["verdict"] == "initialized"
-    assert sv.main(["--project", str(p / "nope")]) == 2
