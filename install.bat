@@ -117,6 +117,23 @@ copy /y "%PAIR_AGENT_SRC%\agents\*.md" "%CLAUDE_HOME%\agents\" >nul
 copy /y "%PAIR_AGENT_SRC%\agents\*.md" "%ANTIGRAVITY_CONFIG%\agents\" >nul
 echo !GREEN![pair-agent]!NC! Installed agents (deliberation, retrospective, skill-executor)
 
+:: Hooks (Claude only: Antigravity has no Claude Code hooks)
+:: The hook script is copied; settings.json is NOT copied. merge_claude_hooks.py only adds the
+:: hooks entry to the existing settings.json (idempotent; refuses to write broken JSON).
+if exist "%PAIR_AGENT_SRC%\hooks" (
+    if not exist "%CLAUDE_HOME%\hooks" mkdir "%CLAUDE_HOME%\hooks"
+    copy /y "%PAIR_AGENT_SRC%\hooks\*.py" "%CLAUDE_HOME%\hooks\" >nul
+    echo !GREEN![pair-agent]!NC! Installed hooks into %%USERPROFILE%%\.claude\hooks
+    set "PY="
+    python -c "import sys" >nul 2>&1 && set "PY=python"
+    if not defined PY py -3 -c "import sys" >nul 2>&1 && set "PY=py -3"
+    if defined PY (
+        !PY! "%SCRIPT_DIR%tools\merge_claude_hooks.py" --settings "%CLAUDE_HOME%\settings.json" || echo !YELLOW![pair-agent]!NC! Could not add the hooks entry to settings.json - see message above. Add home-claude\settings-hooks.json by hand.
+    ) else (
+        echo !YELLOW![pair-agent]!NC! python not found: hooks entry NOT added to settings.json. Add home-claude\settings-hooks.json by hand.
+    )
+)
+
 echo.
 echo !GREEN![pair-agent]!NC! Installation complete!
 goto end
@@ -162,6 +179,12 @@ echo !YELLOW![pair-agent]!NC! (Learning data in pair-agent\ is preserved^)
 :: Claude
 del /q "%CLAUDE_HOME%\rules\pair-agent-core.md" 2>nul
 del /q "%CLAUDE_HOME%\agents\*.md" 2>nul
+:: Hooks entry and script (Claude only)
+set "PY="
+python -c "import sys" >nul 2>&1 && set "PY=python"
+if not defined PY py -3 -c "import sys" >nul 2>&1 && set "PY=py -3"
+if defined PY !PY! "%SCRIPT_DIR%tools\merge_claude_hooks.py" --settings "%CLAUDE_HOME%\settings.json" --remove
+del /q "%CLAUDE_HOME%\hooks\agent_watch_reminder.py" 2>nul
 :: Antigravity
 del /q "%ANTIGRAVITY_CONFIG%\GEMINI.md" 2>nul
 del /q "%ANTIGRAVITY_CONFIG%\rules\pair-agent-core.md" 2>nul

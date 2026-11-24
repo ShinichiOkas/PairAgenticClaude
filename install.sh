@@ -58,6 +58,13 @@ if [[ "${1:-}" == "--uninstall" ]]; then
     rm -f  "${CLAUDE_HOME}/CLAUDE.md.pair-agent-backup" 2>/dev/null || true  
     rm -f  "${CLAUDE_HOME}/rules/pair-agent-core.md" 2>/dev/null || true  
     rm -f  "${CLAUDE_HOME}/agents/"*.md 2>/dev/null || true
+    for c in python3 python; do
+        if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys" >/dev/null 2>&1; then
+            "$c" "${SCRIPT_DIR}/tools/merge_claude_hooks.py" --settings "${CLAUDE_HOME}/settings.json" --remove || true
+            break
+        fi
+    done
+    rm -f  "${CLAUDE_HOME}/hooks/agent_watch_reminder.py" 2>/dev/null || true
     
     # Antigravity
     rm -f  "${ANTIGRAVITY_CONFIG}/GEMINI.md" 2>/dev/null || true
@@ -185,6 +192,24 @@ done
 cp "${PAIR_AGENT_SRC}/agents/"*.md "${CLAUDE_HOME}/agents/"  
 cp "${PAIR_AGENT_SRC}/agents/"*.md "${ANTIGRAVITY_CONFIG}/agents/"  
 info "Installed agents (deliberation, retrospective, skill-executor) to Claude and Antigravity"
+
+# Hooks (Claude Code only: Antigravity has no Claude Code hooks)
+# The hook script is copied; settings.json is NOT copied. merge_claude_hooks.py only adds the
+# hooks entry to the existing ~/.claude/settings.json (idempotent; refuses to write broken JSON).
+if [[ -d "${PAIR_AGENT_SRC}/hooks" ]]; then
+    mkdir -p "${CLAUDE_HOME}/hooks"
+    cp "${PAIR_AGENT_SRC}/hooks/"*.py "${CLAUDE_HOME}/hooks/"
+    info "Installed hooks into ~/.claude/hooks/"
+    PY=""
+    for c in python3 python; do
+        if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys" >/dev/null 2>&1; then PY="$c"; break; fi
+    done
+    if [[ -n "${PY}" ]]; then
+        "${PY}" "${SCRIPT_DIR}/tools/merge_claude_hooks.py" --settings "${CLAUDE_HOME}/settings.json" || warn "Could not add the hooks entry to ~/.claude/settings.json (see message above). Add home-claude/settings-hooks.json by hand."
+    else
+        warn "python not found: hooks entry NOT added to ~/.claude/settings.json. Add home-claude/settings-hooks.json by hand."
+    fi
+fi
 
 info ""  
 info "Installation complete!"  

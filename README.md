@@ -40,6 +40,9 @@ chmod +x install.sh
 
 既存の `CLAUDE.md` がある場合はバックアップを作成し、Antigravity用に `GEMINI.md` も作成します。
 
+Claude Code のフック（`home-claude/hooks/*.py`）は `~/.claude/hooks/` へ写します（Antigravity には Claude Code のフックが無いので配りません）。
+`settings.json` は丸ごとは写しません（PC ごとの許可・モデル・鍵があるため）。`tools/merge_claude_hooks.py` が、雛形 `home-claude/settings-hooks.json` の項目を各 PC の `~/.claude/settings.json` の `hooks` へ**足すだけ**です（同じスクリプトを呼ぶ項目があれば足さない・ほかのキーに触らない・JSON が壊れていれば書かずに知らせる・初回は `settings.json.pair-agent-backup` を残す）。python が見つからない PC では警告だけ出して続行するので、そのときは雛形を手で足してください。`python` が無い Mac・Linux でも動くよう、フックの command は `python … || python3 …` の形です。
+
 ## **プロジェクトへの導入**
 
 > [!NOTE]

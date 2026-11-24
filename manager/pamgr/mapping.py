@@ -43,6 +43,7 @@ ENTRIES: tuple[Entry, ...] = (
     Entry("rules", "global", HOMES, "home-claude/rules", "rules", ("*.md",), label="ルール"),
     Entry("skills", "global", HOMES, "home-claude/skills", "skills", ("*/SKILL.md", "*/scripts/*.py"), label="スキル"),
     Entry("agents", "global", HOMES, "home-claude/agents", "agents", ("*.md",), label="コアのサブエージェント"),
+    Entry("hooks", "global", ("claude_home",), "home-claude/hooks", "hooks", ("*.py",), label="フック（Claude Code のみ。settings.json の項目は install が足す）"),
     Entry("tools", "global", HOMES, "tools", "pair-agent/tools", files=INSTALL_TOOLS, label="道具"),
     Entry("template", "global", HOMES, "home-claude/pair-agent/template", "pair-agent/template", ("**/*",), label="プロジェクトの雛形"),
     Entry("pair-skills", "user", HOMES, "external/pair-agent-skills", "pair-agent/skills", ("*.md",), track_extra=True, label="ペア固有スキル"),

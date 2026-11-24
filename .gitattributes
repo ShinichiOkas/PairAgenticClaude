@@ -4,3 +4,6 @@
 
 # Shell scripts use LF
 *.sh text eol=lf
+
+# Hook scripts are copied as-is into ~/.claude/hooks (Mac/Linux run them directly)
+home-claude/hooks/*.py text eol=lf
